@@ -10,8 +10,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Typography — font applied dynamically per locale in layout */
-  --font-sans: var(--font-active);
+  /* Typography — both font families available as CSS variables.
+     The active font is applied via className on <body> in the layout. */
+  --font-sans: var(--font-work-sans), var(--font-neo-sans-arabic), ui-sans-serif, system-ui, sans-serif;
 
   /* Radius scale */
   --radius-sm: calc(var(--radius) - 4px);

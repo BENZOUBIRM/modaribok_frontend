@@ -2,6 +2,7 @@ import localFont from "next/font/local"
 
 // Work Sans — English typography (per Modaribok Brand Guidelines)
 // Weights: Regular (400), Medium (500), SemiBold (600), Bold (700), ExtraBold (800)
+// Paths are relative to this file (lib/fonts.ts) → go up one level to reach public/
 export const workSans = localFont({
   src: [
     {

@@ -36,16 +36,19 @@ export default async function LangLayout({
   const direction = localeDirection[locale]
   const dictionary = await getDictionary(locale)
 
+  // Both variable classes must be on <html> so the @font-face rules
+  // and CSS variables (--font-work-sans, --font-neo-sans-arabic) are injected.
+  // The locale-specific className is applied to <body> to set the actual font.
+  const fontClassName = locale === "ar" ? neoSansArabic.className : workSans.className
+
   return (
-    <html lang={locale} dir={direction} suppressHydrationWarning>
-      <body
-        className={`${workSans.variable} ${neoSansArabic.variable} antialiased`}
-        style={{
-          "--font-active": locale === "ar"
-            ? "var(--font-neo-sans-arabic)"
-            : "var(--font-work-sans)",
-        } as React.CSSProperties}
-      >
+    <html
+      lang={locale}
+      dir={direction}
+      className={`${workSans.variable} ${neoSansArabic.variable}`}
+      suppressHydrationWarning
+    >
+      <body className={`${fontClassName} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
