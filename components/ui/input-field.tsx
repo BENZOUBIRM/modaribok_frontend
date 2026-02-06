@@ -26,23 +26,27 @@ function InputField({
   id,
   startIcon,
   iconClassName,
+  type,
   ...props
 }: InputFieldProps) {
   const generatedId = React.useId()
   const inputId = id || generatedId
   const hasError = !!error
   const hasSuccess = success && !hasError
+  const isPassword = type === "password"
 
-  // Determine the endIcon based on validation state
+  // For password inputs, the eye toggle is built into Input — skip endIcon override
   let endIcon: React.ReactNode = null
   let endIconClassName = "text-muted-foreground"
-  
-  if (hasSuccess && showSuccessIcon) {
-    endIcon = <Icon icon="solar:check-circle-bold" className="size-4" />
-    endIconClassName = "text-success"
-  } else if (hasError && showErrorIcon) {
-    endIcon = <Icon icon="solar:danger-circle-bold" className="size-4" />
-    endIconClassName = "text-destructive"
+
+  if (!isPassword) {
+    if (hasSuccess && showSuccessIcon) {
+      endIcon = <Icon icon="solar:check-circle-bold" className="size-4" />
+      endIconClassName = "text-success"
+    } else if (hasError && showErrorIcon) {
+      endIcon = <Icon icon="solar:danger-circle-bold" className="size-4" />
+      endIconClassName = "text-destructive"
+    }
   }
 
   return (
@@ -54,6 +58,7 @@ function InputField({
       )}
       <Input
         id={inputId}
+        type={type}
         data-success={hasSuccess || undefined}
         data-error={hasError || undefined}
         aria-invalid={hasError}

@@ -47,7 +47,7 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-md">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">

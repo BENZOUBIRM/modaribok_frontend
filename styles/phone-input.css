@@ -194,7 +194,7 @@
 .react-international-phone-country-selector-dropdown__list-item--selected {
   background: var(--primary) !important;
   background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
+  /* color: var(--primary-foreground) !important; */
 }
 
 .react-international-phone-country-selector-dropdown__list-item--focused {

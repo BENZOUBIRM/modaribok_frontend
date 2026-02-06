@@ -1,6 +1,8 @@
+"use client"
+
 import { PhoneInput } from "react-international-phone"
 import "react-international-phone/style.css"
-import { useLanguage } from "@/i18n/LanguageContext"
+import { useDictionary } from "@/providers/dictionary-provider"
 import { Label } from "./label"
 import { cn } from "@/lib/utils"
 
@@ -27,14 +29,14 @@ export function PhoneInputField({
   required = false,
   className,
 }: PhoneInputFieldProps) {
-  const { isRTL } = useLanguage()
+  const { isRTL } = useDictionary()
 
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
-        <Label className={cn(isRTL && "font-arabic")}>
+        <Label>
           {label}
-          {required && <span className="text-destructive ml-1">*</span>}
+          {required && <span className="text-destructive ltr:ml-1 rtl:mr-1">*</span>}
         </Label>
       )}
       <div
@@ -50,10 +52,6 @@ export function PhoneInputField({
           onChange={onChange}
           disabled={disabled}
           placeholder={placeholder}
-          inputClassName={cn(isRTL && "font-arabic")}
-          countrySelectorStyleProps={{
-            buttonClassName: cn(isRTL && "font-arabic"),
-          }}
           preferredCountries={["ma", "ae", "sa", "us", "gb"]}
         />
       </div>

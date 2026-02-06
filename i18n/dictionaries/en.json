@@ -24,7 +24,7 @@
   },
   "auth": {
     "login": {
-      "title": "Welcome Back! 👋",
+      "title": "WELCOME BACK! 👋",
       "subtitle": "Sign in to your account to continue.",
       "emailOrUsername": "Email",
       "emailPlaceholder": "Enter your email",
@@ -47,8 +47,39 @@
       }
     },
     "signup": {
-      "title": "Create Account",
-      "subtitle": "Join Modaribok and start your journey."
+      "title": "CREATE A NEW ACCOUNT 🚀",
+      "subtitle": "Join Modaribok and start your sports journey.",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter your first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter your last name",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "phone": "Phone Number",
+      "phonePlaceholder": "Enter your phone number",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "signupButton": "Create Account",
+      "orContinueWith": "Or sign up with",
+      "uploadImage": "Attach a profile photo (png, jpeg, jpg)",
+      "noteTitle": "Note",
+      "noteText": "You can be a store owner, own a gym, and you can be a trainer.",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "success": "Account created successfully!",
+      "errors": {
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email",
+        "phoneRequired": "Phone number is required",
+        "passwordRequired": "Password is required",
+        "passwordTooShort": "Password must be at least 8 characters",
+        "serverError": "Something went wrong. Please try again.",
+        "phoneInUse": "This phone number is already in use",
+        "invalidData": "Invalid input data",
+        "networkError": "Network error. Please check your connection."
+      }
     }
   }
 }

@@ -6,34 +6,61 @@
 :root {
   --radius: 0.625rem;
 
-  /* Brand Colors - Light Mode */
-  --background: #F9FBFD;
-  --foreground: #1F2A3D;
+  /* ── Core Backgrounds ── */
+  --background: #F9FBFD;        /* Page background */
+  --foreground: #1F2A3D;        /* Primary text */
+  --navbar: #FFFFFF;            /* Navbar background (distinct from page) */
+  --surface: #EDF3FA;           /* Subtle surface / section background */
+
+  /* ── Cards & Popovers ── */
   --card: #FFFFFF;
   --card-foreground: #1F2A3D;
   --popover: #FFFFFF;
   --popover-foreground: #1F2A3D;
+
+  /* ── Brand Primary (Blue) ── */
   --primary: #2869E8;
   --primary-foreground: #FFFFFF;
+  --primary-light: #E1EDFF;     /* Light tint for badges, hover states */
+
+  /* ── Brand Secondary (Dark Blue) ── */
   --secondary: #153B89;
   --secondary-foreground: #FFFFFF;
-  --muted: #EDF3FA;
-  --muted-foreground: #A9A9A9;
+
+  /* ── Brand Accent (Amber/Gold) ── */
   --accent: #F59E0B;
   --accent-foreground: #FFFFFF;
+  --accent-light: #FFF5CC;      /* Light tint for accent badges, highlights */
+
+  /* ── Muted / Subdued ── */
+  --muted: #EDF3FA;
+  --muted-foreground: #6B7B8F;  /* Subtler than foreground but readable */
+
+  /* ── Text Variants ── */
+  --secondary-text: #3C475B;    /* Secondary body text */
+  --disabled-text: #A9A9A9;     /* Disabled / placeholder text */
+  --link-text: #1A73E8;         /* Link color */
+
+  /* ── Semantic Status ── */
   --destructive: #E53935;
-  --border: #DADDE2;
-  --input: #CCE0F3;
-  --ring: #2869E8;
   --success: #43A047;
   --warning: #F59E0B;
   --info: #42A5F5;
+
+  /* ── Borders & Inputs ── */
+  --border: #DADDE2;
+  --input: #CCE0F3;
+  --ring: #2869E8;
   --field-border: #CCE0F3;
+
+  /* ── Chart Palette ── */
   --chart-1: #2869E8;
   --chart-2: #43A047;
   --chart-3: #F59E0B;
   --chart-4: #E53935;
   --chart-5: #42A5F5;
+
+  /* ── Sidebar ── */
   --sidebar: #EDF3FA;
   --sidebar-foreground: #1F2A3D;
   --sidebar-primary: #2869E8;
@@ -45,34 +72,61 @@
 }
 
 .dark {
-  /* Brand Colors - Dark Mode */
-  --background: #1C1F26;
-  --foreground: #FFFFFF;
+  /* ── Core Backgrounds ── */
+  --background: #1C1F26;        /* Page background */
+  --foreground: #FFFFFF;        /* Primary text */
+  --navbar: #262A33;            /* Navbar background (distinct from page) */
+  --surface: #2F3542;           /* Subtle surface / section background */
+
+  /* ── Cards & Popovers ── */
   --card: #262A33;
   --card-foreground: #FFFFFF;
   --popover: #262A33;
   --popover-foreground: #FFFFFF;
+
+  /* ── Brand Primary (Blue) ── */
   --primary: #2869E8;
   --primary-foreground: #FFFFFF;
+  --primary-light: #174BC1;     /* Darker tint for dark mode hover states */
+
+  /* ── Brand Secondary (Dark Blue) ── */
   --secondary: #0D1B2A;
   --secondary-foreground: #FFFFFF;
-  --muted: #262A33;
-  --muted-foreground: #CCCCCC;
+
+  /* ── Brand Accent (Amber/Gold) ── */
   --accent: #F59E0B;
   --accent-foreground: #1C1F26;
+  --accent-light: #B38E00;      /* Dimmed amber for dark mode highlights */
+
+  /* ── Muted / Subdued ── */
+  --muted: #262A33;
+  --muted-foreground: #9CA3AF;  /* Lighter in dark mode for readability */
+
+  /* ── Text Variants ── */
+  --secondary-text: #CCCCCC;    /* Secondary body text */
+  --disabled-text: #777777;     /* Disabled / placeholder text */
+  --link-text: #4DA6FF;         /* Link color — brighter in dark mode */
+
+  /* ── Semantic Status ── */
   --destructive: #F44336;
-  --border: #4A5262;
-  --input: #333C4F;
-  --ring: #2869E8;
   --success: #4CAF50;
   --warning: #FFC107;
   --info: #2196F3;
+
+  /* ── Borders & Inputs ── */
+  --border: #4A5262;
+  --input: #333C4F;
+  --ring: #2869E8;
   --field-border: #333C4F;
+
+  /* ── Chart Palette ── */
   --chart-1: #2869E8;
   --chart-2: #4CAF50;
   --chart-3: #F59E0B;
   --chart-4: #F44336;
   --chart-5: #2196F3;
+
+  /* ── Sidebar ── */
   --sidebar: #2F3542;
   --sidebar-foreground: #FFFFFF;
   --sidebar-primary: #2869E8;

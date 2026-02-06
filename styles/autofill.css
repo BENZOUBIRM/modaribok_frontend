@@ -22,3 +22,16 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #1F2A3D !important;
   caret-color: #1F2A3D !important;
 }
+
+/* ================================================
+   Hide Native Browser Password Reveal Button
+   ================================================ */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+  /* Chromium-based browsers auto-fill button */
+}
