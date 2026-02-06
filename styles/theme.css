@@ -1,0 +1,84 @@
+/* ================================================
+   Theme Tokens — Modaribok Brand Guidelines
+   Light & Dark mode CSS custom properties
+   ================================================ */
+
+:root {
+  --radius: 0.625rem;
+
+  /* Brand Colors - Light Mode */
+  --background: #F9FBFD;
+  --foreground: #1F2A3D;
+  --card: #FFFFFF;
+  --card-foreground: #1F2A3D;
+  --popover: #FFFFFF;
+  --popover-foreground: #1F2A3D;
+  --primary: #2869E8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #153B89;
+  --secondary-foreground: #FFFFFF;
+  --muted: #EDF3FA;
+  --muted-foreground: #A9A9A9;
+  --accent: #F59E0B;
+  --accent-foreground: #FFFFFF;
+  --destructive: #E53935;
+  --border: #DADDE2;
+  --input: #CCE0F3;
+  --ring: #2869E8;
+  --success: #43A047;
+  --warning: #F59E0B;
+  --info: #42A5F5;
+  --field-border: #CCE0F3;
+  --chart-1: #2869E8;
+  --chart-2: #43A047;
+  --chart-3: #F59E0B;
+  --chart-4: #E53935;
+  --chart-5: #42A5F5;
+  --sidebar: #EDF3FA;
+  --sidebar-foreground: #1F2A3D;
+  --sidebar-primary: #2869E8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FFFFFF;
+  --sidebar-accent-foreground: #1F2A3D;
+  --sidebar-border: #DADDE2;
+  --sidebar-ring: #2869E8;
+}
+
+.dark {
+  /* Brand Colors - Dark Mode */
+  --background: #1C1F26;
+  --foreground: #FFFFFF;
+  --card: #262A33;
+  --card-foreground: #FFFFFF;
+  --popover: #262A33;
+  --popover-foreground: #FFFFFF;
+  --primary: #2869E8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0D1B2A;
+  --secondary-foreground: #FFFFFF;
+  --muted: #262A33;
+  --muted-foreground: #CCCCCC;
+  --accent: #F59E0B;
+  --accent-foreground: #1C1F26;
+  --destructive: #F44336;
+  --border: #4A5262;
+  --input: #333C4F;
+  --ring: #2869E8;
+  --success: #4CAF50;
+  --warning: #FFC107;
+  --info: #2196F3;
+  --field-border: #333C4F;
+  --chart-1: #2869E8;
+  --chart-2: #4CAF50;
+  --chart-3: #F59E0B;
+  --chart-4: #F44336;
+  --chart-5: #2196F3;
+  --sidebar: #2F3542;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #2869E8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #174BC1;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #4A5262;
+  --sidebar-ring: #2869E8;
+}

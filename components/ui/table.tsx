@@ -1,29 +1,52 @@
-"use client"
-
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+interface TableProps extends React.ComponentProps<"table"> {
+  /** Add borders around the entire table */
+  bordered?: boolean
+  /** Apply rounded corners to the table container */
+  rounded?: boolean
+}
+
+function Table({ className, bordered, rounded, ...props }: TableProps) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      data-bordered={bordered || undefined}
+      data-rounded={rounded || undefined}
+      className={cn(
+        "relative w-full overflow-x-auto",
+        rounded && "rounded-lg",
+        className
+      )}
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full caption-bottom text-sm",
+          bordered && "[&_th]:border [&_td]:border [&_th]:border-border [&_td]:border-border"
+        )}
         {...props}
       />
     </div>
   )
 }
 
-function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+interface TableHeaderProps extends React.ComponentProps<"thead"> {
+  /** Background color class for the header (e.g., "bg-primary", "bg-muted") */
+  bgColor?: string
+}
+
+function TableHeader({ className, bgColor, ...props }: TableHeaderProps) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn(
+        "[&_tr]:border-b",
+        bgColor,
+        className
+      )}
       {...props}
     />
   )
@@ -65,12 +88,18 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+interface TableHeadProps extends React.ComponentProps<"th"> {
+  /** Background color class for this header cell */
+  bgColor?: string
+}
+
+function TableHead({ className, bgColor, ...props }: TableHeadProps) {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-foreground h-10 px-3 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5",
+        bgColor,
         className
       )}
       {...props}
@@ -78,12 +107,21 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+interface TableCellProps extends React.ComponentProps<"td"> {
+  /** Mark this cell as a row header (first column styling) */
+  isRowHeader?: boolean
+  /** Background color class for this cell */
+  bgColor?: string
+}
+
+function TableCell({ className, isRowHeader, bgColor, ...props }: TableCellProps) {
   return (
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "p-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5",
+        isRowHeader && "font-medium text-foreground bg-muted/30",
+        bgColor,
         className
       )}
       {...props}

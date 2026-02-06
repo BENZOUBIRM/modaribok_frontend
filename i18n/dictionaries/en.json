@@ -1,0 +1,54 @@
+{
+  "common": {
+    "appName": "Modaribok",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "close": "Close",
+    "search": "Search..."
+  },
+  "navbar": {
+    "home": "Home",
+    "login": "Login",
+    "signup": "Sign Up",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "language": "Language"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back! 👋",
+      "subtitle": "Sign in to your account to continue.",
+      "emailOrUsername": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Sign In",
+      "orContinueWith": "Or continue with",
+      "google": "Google",
+      "facebook": "Facebook",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Create a new account",
+      "success": "Logged in successfully!",
+      "errors": {
+        "emailRequired": "Email is required",
+        "passwordRequired": "Password is required",
+        "serverError": "Something went wrong. Please try again.",
+        "notAdmin": "Access denied. Admin only."
+      }
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Join Modaribok and start your journey."
+    }
+  }
+}
