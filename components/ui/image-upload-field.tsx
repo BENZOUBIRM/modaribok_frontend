@@ -120,15 +120,16 @@ function ImageUploadField({
             <img
               src={preview}
               alt="Preview"
-              className="size-20 rounded-full object-cover ring-2 ring-primary/20"
+              className="size-30 rounded-full object-cover ring-2 ring-primary/20"
             />
             <button
               type="button"
+              title="Remove image"
               onClick={handleRemove}
               aria-label="Remove image"
-              className="absolute -top-1 ltr:-right-1 rtl:-left-1 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:bg-destructive/80 transition-colors"
+              className="absolute -top-2 ltr:-right-5 rtl:-left-5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:bg-destructive/80 transition-colors cursor-pointer"
             >
-              <Icon icon="solar:close-circle-bold" className="size-3.5" />
+              <Icon icon="material-symbols:close-rounded" className="size-3.5" />
             </button>
           </div>
         ) : (

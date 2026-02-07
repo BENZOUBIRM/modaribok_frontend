@@ -125,6 +125,7 @@ function SignupPage() {
             <InputField
               label={t.firstName}
               placeholder={t.firstNamePlaceholder}
+              autoComplete="off"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               disabled={isLoading}
@@ -132,6 +133,7 @@ function SignupPage() {
             <InputField
               label={t.lastName}
               placeholder={t.lastNamePlaceholder}
+              autoComplete="off"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               disabled={isLoading}
@@ -144,6 +146,7 @@ function SignupPage() {
               label={t.email}
               placeholder={t.emailPlaceholder}
               type="email"
+              autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
@@ -167,6 +170,7 @@ function SignupPage() {
               label={t.password}
               placeholder={t.passwordPlaceholder}
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}

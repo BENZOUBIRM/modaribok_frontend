@@ -83,6 +83,7 @@ function LoginPage() {
               label={t.emailOrUsername}
               placeholder={t.emailPlaceholder}
               type="email"
+              autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
@@ -95,6 +96,7 @@ function LoginPage() {
               label={t.password}
               placeholder={t.passwordPlaceholder}
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}

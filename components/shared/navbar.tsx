@@ -101,17 +101,27 @@ export function Navbar() {
             <DropdownMenuContent align={isRTL ? "start" : "end"}>
               <DropdownMenuItem
                 onClick={() => switchLocale("en")}
-                className={cn(lang === "en" && "bg-muted")}
+                className={cn("justify-between", lang === "en" && "bg-muted")}
               >
-                <Icon icon="circle-flags:us" className="size-5" />
-                <span>English</span>
+                <span className="flex items-center gap-2">
+                  <Icon icon="circle-flags:us" className="size-5" />
+                  <span>English</span>
+                </span>
+                {lang === "en" && (
+                  <Icon icon="material-symbols:check" className="size-4 text-primary" />
+                )}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => switchLocale("ar")}
-                className={cn(lang === "ar" && "bg-muted")}
+                className={cn("justify-between", lang === "ar" && "bg-muted")}
               >
-                <Icon icon="circle-flags:ma" className="size-5" />
-                <span>العربية</span>
+                <span className="flex items-center gap-2">
+                  <Icon icon="circle-flags:ma" className="size-5" />
+                  <span>العربية</span>
+                </span>
+                {lang === "ar" && (
+                  <Icon icon="material-symbols:check" className="size-4 text-primary" />
+                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -122,8 +132,10 @@ export function Navbar() {
             size="icon-sm"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             aria-label={
-              theme === "dark"
-                ? dictionary.navbar.lightMode
+              mounted
+                ? theme === "dark"
+                  ? dictionary.navbar.lightMode
+                  : dictionary.navbar.darkMode
                 : dictionary.navbar.darkMode
             }
           >
