@@ -3,11 +3,12 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Icon } from "@iconify/react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { useAuth } from "@/providers/auth-provider"
 import { InputField } from "@/components/ui/input-field"
 import { PhoneInputField } from "@/components/ui/phone-input-field"
 import { ImageUploadField } from "@/components/ui/image-upload-field"
@@ -22,17 +23,33 @@ function SignupPage() {
   const [password, setPassword] = React.useState("")
   const [profileImage, setProfileImage] = React.useState<File | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
+  const [signupSuccess, setSignupSuccess] = React.useState(false)
   const { dictionary, lang, isRTL } = useDictionary()
+  const { signup } = useAuth()
+  const router = useRouter()
   const t = dictionary.auth.signup
 
   // Email validation regex
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
+  // Map backend error codes → i18n keys
+  const resolveErrorMessage = (code?: string, fallback?: string): string => {
+    const codeMap: Record<string, string> = {
+      AUTH_ERROR_EMAIL_EXISTS: t.errors.emailInvalid,
+      AUTH_ERROR_PHONE_EXISTS: t.errors.phoneInUse,
+      AUTH_ERROR_INVALID_DATA: t.errors.invalidData,
+    }
+    if (code && codeMap[code]) return codeMap[code]
+    if (fallback === "networkError") return t.errors.networkError
+    return fallback || t.errors.serverError
+  }
+
   // Handle form submission
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Client-side validation
     if (!firstName.trim()) {
       toast.error(t.errors.firstNameRequired)
       return
@@ -70,10 +87,43 @@ function SignupPage() {
 
     setIsLoading(true)
 
-    // TODO: connect to backend
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    toast.success(t.success)
-    setIsLoading(false)
+    try {
+      const result = await signup({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        profileImage,
+      })
+
+      if (result.success) {
+        setSignupSuccess(true)
+        // Show success callout for 2 seconds, then redirect to login
+        setTimeout(() => {
+          router.push(`/${lang}/login`)
+        }, 2000)
+      } else {
+        toast.error(resolveErrorMessage(result.code, result.error))
+      }
+    } catch {
+      toast.error(t.errors.serverError)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Show success callout after signup (before redirect)
+  if (signupSuccess) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-6 lg:p-10">
+        <div className="w-full max-w-lg space-y-6">
+          <Callout variant="success" title={t.success}>
+            {dictionary.home.signupSuccess}
+          </Callout>
+        </div>
+      </div>
+    )
   }
 
   return (

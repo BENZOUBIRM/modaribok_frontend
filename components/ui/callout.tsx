@@ -78,4 +78,6 @@ function Callout({
   )
 }
 
-export { Callout, calloutVariants }
+const MemoizedCallout = React.memo(Callout)
+
+export { MemoizedCallout as Callout, calloutVariants }

@@ -1,9 +1,8 @@
 "use client"
 
-import { PhoneInput } from "react-international-phone"
-import "react-international-phone/style.css"
-import { useDictionary } from "@/providers/dictionary-provider"
+import * as React from "react"
 import { Label } from "./label"
+import { Input } from "./input"
 import { cn } from "@/lib/utils"
 
 interface PhoneInputFieldProps {
@@ -18,7 +17,15 @@ interface PhoneInputFieldProps {
   className?: string
 }
 
-export function PhoneInputField({
+/**
+ * Simple phone input — plain <input type="tel"> with LTR direction.
+ * Format: "+212 600000000"
+ *
+ * Replaces the heavy react-international-phone library which
+ * caused severe input lag by re-loading all country data on
+ * every keystroke.
+ */
+function PhoneInputFieldInner({
   label,
   value,
   onChange,
@@ -29,8 +36,6 @@ export function PhoneInputField({
   required = false,
   className,
 }: PhoneInputFieldProps) {
-  const { isRTL } = useDictionary()
-
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
@@ -39,22 +44,22 @@ export function PhoneInputField({
           {required && <span className="text-destructive ltr:ml-1 rtl:mr-1">*</span>}
         </Label>
       )}
-      <div
+      <Input
+        type="tel"
+        dir="ltr"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "+212 600000000"}
+        disabled={disabled}
         className={cn(
-          "phone-input-wrapper",
-          error && "phone-input-error",
-          success && "phone-input-success"
+          error && "border-destructive focus-visible:ring-destructive",
+          success && "border-green-500 focus-visible:ring-green-500",
         )}
-      >
-        <PhoneInput
-          defaultCountry="ma"
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-          placeholder={placeholder}
-          preferredCountries={["ma", "ae", "sa", "us", "gb"]}
-        />
-      </div>
+      />
     </div>
   )
 }
+
+const PhoneInputField = React.memo(PhoneInputFieldInner)
+
+export { PhoneInputField }

@@ -9,6 +9,7 @@ import { Icon } from "@iconify/react"
 
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { useAuth } from "@/providers/auth-provider"
 import { localeNames, type Locale } from "@/i18n/settings"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,10 +21,12 @@ import {
 
 export function Navbar() {
   const { dictionary, lang, isRTL } = useDictionary()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const router = useRouter()
   const [mounted, setMounted] = React.useState(false)
+  const [loggingOut, setLoggingOut] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
@@ -40,11 +43,24 @@ export function Navbar() {
     router.push(newPath)
   }
 
-  const navLinks = [
-    { href: `/${lang}`, label: dictionary.navbar.home },
-    { href: `/${lang}/login`, label: dictionary.navbar.login },
-    { href: `/${lang}/signup`, label: dictionary.navbar.signup },
-  ]
+  // Handle logout
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    await logout()
+    setLoggingOut(false)
+    router.push(`/${lang}/login`)
+  }
+
+  // Build nav links based on auth state
+  const navLinks = isAuthenticated
+    ? [
+        { href: `/${lang}`, label: dictionary.navbar.home },
+      ]
+    : [
+        { href: `/${lang}`, label: dictionary.navbar.home },
+        { href: `/${lang}/login`, label: dictionary.navbar.login },
+        { href: `/${lang}/signup`, label: dictionary.navbar.signup },
+      ]
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md">
@@ -84,6 +100,27 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* User greeting & Logout (authenticated) */}
+          {mounted && isAuthenticated && user && (
+            <>
+              <span className="hidden sm:inline text-sm text-muted-foreground">
+                {dictionary.navbar.welcome}, <span className="font-medium text-foreground">{user.firstName}</span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
+                <Icon icon="solar:logout-2-bold-duotone" className="size-5" />
+                <span className="hidden sm:inline text-sm">
+                  {dictionary.navbar.logout}
+                </span>
+              </Button>
+            </>
+          )}
+
           {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -18,9 +18,18 @@
     "home": "Home",
     "login": "Login",
     "signup": "Sign Up",
+    "logout": "Logout",
+    "welcome": "Welcome",
     "darkMode": "Dark Mode",
     "lightMode": "Light Mode",
     "language": "Language"
+  },
+  "home": {
+    "welcomeTitle": "Welcome to Modaribok",
+    "welcomeSubtitle": "You are now logged in.",
+    "logoutSuccess": "Logged out successfully!",
+    "logoutError": "Logout failed. Please try again.",
+    "signupSuccess": "Account created successfully! Please sign in."
   },
   "auth": {
     "login": {
@@ -42,6 +51,9 @@
       "errors": {
         "emailRequired": "Email is required",
         "passwordRequired": "Password is required",
+        "invalidCredentials": "Invalid email or password",
+        "accountLocked": "Your account has been locked. Please contact support.",
+        "networkError": "Network error. Please check your connection.",
         "serverError": "Something went wrong. Please try again.",
         "notAdmin": "Access denied. Admin only."
       }

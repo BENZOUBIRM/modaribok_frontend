@@ -8,6 +8,7 @@ import { isValidLocale, localeDirection } from "@/i18n/settings"
 import type { Locale } from "@/i18n/settings"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { DictionaryProvider } from "@/providers/dictionary-provider"
+import { AuthProvider } from "@/providers/auth-provider"
 import { Navbar } from "@/components/shared/navbar"
 
 export const metadata: Metadata = {
@@ -56,10 +57,12 @@ export default async function LangLayout({
           disableTransitionOnChange
         >
           <DictionaryProvider dictionary={dictionary} lang={locale}>
-            <Navbar />
-            <main className="pt-16">
-              {children}
-            </main>
+            <AuthProvider>
+              <Navbar />
+              <main className="pt-16">
+                {children}
+              </main>
+            </AuthProvider>
           </DictionaryProvider>
         </ThemeProvider>
       </body>

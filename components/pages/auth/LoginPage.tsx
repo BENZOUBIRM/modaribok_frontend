@@ -3,15 +3,20 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Icon } from "@iconify/react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { useAuth } from "@/providers/auth-provider"
 import { InputField } from "@/components/ui/input-field"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+
+/** URL of the admin dashboard (separate Vite app) */
+const ADMIN_DASHBOARD_URL = "http://localhost:5173/dashboard"
 
 function LoginPage() {
   const [email, setEmail] = React.useState("")
@@ -19,12 +24,28 @@ function LoginPage() {
   const [rememberMe, setRememberMe] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const { dictionary, lang, isRTL } = useDictionary()
+  const { login } = useAuth()
+  const router = useRouter()
   const t = dictionary.auth.login
+
+  // Map backend error codes → i18n keys
+  const resolveErrorMessage = (code?: string, fallback?: string): string => {
+    const codeMap: Record<string, string> = {
+      AUTH_ERROR_001: t.errors.emailRequired,
+      AUTH_ERROR_002: t.errors.passwordRequired,
+      AUTH_ERROR_003: t.errors.invalidCredentials,
+      AUTH_ERROR_LOCKED: t.errors.accountLocked,
+    }
+    if (code && codeMap[code]) return codeMap[code]
+    if (fallback === "networkError") return t.errors.networkError
+    return fallback || t.errors.serverError
+  }
 
   // Handle form submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Client-side validation
     if (!email.trim()) {
       toast.error(t.errors.emailRequired)
       return
@@ -37,10 +58,29 @@ function LoginPage() {
 
     setIsLoading(true)
 
-    // TODO: connect to backend
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    toast.success(t.success)
-    setIsLoading(false)
+    try {
+      const result = await login({ emailOrPhone: email, password })
+
+      if (result.success && result.user) {
+        toast.success(t.success)
+
+        // Role-based redirect
+        if (result.user.role === "ADMIN") {
+          // Redirect admins to the external dashboard
+          window.location.href = ADMIN_DASHBOARD_URL
+        } else {
+          // Normal users stay in the Next.js app
+          router.push(`/${lang}`)
+        }
+      } else {
+        // Show translated error
+        toast.error(resolveErrorMessage(result.code, result.error))
+      }
+    } catch {
+      toast.error(t.errors.serverError)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

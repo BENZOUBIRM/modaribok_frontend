@@ -150,4 +150,11 @@ function ImageUploadField({
   )
 }
 
-export { ImageUploadField }
+/**
+ * Memoized version of ImageUploadField.
+ * Prevents expensive re-renders (createObjectURL, etc.) when parent
+ * state changes on every keystroke (e.g. in SignupPage form fields).
+ */
+const MemoizedImageUploadField = React.memo(ImageUploadField)
+
+export { MemoizedImageUploadField as ImageUploadField }
