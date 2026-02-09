@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Icon } from "@iconify/react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -14,6 +15,11 @@ import { PhoneInputField } from "@/components/ui/phone-input-field"
 import { ImageUploadField } from "@/components/ui/image-upload-field"
 import { Callout } from "@/components/ui/callout"
 import { Button } from "@/components/ui/button"
+
+/** Backend OAuth2 authorization URL for Google */
+const GOOGLE_OAUTH2_URL =
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api")
+    .replace(/\/api$/, "") + "/oauth2/authorization/google"
 
 function SignupPage() {
   const [firstName, setFirstName] = React.useState("")
@@ -244,7 +250,7 @@ function SignupPage() {
             {t.signupButton}
           </Button>
 
-          {/* Divider 
+          {/* Divider */}
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border"></div>
@@ -255,18 +261,22 @@ function SignupPage() {
               </span>
             </div>
           </div>
-          */}
 
-          {/* Social Login Buttons 
+          {/* Social Login Buttons */}
           <div className="flex items-center justify-center gap-4 mb-4">
-            <Button variant="outline" size="icon-lg" className="rounded-full" disabled>
+            <Button
+              variant="outline"
+              size="icon-lg"
+              className="rounded-full"
+              onClick={() => { window.location.href = GOOGLE_OAUTH2_URL }}
+              disabled={isLoading}
+            >
               <Icon icon="flat-color-icons:google" className="size-5" />
             </Button>
             <Button variant="outline" size="icon-lg" className="rounded-full" disabled>
               <Icon icon="logos:facebook" className="size-5" />
             </Button>
           </div>
-          */}
           
 
           {/* Login Link */}

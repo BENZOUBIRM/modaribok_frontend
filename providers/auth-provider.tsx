@@ -18,7 +18,7 @@
 
 import * as React from "react"
 import { authService } from "@/services/api"
-import { getToken, getStoredUser, setStoredUser } from "@/services/api/client"
+import { getToken, getStoredUser, setStoredUser, setToken } from "@/services/api/client"
 import type {
   AuthContextValue,
   LoginRequest,
@@ -97,6 +97,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null)
   }, [])
 
+  /* ── OAuth2 callback ── */
+  const loginWithOAuth2 = React.useCallback(
+    (token: string, userData: User | null) => {
+      setToken(token)
+      if (userData) {
+        setUser(userData)
+        setStoredUser(userData)
+      }
+    },
+    [],
+  )
+
   /* ── Context value (stable reference) ── */
   const value = React.useMemo<AuthContextValue>(
     () => ({
@@ -105,9 +117,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isAuthenticated,
       login,
       signup,
+      loginWithOAuth2,
       logout,
     }),
-    [user, isLoading, isAuthenticated, login, signup, logout],
+    [user, isLoading, isAuthenticated, login, signup, loginWithOAuth2, logout],
   )
 
   // Don't render children until auth state is resolved —

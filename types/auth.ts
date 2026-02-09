@@ -88,6 +88,8 @@ export interface AuthContextValue {
   login: (data: LoginRequest) => Promise<LoginResult>
   /** Create a new account */
   signup: (data: SignupRequest) => Promise<SignupResult>
+  /** Store OAuth2 token + user after redirect callback */
+  loginWithOAuth2: (token: string, user: User | null) => void
   /** Clear token & user state */
   logout: () => Promise<void>
 }

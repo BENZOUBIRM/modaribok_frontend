@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { defaultLocale, locales, type Locale } from "@/i18n/settings"
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, search } = request.nextUrl
 
   // Check if the pathname already has a locale prefix
   const pathnameHasLocale = locales.some(
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
   const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value
   if (cookieLocale && locales.includes(cookieLocale as typeof locales[number])) {
     return NextResponse.redirect(
-      new URL(`/${cookieLocale}${pathname}`, request.url)
+      new URL(`/${cookieLocale}${pathname}${search}`, request.url)
     )
   }
 
@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
   }
 
   return NextResponse.redirect(
-    new URL(`/${detectedLocale}${pathname}`, request.url)
+    new URL(`/${detectedLocale}${pathname}${search}`, request.url)
   )
 }
 

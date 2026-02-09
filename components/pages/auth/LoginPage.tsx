@@ -18,6 +18,11 @@ import { Button } from "@/components/ui/button"
 /** URL of the admin dashboard (separate Vite app) */
 const ADMIN_DASHBOARD_URL = "http://localhost:5173/dashboard"
 
+/** Backend OAuth2 authorization URL for Google */
+const GOOGLE_OAUTH2_URL =
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api")
+    .replace(/\/api$/, "") + "/oauth2/authorization/google"
+
 function LoginPage() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
@@ -177,7 +182,13 @@ function LoginPage() {
 
           {/* Social Login Buttons */}
           <div className={cn("flex items-center justify-center gap-4 mb-4")}>
-            <Button variant="outline" size="icon-lg" className="rounded-full" disabled>
+            <Button
+              variant="outline"
+              size="icon-lg"
+              className="rounded-full"
+              onClick={() => { window.location.href = GOOGLE_OAUTH2_URL }}
+              disabled={isLoading}
+            >
               <Icon icon="flat-color-icons:google" className="size-5" />
             </Button>
             <Button variant="outline" size="icon-lg" className="rounded-full" disabled>
