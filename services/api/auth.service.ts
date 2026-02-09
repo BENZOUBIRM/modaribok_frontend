@@ -92,14 +92,18 @@ export async function signup(
     // Build multipart/form-data with a JSON part + optional image
     const formData = new FormData()
     formData.append(
-      "signupRequest",
+      "user",
       new Blob([JSON.stringify(signupRequest)], { type: "application/json" }),
     )
     if (profileImage) {
       formData.append("profileImage", profileImage)
     }
 
-    const response = await apiClient.post("/auth/signup", formData)
+    // Do NOT set Content-Type — let the browser set
+    // multipart/form-data with the correct boundary automatically.
+    const response = await apiClient.post("/auth/signup", formData, {
+      headers: { "Content-Type": undefined },
+    })
 
     return {
       success: true,
