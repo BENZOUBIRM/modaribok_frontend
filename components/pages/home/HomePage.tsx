@@ -14,7 +14,7 @@ import { Callout } from "@/components/ui/callout"
  * appears temporarily to confirm the account was created.
  */
 function HomePage() {
-  const { dictionary, lang } = useDictionary()
+  const { dictionary } = useDictionary()
   const { user, isAuthenticated, isLoading } = useAuth()
   const searchParams = useSearchParams()
   const t = dictionary.home
@@ -84,9 +84,7 @@ function HomePage() {
             {dictionary.common.appName}
           </h1>
           <p className="text-muted-foreground text-lg">
-            {lang === "ar"
-              ? "رحلتك الرياضية تبدأ هنا"
-              : "Your sports journey starts here"}
+            {t.tagline}
           </p>
         </div>
       </div>

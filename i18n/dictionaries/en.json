@@ -2,6 +2,7 @@
   "common": {
     "appName": "Modaribok",
     "loading": "Loading...",
+    "signingIn": "Signing you in…",
     "error": "An error occurred",
     "save": "Save",
     "cancel": "Cancel",
@@ -27,6 +28,7 @@
   "home": {
     "welcomeTitle": "Welcome to Modaribok",
     "welcomeSubtitle": "You are now logged in.",
+    "tagline": "Your sports journey starts here",
     "logoutSuccess": "Logged out successfully!",
     "logoutError": "Logout failed. Please try again.",
     "signupSuccess": "Account created successfully! Please sign in."
@@ -35,6 +37,7 @@
     "login": {
       "title": "WELCOME BACK! 👋",
       "subtitle": "Sign in to your account to continue.",
+      "metaDescription": "Your sports journey starts here",
       "emailOrUsername": "Email",
       "emailPlaceholder": "Enter your email",
       "password": "Password",
@@ -61,6 +64,7 @@
     "signup": {
       "title": "CREATE A NEW ACCOUNT 🚀",
       "subtitle": "Join Modaribok and start your sports journey.",
+      "metaDescription": "Your sports journey starts here",
       "firstName": "First Name",
       "firstNamePlaceholder": "Enter your first name",
       "lastName": "Last Name",

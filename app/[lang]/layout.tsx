@@ -11,9 +11,18 @@ import { DictionaryProvider } from "@/providers/dictionary-provider"
 import { AuthProvider } from "@/providers/auth-provider"
 import { Navbar } from "@/components/shared/navbar"
 
-export const metadata: Metadata = {
-  title: "Modaribok | مدربك",
-  description: "Your sports journey starts here — رحلتك الرياضية تبدأ هنا",
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}): Promise<Metadata> {
+  const { lang } = await params
+  const locale = isValidLocale(lang) ? (lang as Locale) : "en"
+  const dictionary = await getDictionary(locale)
+  return {
+    title: `${dictionary.common.appName} | Modaribok`,
+    description: dictionary.auth.login.metaDescription,
+  }
 }
 
 export async function generateStaticParams() {

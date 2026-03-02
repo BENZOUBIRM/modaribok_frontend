@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useAuth } from "@/providers/auth-provider"
+import { useDictionary } from "@/providers/dictionary-provider"
 import { Spinner } from "@/components/ui/spinner"
 
 /**
@@ -21,6 +22,7 @@ export default function OAuth2CallbackPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const { loginWithOAuth2 } = useAuth()
+  const { dictionary } = useDictionary()
   const processed = useRef(false)
 
   const lang = (params.lang as string) || "en"
@@ -59,7 +61,7 @@ export default function OAuth2CallbackPage() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <Spinner className="size-8" />
-        <p className="text-muted-foreground text-sm">Signing you in…</p>
+        <p className="text-muted-foreground text-sm">{dictionary.common.signingIn}</p>
       </div>
     </div>
   )
