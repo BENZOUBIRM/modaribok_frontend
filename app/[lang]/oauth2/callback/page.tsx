@@ -2,20 +2,22 @@
 
 import { useEffect, useRef } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 import { useAuth } from "@/providers/auth-provider"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { extractUserFromJwt } from "@/lib/jwt"
 import { Spinner } from "@/components/ui/spinner"
 
 /**
- * OAuth2 Callback Page
- * ────────────────────
- * The Spring Boot backend redirects here after a successful
- * Google OAuth2 login with two query parameters:
+ * OAuth2 Callback Page (alternate path)
+ * ──────────────────────────────────────
+ * Mirror of /[lang]/auth/callback for the /oauth2/callback route.
  *
- *   ?token=<JWT>&user=<Base64-encoded JSON user object>
+ * The Spring Boot backend redirects here after a Google OAuth2
+ * login attempt with two possible outcomes:
  *
- * This page reads both, stores them via the auth provider,
- * and redirects the user to the home page.
+ *   Success → ?status=success&token=<JWT>
+ *   Error   → ?status=error&message=<error_code>
  */
 export default function OAuth2CallbackPage() {
   const router = useRouter()
@@ -32,30 +34,46 @@ export default function OAuth2CallbackPage() {
     if (processed.current) return
     processed.current = true
 
+    const status = searchParams.get("status")
     const token = searchParams.get("token")
-    const userBase64 = searchParams.get("user")
+    const errorMessage = searchParams.get("message")
 
-    if (!token) {
-      // No token → something went wrong, redirect to login
+    // ── Error from backend ──
+    if (status === "error" || (!token && errorMessage)) {
+      const errorKey = errorMessage || "unknown"
+      const t = dictionary.auth.oauth2Errors
+      const message =
+        (t as Record<string, string>)[errorKey] ?? t.generic
+      toast.error(message)
       router.replace(`/${lang}/login`)
       return
     }
 
+    // ── No token at all ──
+    if (!token) {
+      toast.error(dictionary.auth.oauth2Errors.generic)
+      router.replace(`/${lang}/login`)
+      return
+    }
+
+    // ── Success: decode JWT & hydrate auth state ──
     try {
-      // Decode user data from Base64
-      const userJson = userBase64 ? atob(userBase64) : null
-      const user = userJson ? JSON.parse(userJson) : null
+      const user = extractUserFromJwt(token)
 
       // Store token + user in localStorage and update auth state
       loginWithOAuth2(token, user)
 
-      // Redirect to home
-      router.replace(`/${lang}`)
+      // Redirect admins to dashboard, others to home
+      if (user?.role === "ADMIN") {
+        router.replace(`/${lang}/dashboard`)
+      } else {
+        router.replace(`/${lang}`)
+      }
     } catch {
-      // Decoding/parsing failed → redirect to login
+      toast.error(dictionary.auth.oauth2Errors.generic)
       router.replace(`/${lang}/login`)
     }
-  }, [searchParams, router, lang, loginWithOAuth2])
+  }, [searchParams, router, lang, loginWithOAuth2, dictionary])
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">

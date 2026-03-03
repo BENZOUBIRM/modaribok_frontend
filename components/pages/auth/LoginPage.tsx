@@ -13,9 +13,6 @@ import { AuthCardLayout } from "@/components/shared/auth-card-layout"
 import { InputField } from "@/components/ui/input-field"
 import { Button } from "@/components/ui/button"
 
-/** URL of the admin dashboard (separate Vite app) */
-const ADMIN_DASHBOARD_URL = "http://localhost:5173/dashboard"
-
 /** Backend OAuth2 authorization URL for Google */
 const GOOGLE_OAUTH2_URL =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api")
@@ -69,10 +66,8 @@ function LoginPage() {
 
         // Role-based redirect
         if (result.user.role === "ADMIN") {
-          // Redirect admins to the external dashboard
-          window.location.href = ADMIN_DASHBOARD_URL
+          router.push(`/${lang}/dashboard`)
         } else {
-          // Normal users stay in the Next.js app
           router.push(`/${lang}`)
         }
       } else {

@@ -96,6 +96,16 @@
         "invalidData": "Invalid input data",
         "networkError": "Network error. Please check your connection."
       }
+    },
+    "oauth2Errors": {
+      "generic": "Authentication failed. Please try again.",
+      "OAUTH2_AUTHENTICATION_FAILED_022": "Google authentication failed. Please try again.",
+      "OAUTH2_EMAIL_CONFLICT_023": "An account with this email already exists.",
+      "OAUTH2_PROVIDER_NOT_SUPPORTED_024": "This login provider is not supported.",
+      "OAUTH2_USER_INFO_MISSING_025": "Could not retrieve your account information. Please try again.",
+      "AUTH_TOKEN_REQUIRED_018": "Authentication session expired. Please try again.",
+      "AUTH_TOKEN_INVALID_009": "Invalid authentication token. Please try again.",
+      "AUTH_TOKEN_EXPIRED_010": "Session expired. Please sign in again."
     }
   }
 }
