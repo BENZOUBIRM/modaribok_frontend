@@ -24,7 +24,10 @@
     "darkMode": "Dark Mode",
     "lightMode": "Light Mode",
     "language": "Language",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "searchPlaceholder": "Search...",
+    "notifications": "Notifications",
+    "messages": "Messages"
   },
   "home": {
     "welcomeTitle": "Welcome to Modaribok",
@@ -116,21 +119,75 @@
     }
   },
   "sidebar": {
-    "dashboard": "Dashboard",
-    "buttons": "Buttons",
-    "inputs": "Inputs",
-    "forms": "Forms",
-    "cards": "Cards",
-    "tables": "Tables",
-    "accordion": "Accordion",
-    "modals": "Modals",
-    "colors": "Colors",
-    "authPages": "Auth Pages"
+    "home": "Home",
+    "search": "Search",
+    "products": "Products",
+    "trainers": "Trainers",
+    "gyms": "Gyms",
+    "events": "Events",
+    "fields": "Fields",
+    "stores": "Stores",
+    "settings": "Settings"
   },
   "activity": {
     "title": "Activity",
     "upcomingEvents": "Upcoming Events",
     "recentNotifications": "Recent Notifications",
     "timeline": "Activity Timeline"
+  },
+  "feed": {
+    "createPost": "Create Post",
+    "whatsOnYourMind": "What's on your mind?",
+    "addPhoto": "Add Photo",
+    "addVideo": "Add Video",
+    "privacy": "Privacy",
+    "privacyPublic": "Public",
+    "latestPosts": "Latest Posts",
+    "likes": "Likes",
+    "comments": "Comments",
+    "shares": "Shares",
+    "writeComment": "Write a comment...",
+    "reply": "Reply",
+    "viewReplies": "View replies",
+    "hideReplies": "Hide replies",
+    "sendComment": "Send",
+    "like": "Like",
+    "comment": "Comment",
+    "share": "Share",
+    "viewAllComments": "View all comments",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "cancel": "Cancel",
+    "ago": {
+      "now": "just now",
+      "minutes": "{count}m ago",
+      "hours": "{count}h ago",
+      "days": "{count}d ago"
+    }
+  },
+  "profile": {
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following"
+  },
+  "events": {
+    "currentEvents": "Current Events",
+    "invitedEvents": "Events You're Invited To",
+    "accept": "Accept",
+    "reject": "Reject",
+    "today": "Today",
+    "upcomingActivities": "Upcoming Activities",
+    "eventsList": "Events List",
+    "footballEvent": "Football Event",
+    "runWithFriends": "Run With Friends",
+    "basketballEvent": "Basketball Event",
+    "swimmingEvent": "Swimming Event",
+    "weightlifting": "Weightlifting",
+    "remaining": "Remaining",
+    "join": "Join"
+  },
+  "suggestions": {
+    "peopleYouMayKnow": "People You May Know",
+    "follow": "Follow"
   }
 }

@@ -11,16 +11,14 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 
 const navItems = [
-  { path: "/dashboard", icon: "solar:chart-square-linear", translationKey: "dashboard" },
-  { path: "/buttons", icon: "solar:widget-5-linear", translationKey: "buttons" },
-  { path: "/inputs", icon: "solar:pen-new-square-linear", translationKey: "inputs" },
-  { path: "/forms", icon: "solar:checklist-minimalistic-linear", translationKey: "forms" },
-  { path: "/cards", icon: "solar:card-linear", translationKey: "cards" },
-  { path: "/tables", icon: "solar:document-medicine-linear", translationKey: "tables" },
-  { path: "/accordion", icon: "solar:list-check-minimalistic-linear", translationKey: "accordion" },
-  { path: "/modals", icon: "solar:tablet-outline", translationKey: "modals" },
-  { path: "/colors", icon: "solar:pallete-2-linear", translationKey: "colors" },
-  { path: "/auth", icon: "solar:user-circle-linear", translationKey: "authPages" },
+  { path: "/", icon: "solar:widget-4-bold", translationKey: "home" },
+  { path: "/search", icon: "solar:magnifer-linear", translationKey: "search", mobileOnly: true },
+  { path: "/products", icon: "solar:cart-3-bold", translationKey: "products" },
+  { path: "/trainers", icon: "solar:users-group-rounded-bold", translationKey: "trainers" },
+  { path: "/gyms", icon: "solar:dumbbells-bold", translationKey: "gyms" },
+  { path: "/events", icon: "solar:calendar-mark-bold", translationKey: "events" },
+  { path: "/stores", icon: "solar:shop-bold", translationKey: "stores" },
+  { path: "/settings", icon: "solar:settings-bold", translationKey: "settings" },
 ]
 
 interface SidebarProps {
@@ -78,8 +76,11 @@ export default function AppSidebar({
     }
   }, [isMobile, isOpen])
 
-  const getHref = (path: string) => `/${lang}${path}`
-  const isActive = (path: string) => pathname === `/${lang}${path}`
+  const getHref = (path: string) => path === "/" ? `/${lang}` : `/${lang}${path}`
+  const isActive = (path: string) => {
+    if (path === "/") return pathname === `/${lang}` || pathname === `/${lang}/`
+    return pathname === `/${lang}${path}` || pathname.startsWith(`/${lang}${path}/`)
+  }
 
   // Mobile sidebar
   if (isMobile) {
@@ -178,7 +179,7 @@ export default function AppSidebar({
                     onClick={onThemeToggle}
                     title={theme === "dark" ? "Light Mode" : "Dark Mode"}
                   >
-                    {theme === "dark" ? <Icon icon="solar:sun-bold" className="size-4" /> : <Icon icon="solar:moon-bold" className="size-4" />}
+                    {theme === "dark" ? <Icon icon="solar:sun-bold-duotone" className="size-5 text-accent" /> : <Icon icon="solar:moon-bold-duotone" className="size-5" />}
                   </Button>
                   
                   <Button
@@ -187,7 +188,7 @@ export default function AppSidebar({
                     onClick={onLogout}
                     title="Logout"
                   >
-                    <Icon icon="solar:logout-2-linear" className="size-5" />
+                    <Icon icon="solar:logout-3-line-duotone" className="size-5 text-destructive" />
                   </Button>
                 </div>
               </div>
@@ -208,7 +209,7 @@ export default function AppSidebar({
       )}
     >
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-border min-w-0 shrink-0">
+        <div className="flex items-center justify-between px-4 h-16 border-b border-border min-w-0 shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {/* <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
@@ -218,7 +219,7 @@ export default function AppSidebar({
               
                 <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
                     <Image
-                        src="/images/logo-cropped.png"
+                        src="/images/logo.png"
                         alt="Modaribok"
                         width={120}
                         height={40}
@@ -247,7 +248,7 @@ export default function AppSidebar({
           isCollapsed && "scrollbar-hidden"
         )}>
           <div className="space-y-1">
-            {navItems.map((item) => {
+            {navItems.filter(item => !item.mobileOnly).map((item) => {
               const active = isActive(item.path)
               return (
                 <Link
@@ -300,7 +301,7 @@ export default function AppSidebar({
                   onClick={scrollToTop}
                   title="Scroll to Top"
                 >
-                  <Icon icon="solar:arrow-up-linear" className="size-4" />
+                  <Icon icon="solar:arrow-up-linear" className="size-4 text-primary" />
                 </Button>
               ) : (
                 <Button
@@ -323,6 +324,17 @@ export default function AppSidebar({
               >
                 {theme === "dark" ? <Icon icon="solar:sun-bold-duotone" className="size-5 text-accent" /> : <Icon icon="solar:moon-bold-duotone" className="size-5" />}
               </Button>
+
+              {showScrollTop && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={scrollToTop}
+                  title="Scroll to Top"
+                >
+                  <Icon icon="solar:arrow-up-linear" className="size-4 text-primary" />
+                </Button>
+              )}
               
               <Button
                 variant="outline"
@@ -330,7 +342,7 @@ export default function AppSidebar({
                 onClick={onLogout}
                 title="Logout"
               >
-                <Icon icon="solar:logout-2-linear" className="size-5 text-destructive" />
+                <Icon icon="solar:logout-3-line-duotone" className="size-5 text-destructive" />
               </Button>
             </div>
           )}

@@ -22,17 +22,20 @@ import {
 export function Navbar({
   fixed = true,
   onSidebarToggle,
+  sidebarExpanded = false,
+  onLogout,
 }: {
   fixed?: boolean
   onSidebarToggle?: () => void
+  sidebarExpanded?: boolean
+  onLogout?: () => void
 }) {
   const { dictionary, lang, isRTL } = useDictionary()
-  const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const { isAuthenticated } = useAuth()
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const router = useRouter()
   const [mounted, setMounted] = React.useState(false)
-  const [loggingOut, setLoggingOut] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
@@ -40,45 +43,29 @@ export function Navbar({
 
   // Switch language by replacing the locale segment in the URL
   const switchLocale = (newLocale: Locale) => {
-    // pathname is like /en/login or /ar
     const segments = pathname.split("/")
     segments[1] = newLocale
     const newPath = segments.join("/") || `/${newLocale}`
-    // Set cookie for middleware to remember preference
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`
     router.push(newPath)
   }
 
-  // Handle logout
-  const handleLogout = async () => {
-    setLoggingOut(true)
-    await logout()
-    setLoggingOut(false)
-    router.push(`/${lang}/login`)
-  }
-
-  // Build nav links based on auth state
-  const navLinks = isAuthenticated
-    ? [
-        { href: `/${lang}`, label: dictionary.navbar.home },
-        { href: `/${lang}/dashboard`, label: dictionary.navbar.dashboard },
-      ]
-    : [
-        { href: `/${lang}`, label: dictionary.navbar.home },
-        { href: `/${lang}/login`, label: dictionary.navbar.login },
-        { href: `/${lang}/signup`, label: dictionary.navbar.signup },
-      ]
+  // Guest-only nav links
+  const guestLinks = [
+    { href: `/${lang}`, label: dictionary.navbar.home },
+    { href: `/${lang}/login`, label: dictionary.navbar.login },
+    { href: `/${lang}/signup`, label: dictionary.navbar.signup },
+  ]
 
   return (
     <nav className={cn(
       "z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md",
       fixed ? "fixed top-0 left-0 right-0" : "shrink-0 w-full"
     )}>
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="flex h-full items-center justify-between px-4 sm:px-6">
         {/* Logo / Mobile burger */}
         {onSidebarToggle ? (
           <>
-            {/* Mobile: burger icon replaces logo (sidebar shows logo) */}
             <Button
               variant="ghost"
               size="icon"
@@ -88,17 +75,19 @@ export function Navbar({
             >
               <Icon icon="solar:hamburger-menu-linear" className="size-5" />
             </Button>
-            {/* Desktop: logo as usual */}
-            <Link href={`/${lang}`} className="hidden lg:flex items-center gap-2 shrink-0">
-              <Image
-                src="/images/logo.png"
-                alt="Modaribok"
-                width={120}
-                height={40}
-                className="h-8 w-auto"
-                priority
-              />
-            </Link>
+            {/* Show logo only when sidebar is collapsed (no logo showing there) */}
+            {!sidebarExpanded && (
+              <Link href={`/${lang}`} className="hidden lg:flex items-center gap-2 shrink-0">
+                <Image
+                  src="/images/logo.png"
+                  alt="Modaribok"
+                  width={120}
+                  height={40}
+                  className="h-8 w-auto"
+                  priority
+                />
+              </Link>
+            )}
           </>
         ) : (
           <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
@@ -113,46 +102,70 @@ export function Navbar({
           </Link>
         )}
 
-        {/* Navigation Links */}
-        <div className="hidden sm:flex items-center gap-1">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
+        {/* Authenticated: Search bar (center) */}
+        {isAuthenticated && (
+          <div className="hidden sm:flex flex-1 max-w-md mx-4">
+            <div className="relative w-full">
+              <Icon
+                icon="solar:magnifer-linear"
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  "absolute top-1/2 -translate-y-1/2 size-4 text-muted-foreground",
+                  isRTL ? "right-3" : "left-3"
                 )}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
-        </div>
+              />
+              <input
+                type="text"
+                placeholder={dictionary.navbar.searchPlaceholder}
+                className={cn(
+                  "w-full h-10 rounded-full bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+                  isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
+                )}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Guest: Navigation Links */}
+        {!isAuthenticated && (
+          <div className="hidden sm:flex items-center gap-1">
+            {guestLinks.map((link) => {
+              const isActive = pathname === link.href
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
+          </div>
+        )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
-          {/* User greeting & Logout (authenticated) */}
-          {mounted && isAuthenticated && user && (
+        <div className="flex items-center gap-1">
+          {/* Authenticated: Notifications + Messages */}
+          {mounted && isAuthenticated && (
             <>
-              <span className="hidden sm:inline text-sm text-muted-foreground">
-                {dictionary.navbar.welcome}, <span className="font-medium text-foreground">{user.firstName}</span>
-              </span>
               <Button
                 variant="ghost"
-                size="sm"
-                className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={handleLogout}
-                disabled={loggingOut}
+                size="icon-sm"
+                aria-label={dictionary.navbar.notifications}
               >
-                <Icon icon="solar:logout-2-bold-duotone" className="size-5" />
-                <span className="hidden sm:inline text-sm">
-                  {dictionary.navbar.logout}
-                </span>
+                <Icon icon="solar:bell-bold" className="size-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={dictionary.navbar.messages}
+              >
+                <Icon icon="solar:chat-round-dots-bold" className="size-5" />
               </Button>
             </>
           )}
@@ -222,6 +235,19 @@ export function Navbar({
               <div className="size-5" />
             )}
           </Button>
+
+          {/* Logout icon (authenticated only, far end) */}
+          {mounted && isAuthenticated && onLogout && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={onLogout}
+              aria-label={dictionary.navbar.logout}
+            >
+              <Icon icon="solar:logout-3-line-duotone" className="size-5" />
+            </Button>
+          )}
         </div>
       </div>
     </nav>

@@ -13,10 +13,7 @@ export function useSidebar() {
   })
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === "undefined") return false
-    if (window.innerWidth >= 1024) {
-      // Collapsed by default
-      return true
-    }
+    // Expanded by default on desktop
     return false
   })
 

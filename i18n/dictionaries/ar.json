@@ -24,7 +24,10 @@
     "darkMode": "الوضع الداكن",
     "lightMode": "الوضع الفاتح",
     "language": "اللغة",
-    "dashboard": "لوحة التحكم"
+    "dashboard": "لوحة التحكم",
+    "searchPlaceholder": "بحث...",
+    "notifications": "الإشعارات",
+    "messages": "الرسائل"
   },
   "home": {
     "welcomeTitle": "مرحباً بك في مدربك",
@@ -116,21 +119,75 @@
     }
   },
   "sidebar": {
-    "dashboard": "لوحة التحكم",
-    "buttons": "أزرار",
-    "inputs": "حقول الإدخال",
-    "forms": "النماذج",
-    "cards": "البطاقات",
-    "tables": "الجداول",
-    "accordion": "الأكورديون",
-    "modals": "النوافذ المنبثقة",
-    "colors": "الألوان",
-    "authPages": "صفحات المصادقة"
+    "home": "الرئيسية",
+    "search": "البحث",
+    "products": "منتجات",
+    "trainers": "مدربين",
+    "gyms": "صالات رياضية",
+    "events": "فعاليات",
+    "fields": "ملاعب",
+    "stores": "متاجر",
+    "settings": "إعدادات"
   },
   "activity": {
     "title": "النشاط",
     "upcomingEvents": "الأحداث القادمة",
     "recentNotifications": "الإشعارات الأخيرة",
     "timeline": "سجل النشاط"
+  },
+  "feed": {
+    "createPost": "إنشاء منشور",
+    "whatsOnYourMind": "بماذا تفكر؟",
+    "addPhoto": "إضافة صورة",
+    "addVideo": "إضافة فيديو",
+    "privacy": "الخصوصية",
+    "privacyPublic": "عام",
+    "latestPosts": "أحدث المنشورات",
+    "likes": "إعجابات",
+    "comments": "تعليقات",
+    "shares": "مشاركات",
+    "writeComment": "اكتب تعليقاً...",
+    "reply": "رد",
+    "viewReplies": "عرض الردود",
+    "hideReplies": "إخفاء الردود",
+    "sendComment": "إرسال",
+    "like": "إعجاب",
+    "comment": "تعليق",
+    "share": "مشاركة",
+    "viewAllComments": "عرض جميع التعليقات",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل",
+    "cancel": "إلغاء",
+    "ago": {
+      "now": "الآن",
+      "minutes": "منذ {count} دقيقة",
+      "hours": "منذ {count} ساعة",
+      "days": "منذ {count} يوم"
+    }
+  },
+  "profile": {
+    "posts": "منشور",
+    "followers": "متابعين",
+    "following": "أتابع"
+  },
+  "events": {
+    "currentEvents": "فعاليات حالية",
+    "invitedEvents": "فعاليات تمت دعوتك إليها",
+    "accept": "قبول",
+    "reject": "رفض",
+    "today": "اليوم",
+    "upcomingActivities": "فعاليات قادمة",
+    "eventsList": "قائمة الفعاليات",
+    "footballEvent": "فعالية كرة القدم",
+    "runWithFriends": "فعالية الجري مع الأصدقاء",
+    "basketballEvent": "فعالية كرة السلة",
+    "swimmingEvent": "فعالية السباحة",
+    "weightlifting": "فعالية رفع اثقال",
+    "remaining": "متبقي",
+    "join": "انضمام"
+  },
+  "suggestions": {
+    "peopleYouMayKnow": "أشخاص قد تعرفهم",
+    "follow": "متابعة"
   }
 }

@@ -6,12 +6,15 @@ import { useSearchParams } from "next/navigation"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { Callout } from "@/components/ui/callout"
+import { CreatePublication } from "@/components/homepage/feed/CreatePublication"
+import { PublicationFeed } from "@/components/homepage/feed/PublicationFeed"
+import { MobileSearchBar } from "@/components/homepage/feed/MobileSearchBar"
 
 /**
  * Home page content — shows different UI depending on auth state.
  *
- * When the user arrives from signup (?signup=success) an extra Callout
- * appears temporarily to confirm the account was created.
+ * Authenticated: Social feed with publication composer + posts + suggestions.
+ * Guest: Landing page with app name + tagline.
  */
 function HomePage() {
   const { dictionary } = useDictionary()
@@ -40,30 +43,14 @@ function HomePage() {
     )
   }
 
-  // Authenticated view
+  // Authenticated view — Social feed
   if (isAuthenticated && user) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
-        <div className="w-full max-w-lg space-y-6">
-          {/* Login success callout */}
-          <Callout variant="success" title={t.welcomeTitle}>
-            {t.welcomeSubtitle}
-          </Callout>
-
-          {/* User info card */}
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">
-              {user.firstName} {user.lastName}
-            </h2>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-            {user.phone && (
-              <p className="text-sm text-muted-foreground">{user.phone}</p>
-            )}
-            <span className="inline-block text-xs font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-              {user.role}
-            </span>
-          </div>
-        </div>
+      <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
+        {/* Mobile search bar — visible only below sm (when navbar search is hidden) */}
+        <MobileSearchBar />
+        <CreatePublication />
+        <PublicationFeed />
       </div>
     )
   }

@@ -5,89 +5,25 @@ import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { UserProfileCard } from "@/components/homepage/profile/UserProfileCard"
+import { CurrentEvents } from "@/components/homepage/events/CurrentEvents"
+import { EventInvitations } from "@/components/homepage/events/EventInvitations"
+import { EventCalendar } from "@/components/homepage/events/EventCalendar"
+import { EventSchedule } from "@/components/homepage/events/EventSchedule"
+import { EventLegend } from "@/components/homepage/events/EventLegend"
 
 /* ------------------------------------------------------------------ */
 /*  Shared scrollable content used by both desktop and mobile panels   */
 /* ------------------------------------------------------------------ */
 function PanelContent() {
-  const { dictionary } = useDictionary()
-
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {/* Upcoming Events */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Icon icon="solar:calendar-linear" className="size-4 text-primary" />
-          <h3 className="font-semibold text-sm">
-            {dictionary.activity.upcomingEvents}
-          </h3>
-        </div>
-        <div className="space-y-2">
-          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-            <p className="text-sm font-medium">Team Meeting</p>
-            <p className="text-xs text-muted-foreground mt-1">Today, 2:00 PM</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="text-sm font-medium">Project Review</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tomorrow, 10:00 AM
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Notifications */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Icon icon="solar:bell-linear" className="size-4 text-primary" />
-          <h3 className="font-semibold text-sm">
-            {dictionary.activity.recentNotifications}
-          </h3>
-        </div>
-        <div className="space-y-2">
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="text-sm">New comment on your task</p>
-            <p className="text-xs text-muted-foreground mt-1">5 minutes ago</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="text-sm">Task deadline approaching</p>
-            <p className="text-xs text-muted-foreground mt-1">1 hour ago</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Activity Timeline */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Icon icon="solar:chart-2-linear" className="size-4 text-primary" />
-          <h3 className="font-semibold text-sm">
-            {dictionary.activity.timeline}
-          </h3>
-        </div>
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 shrink-0" />
-            <div>
-              <p className="text-sm">Task completed</p>
-              <p className="text-xs text-muted-foreground">2 hours ago</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-            <div>
-              <p className="text-sm">New file uploaded</p>
-              <p className="text-xs text-muted-foreground">3 hours ago</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5 shrink-0" />
-            <div>
-              <p className="text-sm">Meeting rescheduled</p>
-              <p className="text-xs text-muted-foreground">5 hours ago</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="flex-1 overflow-y-auto">
+      <UserProfileCard />
+      <CurrentEvents />
+      <EventInvitations />
+      <EventCalendar />
+      <EventSchedule />
+      <EventLegend />
     </div>
   )
 }
@@ -100,7 +36,7 @@ export function ActivityPanelDesktop({
 }: {
   isOpen: boolean
 }) {
-  const { dictionary, isRTL } = useDictionary()
+  const { isRTL } = useDictionary()
 
   return (
     <AnimatePresence>
@@ -115,13 +51,7 @@ export function ActivityPanelDesktop({
             isRTL ? "border-r border-border" : "border-l border-border"
           )}
         >
-          {/* Scrollable content */}
           <div className="flex-1 flex flex-col min-w-[224px] overflow-hidden">
-            <div className="flex items-center justify-between h-16 shrink-0 px-4 border-b border-border">
-              <h2 className="font-bold text-lg">
-                {dictionary.activity.title}
-              </h2>
-            </div>
             <PanelContent />
           </div>
         </motion.div>
@@ -159,19 +89,19 @@ export default function ActivityPanelMobile({
             className={cn(
               "h-20 w-6 bg-card flex items-center justify-center shadow-md",
               isRTL
-                ? "rounded-r-lg border-r border-t border-b border-border"
-                : "rounded-l-lg border-l border-t border-b border-border"
+                ? "rounded-r-lg border-r border-t border-b border-primary-200"
+                : "rounded-l-lg border-l border-t border-b border-primary-200"
             )}
           >
             {isRTL ? (
               <Icon
                 icon="solar:alt-arrow-right-linear"
-                className="size-4 text-muted-foreground"
+                className="size-4 text-primary"
               />
             ) : (
               <Icon
                 icon="solar:alt-arrow-left-linear"
-                className="size-4 text-muted-foreground"
+                className="size-4 text-primary"
               />
             )}
           </div>

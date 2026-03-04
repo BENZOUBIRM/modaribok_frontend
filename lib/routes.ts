@@ -29,6 +29,31 @@ export const PRODUCT_ROUTES = {
   CATEGORIES: (lang: string) => `/${lang}/products/categories`,
 } as const
 
+export const TRAINER_ROUTES = {
+  LIST: (lang: string) => `/${lang}/trainers`,
+  DETAIL: (lang: string, id: string | number) => `/${lang}/trainers/${id}`,
+} as const
+
+export const GYM_ROUTES = {
+  LIST: (lang: string) => `/${lang}/gyms`,
+  DETAIL: (lang: string, id: string | number) => `/${lang}/gyms/${id}`,
+} as const
+
+export const EVENT_ROUTES = {
+  LIST: (lang: string) => `/${lang}/events`,
+  DETAIL: (lang: string, id: string | number) => `/${lang}/events/${id}`,
+} as const
+
+export const FIELD_ROUTES = {
+  LIST: (lang: string) => `/${lang}/fields`,
+  DETAIL: (lang: string, id: string | number) => `/${lang}/fields/${id}`,
+} as const
+
+export const STORE_ROUTES = {
+  LIST: (lang: string) => `/${lang}/stores`,
+  DETAIL: (lang: string, id: string | number) => `/${lang}/stores/${id}`,
+} as const
+
 export const ORDER_ROUTES = {
   LIST: (lang: string) => `/${lang}/orders`,
   DETAIL: (lang: string, id: string | number) => `/${lang}/orders/${id}`,
@@ -47,6 +72,11 @@ export const ROUTES = {
   DASHBOARD: DASHBOARD_ROUTES,
   USERS: USER_ROUTES,
   PRODUCTS: PRODUCT_ROUTES,
+  TRAINERS: TRAINER_ROUTES,
+  GYMS: GYM_ROUTES,
+  EVENTS: EVENT_ROUTES,
+  FIELDS: FIELD_ROUTES,
+  STORES: STORE_ROUTES,
   ORDERS: ORDER_ROUTES,
   SETTINGS: SETTINGS_ROUTES,
 } as const

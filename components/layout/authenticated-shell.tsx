@@ -85,6 +85,18 @@ export default function AuthenticatedShell({
     router.push(`/${lang}/login`)
   }
 
+  // Unified logout request — close overlays first, then show dialog
+  const requestLogout = () => {
+    if (sidebar.isMobile) {
+      sidebar.close()
+      activityPanel.close()
+      // Small delay so overlay exit animations start before dialog appears
+      setTimeout(() => setShowLogoutConfirm(true), 80)
+    } else {
+      setShowLogoutConfirm(true)
+    }
+  }
+
   /* ── Loading state ───────────────────────────────────────────── */
   if (isLoading) {
     return (
@@ -148,81 +160,82 @@ export default function AuthenticatedShell({
 
       {/* ─── Main full-height layout ─── */}
       <div className="h-screen bg-background text-foreground flex overflow-hidden">
-        {/* Left column: navbar ▸ sidebar + content + footer */}
+        {/* Sidebar — full viewport height, first column */}
+        <AppSidebar
+          isOpen={sidebar.isOpen}
+          isCollapsed={sidebar.isCollapsed}
+          isMobile={sidebar.isMobile}
+          onClose={sidebar.close}
+          onToggle={sidebar.toggle}
+          theme={theme}
+          onThemeToggle={toggleTheme}
+          onLogout={requestLogout}
+        />
+
+        {/* Center column: navbar ▸ content ▸ footer */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Navbar — flows inside the column so the panel can push it */}
-          <Navbar fixed={false} onSidebarToggle={sidebar.toggle} />
+          {/* Navbar — flows inside center column */}
+          <Navbar
+            fixed={false}
+            onSidebarToggle={sidebar.toggle}
+            sidebarExpanded={!sidebar.isMobile && !sidebar.isCollapsed}
+            onLogout={requestLogout}
+          />
 
-          {/* Inner row: sidebar ▸ content column */}
+          {/* Content + toggle strip row */}
           <div className="flex flex-1 overflow-hidden">
-            <AppSidebar
-              isOpen={sidebar.isOpen}
-              isCollapsed={sidebar.isCollapsed}
-              isMobile={sidebar.isMobile}
-              onClose={sidebar.close}
-              onToggle={sidebar.toggle}
-              theme={theme}
-              onThemeToggle={toggleTheme}
-              onLogout={() => setShowLogoutConfirm(true)}
-            />
+            <main
+              id="main-content"
+              className="flex-1 overflow-auto min-w-0"
+            >
+              {children}
+            </main>
 
-            {/* Content + toggle strip */}
-            <div className="flex-1 flex min-w-0 overflow-hidden">
-              <main
-                id="main-content"
-                className="flex-1 overflow-auto min-w-0"
+            {/* Desktop toggle/close strip */}
+            {!activityPanel.isMobile && (
+              <div
+                className={cn(
+                  "w-6 shrink-0 bg-card flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors",
+                  isRTL
+                    ? "border-r border-border"
+                    : "border-l border-border"
+                )}
+                onClick={activityPanel.toggle}
               >
-                <div className="container mx-auto px-6 py-8">
-                  {children}
-                </div>
-              </main>
-
-              {/* Desktop toggle/close strip — always between navbar and footer */}
-              {!activityPanel.isMobile && (
-                <div
-                  className={cn(
-                    "w-6 shrink-0 bg-card flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors",
-                    isRTL
-                      ? "border-r border-border"
-                      : "border-l border-border"
-                  )}
-                  onClick={activityPanel.toggle}
-                >
-                  {activityPanel.isOpen ? (
-                    isRTL ? (
-                      <Icon
-                        icon="solar:alt-arrow-left-linear"
-                        className="size-4 text-muted-foreground"
-                      />
-                    ) : (
-                      <Icon
-                        icon="solar:alt-arrow-right-linear"
-                        className="size-4 text-muted-foreground"
-                      />
-                    )
+                {activityPanel.isOpen ? (
+                  isRTL ? (
+                    <Icon
+                      icon="solar:alt-arrow-left-linear"
+                      className="size-4 text-muted-foreground"
+                    />
                   ) : (
-                    isRTL ? (
-                      <Icon
-                        icon="solar:alt-arrow-right-linear"
-                        className="size-4 text-muted-foreground"
-                      />
-                    ) : (
-                      <Icon
-                        icon="solar:alt-arrow-left-linear"
-                        className="size-4 text-muted-foreground"
-                      />
-                    )
-                  )}
-                </div>
-              )}
-            </div>
+                    <Icon
+                      icon="solar:alt-arrow-right-linear"
+                      className="size-4 text-muted-foreground"
+                    />
+                  )
+                ) : (
+                  isRTL ? (
+                    <Icon
+                      icon="solar:alt-arrow-right-linear"
+                      className="size-4 text-muted-foreground"
+                    />
+                  ) : (
+                    <Icon
+                      icon="solar:alt-arrow-left-linear"
+                      className="size-4 text-muted-foreground"
+                    />
+                  )
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Footer — below sidebar + content row, spans full left column width */}
+          {/* Footer — below content row, spans center column */}
           {/* <Footer /> */}
         </div>
 
-        {/* Activity panel — full viewport height, beside the navbar */}
+        {/* Activity panel — full viewport height, last column */}
         {!activityPanel.isMobile && (
           <ActivityPanelDesktop
             isOpen={activityPanel.isOpen}
