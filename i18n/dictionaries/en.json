@@ -23,7 +23,8 @@
     "welcome": "Welcome",
     "darkMode": "Dark Mode",
     "lightMode": "Light Mode",
-    "language": "Language"
+    "language": "Language",
+    "dashboard": "Dashboard"
   },
   "home": {
     "welcomeTitle": "Welcome to Modaribok",
@@ -97,6 +98,12 @@
         "networkError": "Network error. Please check your connection."
       }
     },
+    "logout": {
+      "confirmTitle": "Confirm Logout",
+      "confirmMessage": "Are you sure you want to log out?",
+      "confirmButton": "Logout",
+      "cancelButton": "Cancel"
+    },
     "oauth2Errors": {
       "generic": "Authentication failed. Please try again.",
       "OAUTH2_AUTHENTICATION_FAILED_022": "Google authentication failed. Please try again.",
@@ -107,5 +114,23 @@
       "AUTH_TOKEN_INVALID_009": "Invalid authentication token. Please try again.",
       "AUTH_TOKEN_EXPIRED_010": "Session expired. Please sign in again."
     }
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "buttons": "Buttons",
+    "inputs": "Inputs",
+    "forms": "Forms",
+    "cards": "Cards",
+    "tables": "Tables",
+    "accordion": "Accordion",
+    "modals": "Modals",
+    "colors": "Colors",
+    "authPages": "Auth Pages"
+  },
+  "activity": {
+    "title": "Activity",
+    "upcomingEvents": "Upcoming Events",
+    "recentNotifications": "Recent Notifications",
+    "timeline": "Activity Timeline"
   }
 }

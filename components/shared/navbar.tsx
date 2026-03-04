@@ -19,7 +19,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function Navbar() {
+export function Navbar({
+  fixed = true,
+  onSidebarToggle,
+}: {
+  fixed?: boolean
+  onSidebarToggle?: () => void
+}) {
   const { dictionary, lang, isRTL } = useDictionary()
   const { user, isAuthenticated, isLoading, logout } = useAuth()
   const { theme, setTheme } = useTheme()
@@ -55,6 +61,7 @@ export function Navbar() {
   const navLinks = isAuthenticated
     ? [
         { href: `/${lang}`, label: dictionary.navbar.home },
+        { href: `/${lang}/dashboard`, label: dictionary.navbar.dashboard },
       ]
     : [
         { href: `/${lang}`, label: dictionary.navbar.home },
@@ -63,19 +70,48 @@ export function Navbar() {
       ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md">
+    <nav className={cn(
+      "z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md",
+      fixed ? "fixed top-0 left-0 right-0" : "shrink-0 w-full"
+    )}>
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
-          <Image
-            src="/images/logo.png"
-            alt="Modaribok"
-            width={120}
-            height={40}
-            className="h-8 w-auto"
-            priority
-          />
-        </Link>
+        {/* Logo / Mobile burger */}
+        {onSidebarToggle ? (
+          <>
+            {/* Mobile: burger icon replaces logo (sidebar shows logo) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onSidebarToggle}
+              aria-label="Toggle sidebar"
+              className="lg:hidden"
+            >
+              <Icon icon="solar:hamburger-menu-linear" className="size-5" />
+            </Button>
+            {/* Desktop: logo as usual */}
+            <Link href={`/${lang}`} className="hidden lg:flex items-center gap-2 shrink-0">
+              <Image
+                src="/images/logo.png"
+                alt="Modaribok"
+                width={120}
+                height={40}
+                className="h-8 w-auto"
+                priority
+              />
+            </Link>
+          </>
+        ) : (
+          <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
+            <Image
+              src="/images/logo.png"
+              alt="Modaribok"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
+          </Link>
+        )}
 
         {/* Navigation Links */}
         <div className="hidden sm:flex items-center gap-1">

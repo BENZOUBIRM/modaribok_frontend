@@ -9,7 +9,7 @@ import type { Locale } from "@/i18n/settings"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { DictionaryProvider } from "@/providers/dictionary-provider"
 import { AuthProvider } from "@/providers/auth-provider"
-import { Navbar } from "@/components/shared/navbar"
+import AuthenticatedShell from "@/components/layout/authenticated-shell"
 
 export async function generateMetadata({
   params,
@@ -22,6 +22,15 @@ export async function generateMetadata({
   return {
     title: `${dictionary.common.appName} | Modaribok`,
     description: dictionary.auth.login.metaDescription,
+    icons: {
+      icon: [
+        { url: "/images/favicon/favicon.ico", sizes: "any" },
+        { url: "/images/favicon/favicon.svg", type: "image/svg+xml" },
+        { url: "/images/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      ],
+      apple: "/images/favicon/apple-touch-icon.png",
+    },
+    manifest: "/images/favicon/site.webmanifest",
   }
 }
 
@@ -67,10 +76,9 @@ export default async function LangLayout({
         >
           <DictionaryProvider dictionary={dictionary} lang={locale}>
             <AuthProvider>
-              <Navbar />
-              <main className="pt-16">
+              <AuthenticatedShell>
                 {children}
-              </main>
+              </AuthenticatedShell>
             </AuthProvider>
           </DictionaryProvider>
         </ThemeProvider>

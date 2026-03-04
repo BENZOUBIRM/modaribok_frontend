@@ -23,7 +23,8 @@
     "welcome": "مرحباً",
     "darkMode": "الوضع الداكن",
     "lightMode": "الوضع الفاتح",
-    "language": "اللغة"
+    "language": "اللغة",
+    "dashboard": "لوحة التحكم"
   },
   "home": {
     "welcomeTitle": "مرحباً بك في مدربك",
@@ -97,6 +98,12 @@
         "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك."
       }
     },
+    "logout": {
+      "confirmTitle": "تأكيد تسجيل الخروج",
+      "confirmMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+      "confirmButton": "تسجيل الخروج",
+      "cancelButton": "إلغاء"
+    },
     "oauth2Errors": {
       "generic": "فشلت المصادقة. يرجى المحاولة مرة أخرى.",
       "OAUTH2_AUTHENTICATION_FAILED_022": "فشلت مصادقة Google. يرجى المحاولة مرة أخرى.",
@@ -107,5 +114,23 @@
       "AUTH_TOKEN_INVALID_009": "رمز المصادقة غير صالح. يرجى المحاولة مرة أخرى.",
       "AUTH_TOKEN_EXPIRED_010": "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى."
     }
+  },
+  "sidebar": {
+    "dashboard": "لوحة التحكم",
+    "buttons": "أزرار",
+    "inputs": "حقول الإدخال",
+    "forms": "النماذج",
+    "cards": "البطاقات",
+    "tables": "الجداول",
+    "accordion": "الأكورديون",
+    "modals": "النوافذ المنبثقة",
+    "colors": "الألوان",
+    "authPages": "صفحات المصادقة"
+  },
+  "activity": {
+    "title": "النشاط",
+    "upcomingEvents": "الأحداث القادمة",
+    "recentNotifications": "الإشعارات الأخيرة",
+    "timeline": "سجل النشاط"
   }
 }
