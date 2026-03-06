@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useAuth } from "@/providers/auth-provider"
-import { LoginPage } from "@/components/pages/auth/LoginPage"
+import { LoginPage } from "@/components/pages/auth"
 
 export default function LoginRoute() {
   const { isAuthenticated, isLoading } = useAuth()

@@ -245,21 +245,25 @@
 }
 
 /* Success State */
-.phone-input-success .react-international-phone-input {
-  border-color: var(--success);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--success) 20%, transparent);
+.phone-input-success .react-international-phone-input,
+.phone-input-success .react-international-phone-country-selector-button {
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--success) 20%, transparent) !important;
 }
 
-.phone-input-success .react-international-phone-input:hover {
-  border-color: var(--success);
+.phone-input-success .react-international-phone-input:hover,
+.phone-input-success .react-international-phone-country-selector-button:hover {
+  border-color: var(--success) !important;
 }
 
 /* Error State */
-.phone-input-error .react-international-phone-input {
-  border-color: var(--destructive);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--destructive) 20%, transparent);
+.phone-input-error .react-international-phone-input,
+.phone-input-error .react-international-phone-country-selector-button {
+  border-color: var(--destructive) !important;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--destructive) 20%, transparent) !important;
 }
 
-.phone-input-error .react-international-phone-input:hover {
-  border-color: var(--destructive);
+.phone-input-error .react-international-phone-input:hover,
+.phone-input-error .react-international-phone-country-selector-button:hover {
+  border-color: var(--destructive) !important;
 }

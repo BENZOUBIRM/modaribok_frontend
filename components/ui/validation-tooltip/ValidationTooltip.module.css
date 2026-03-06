@@ -1,0 +1,85 @@
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* ── Bubble ── */
+.bubble {
+  position: absolute;
+  z-index: 100;
+  bottom: calc(100% + 8px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* LTR: anchor to the right side */
+:global([dir="ltr"]) .bubble {
+  right: -4px;
+}
+
+/* RTL: anchor to the left side */
+:global([dir="rtl"]) .bubble {
+  left: -4px;
+}
+
+.tooltip:hover .bubble,
+.tooltip:focus-within .bubble {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Arrow ── */
+.bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 0 0 2px 0;
+  transform: rotate(45deg);
+}
+
+:global([dir="ltr"]) .bubble::after {
+  right: 10px;
+}
+
+:global([dir="rtl"]) .bubble::after {
+  left: 10px;
+}
+
+/* ── Error variant ── */
+.error {
+  background-color: var(--destructive-light);
+  color: var(--destructive);
+  border: 1px solid var(--destructive);
+}
+
+.error::after {
+  background-color: var(--destructive-light);
+  border-right: 1px solid var(--destructive);
+  border-bottom: 1px solid var(--destructive);
+}
+
+/* ── Success variant ── */
+.success {
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.success::after {
+  background-color: var(--success-light);
+  border-right: 1px solid var(--success);
+  border-bottom: 1px solid var(--success);
+}

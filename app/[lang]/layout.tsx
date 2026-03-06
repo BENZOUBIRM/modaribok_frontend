@@ -9,7 +9,7 @@ import type { Locale } from "@/i18n/settings"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { DictionaryProvider } from "@/providers/dictionary-provider"
 import { AuthProvider } from "@/providers/auth-provider"
-import AuthenticatedShell from "@/components/layout/authenticated-shell"
+import { AuthenticatedShell } from "@/components/layout/authenticated-shell"
 
 export async function generateMetadata({
   params,

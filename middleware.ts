@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
 
   // Detect locale from Accept-Language header
   const acceptLanguage = request.headers.get("Accept-Language")
-  let detectedLocale = defaultLocale
+  let detectedLocale: Locale = defaultLocale
 
   if (acceptLanguage) {
     const preferredLanguages = acceptLanguage

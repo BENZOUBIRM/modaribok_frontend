@@ -43,7 +43,9 @@
 
   /* ── Semantic Status ── */
   --destructive: #E53935;
+  --destructive-light: #FDECEA;
   --success: #43A047;
+  --success-light: #E8F5E9;
   --warning: #F59E0B;
   --info: #42A5F5;
 
@@ -109,7 +111,9 @@
 
   /* ── Semantic Status ── */
   --destructive: #F44336;
+  --destructive-light: #3D2222;
   --success: #4CAF50;
+  --success-light: #1E3320;
   --warning: #FFC107;
   --info: #2196F3;
 
