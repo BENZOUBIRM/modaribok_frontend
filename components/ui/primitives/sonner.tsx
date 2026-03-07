@@ -6,40 +6,43 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       className="toaster group"
       closeButton
+      duration={5000}
+      gap={8}
+      visibleToasts={4}
       icons={{
         success: (
           <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-green-500">
-            <Icon icon="solar:check-circle-bold" className="size-4 text-white" />
+            <Icon icon="solar:check-circle-bold" className="size-5 text-white" />
           </span>
         ),
         info: (
           <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-500">
-            <Icon icon="solar:info-circle-bold" className="size-4 text-white" />
+            <Icon icon="solar:info-circle-bold" className="size-5 text-white" />
           </span>
         ),
         warning: (
           <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-yellow-500">
-            <Icon icon="solar:danger-triangle-bold" className="size-4 text-white" />
+            <Icon icon="solar:shield-warning-bold" className="size-5 text-white" />
           </span>
         ),
         error: (
           <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-red-500">
-            <Icon icon="solar:close-circle-bold" className="size-4 text-white" />
+            <Icon icon="solar:danger-triangle-bold" className="size-5 text-white" />
           </span>
         ),
         loading: (
           <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-gray-500">
-            <Icon icon="solar:refresh-circle-linear" className="size-4 text-white animate-spin" />
+            <Icon icon="solar:refresh-circle-linear" className="size-5 text-white animate-spin" />
           </span>
         ),
       }}
       toastOptions={{
         unstyled: true,
         classNames: {
-          toast: 'w-full rounded-lg py-3 px-4 flex items-center gap-3 shadow-lg border-l-4',
+          toast: 'w-full rounded-lg py-3 px-4 ltr:pr-10 rtl:pl-10 flex items-center gap-3 shadow-lg border-l-4',
           title: 'font-semibold text-sm',
           description: 'text-sm opacity-80',
-          closeButton: 'absolute top-1/2 -translate-y-1/2 ltr:right-3 rtl:left-3 size-5 flex items-center justify-center rounded-full opacity-60 hover:opacity-100 transition-opacity bg-black/10 dark:bg-white/20 border-0 text-current',
+          closeButton: 'absolute top-1/2 -translate-y-1/2 ltr:right-3 rtl:left-3 size-5 flex items-center justify-center rounded-full cursor-pointer bg-black/20 hover:bg-black/50 dark:bg-white/25 dark:hover:bg-white/55 border-0 text-white hover:text-white dark:text-white transition-colors',
           // Light mode: pastel bg with colored left border | Dark mode: solid colored bg
           success: 'bg-green-100 text-green-800 border-green-500 dark:bg-green-500 dark:text-white dark:border-green-600',
           error: 'bg-red-100 text-red-700 border-red-500 dark:bg-red-500 dark:text-white dark:border-red-600',

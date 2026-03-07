@@ -107,6 +107,19 @@ export function isPasswordValid(password: string): boolean {
   )
 }
 
+/* ──────────────── Forgot Password Form ──────────────── */
+
+export interface ForgotPasswordFormData {
+  emailOrPhone: string
+}
+
+/* ──────────────── Reset Password Form ──────────────── */
+
+export interface ResetPasswordFormData {
+  newPassword: string
+  confirmPassword: string
+}
+
 /* ──────────────── Login Validation Rules ──────────────── */
 
 export function getLoginRules(v: ValidationMessages) {
@@ -127,6 +140,49 @@ export function getLoginRules(v: ValidationMessages) {
     password: {
       required: v.fieldRequired,
     } satisfies RegisterOptions<LoginFormData, "password">,
+  }
+}
+
+/* ──────────────── Signup Validation Rules ──────────────── */
+
+/* ──────────────── Forgot Password Validation Rules ──────────────── */
+
+export function getForgotPasswordRules(v: ValidationMessages) {
+  return {
+    emailOrPhone: {
+      required: v.fieldRequired,
+      validate: (value: string) => {
+        const trimmed = value.trim()
+        if (trimmed.includes("@")) {
+          return EMAIL_REGEX.test(trimmed) || v.emailOrPhoneFormat
+        }
+        const digits = trimmed.replace(/[\s\-().]/g, "")
+        return PHONE_LOOSE_REGEX.test(digits) || v.emailOrPhoneFormat
+      },
+    } satisfies RegisterOptions<ForgotPasswordFormData, "emailOrPhone">,
+  }
+}
+
+/* ──────────────── Reset Password Validation Rules ──────────────── */
+
+export function getResetPasswordRules(
+  v: ValidationMessages & { passwordMismatch: string },
+  watchPassword: () => string,
+) {
+  return {
+    newPassword: {
+      required: v.fieldRequired,
+      validate: {
+        strong: (val: string) => isPasswordValid(val) || v.passwordMinLength,
+      },
+    } satisfies RegisterOptions<ResetPasswordFormData, "newPassword">,
+
+    confirmPassword: {
+      required: v.fieldRequired,
+      validate: {
+        match: (val: string) => val === watchPassword() || v.passwordMismatch,
+      },
+    } satisfies RegisterOptions<ResetPasswordFormData, "confirmPassword">,
   }
 }
 

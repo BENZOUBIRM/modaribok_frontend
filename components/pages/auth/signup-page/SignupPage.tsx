@@ -5,8 +5,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { Icon } from "@iconify/react"
-import { toast } from "sonner"
-
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { AuthCardLayout } from "@/components/pages/auth/auth-card-layout"
@@ -55,7 +53,7 @@ function SignupPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isSubmitting, dirtyFields },
+    formState: { errors, isSubmitting, isSubmitted, dirtyFields },
   } = useForm<SignupFormData>({
     mode: "onChange",
     defaultValues: {
@@ -78,42 +76,25 @@ function SignupPage() {
   const passwordReqs = getPasswordRequirements(passwordValue ?? "", v)
   const allPasswordMet = isPasswordValid(passwordValue ?? "")
 
-  // Map backend error codes → i18n keys
-  const resolveErrorMessage = (code?: string, fallback?: string): string => {
-    const codeMap: Record<string, string> = {
-      AUTH_ERROR_EMAIL_EXISTS: t.errors.emailInvalid,
-      AUTH_ERROR_PHONE_EXISTS: t.errors.phoneInUse,
-      AUTH_ERROR_INVALID_DATA: t.errors.invalidData,
-    }
-    if (code && codeMap[code]) return codeMap[code]
-    if (fallback === "networkError") return t.errors.networkError
-    return fallback || t.errors.serverError
-  }
-
   // Handle form submission
   const onSubmit = async (data: SignupFormData) => {
-    try {
-      const result = await signup({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        password: data.password,
-        profileImage: data.profileImage,
-      })
+    const result = await signup({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      password: data.password,
+      profileImage: data.profileImage,
+    })
 
-      if (result.success) {
-        setSignupSuccess(true)
-        // Show success callout for 2 seconds, then redirect to login
-        setTimeout(() => {
-          router.push(`/${lang}/login`)
-        }, 2000)
-      } else {
-        toast.error(resolveErrorMessage(result.code, result.error))
-      }
-    } catch {
-      toast.error(t.errors.serverError)
+    if (result.success) {
+      setSignupSuccess(true)
+      // Show success callout for 2 seconds, then redirect to login
+      setTimeout(() => {
+        router.push(`/${lang}/login`)
+      }, 2000)
     }
+    // Error toasts are handled automatically by the global interceptor
   }
 
   /** Determine field state for InputField props */
@@ -124,6 +105,10 @@ function SignupPage() {
 
     // Special handling for password: show requirements checklist
     if (name === "password") {
+      // After submit, show required error for untouched empty password
+      if (isSubmitted && !dirty && error) {
+        return { error }
+      }
       const showReqs = dirty && !allPasswordMet
       return {
         error: showReqs ? " " : undefined, // non-empty string triggers error styling

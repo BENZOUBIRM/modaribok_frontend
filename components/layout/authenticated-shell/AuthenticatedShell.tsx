@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { Icon } from "@iconify/react"
-import { Toaster, toast } from "sonner"
+import { toast } from "sonner"
 
+import { Toaster } from "@/components/ui/primitives/sonner"
+import { ApiToastProvider } from "@/providers/api-toast-provider"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { useSidebar } from "@/hooks/use-sidebar"
@@ -104,6 +106,8 @@ export default function AuthenticatedShell({
   if (isLoading) {
     return (
       <>
+        <Toaster position="top-center" offset="80px" dir={isRTL ? "rtl" : "ltr"} />
+        <ApiToastProvider />
         <Navbar />
         <main className="pt-16">
           <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background">
@@ -118,6 +122,8 @@ export default function AuthenticatedShell({
   if (!isAuthenticated) {
     return (
       <>
+        <Toaster position="top-center" offset="80px" dir={isRTL ? "rtl" : "ltr"} />
+        <ApiToastProvider />
         <Navbar onGuestSidebarToggle={() => setGuestSidebarOpen(true)} />
         <GuestSidebar
           isOpen={guestSidebarOpen}
@@ -133,7 +139,8 @@ export default function AuthenticatedShell({
   /* ── Authenticated state ─────────────────────────────────────── */
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="top-center" offset="80px" dir={isRTL ? "rtl" : "ltr"} />
+      <ApiToastProvider />
 
       {/* Logout Confirmation Dialog */}
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>

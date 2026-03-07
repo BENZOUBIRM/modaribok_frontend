@@ -1,3 +1,5 @@
 export * from "./auth-card-layout"
 export * from "./login-page"
 export * from "./signup-page"
+export * from "./forgot-password-page"
+export * from "./reset-password-page"

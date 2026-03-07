@@ -6,6 +6,8 @@
 export const AUTH_ROUTES = {
   LOGIN: (lang: string) => `/${lang}/login`,
   SIGNUP: (lang: string) => `/${lang}/signup`,
+  FORGOT_PASSWORD: (lang: string) => `/${lang}/forgot-password`,
+  RESET_PASSWORD: (lang: string) => `/${lang}/reset-password`,
 } as const
 
 export const DASHBOARD_ROUTES = {

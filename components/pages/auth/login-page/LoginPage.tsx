@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { Icon } from "@iconify/react"
-import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
@@ -48,40 +47,19 @@ function LoginPage() {
   const [readOnly, setReadOnly] = React.useState(true)
   const handleFocus = () => { if (readOnly) setReadOnly(false) }
 
-  // Map backend error codes → i18n keys
-  const resolveErrorMessage = (code?: string, fallback?: string): string => {
-    const codeMap: Record<string, string> = {
-      AUTH_ERROR_001: t.errors.emailRequired,
-      AUTH_ERROR_002: t.errors.passwordRequired,
-      AUTH_ERROR_003: t.errors.invalidCredentials,
-      AUTH_ERROR_LOCKED: t.errors.accountLocked,
-    }
-    if (code && codeMap[code]) return codeMap[code]
-    if (fallback === "networkError") return t.errors.networkError
-    return fallback || t.errors.serverError
-  }
-
   // Handle form submission
   const onSubmit = async (data: LoginFormData) => {
-    try {
-      const result = await login({ emailOrPhone: data.emailOrPhone, password: data.password })
+    const result = await login({ emailOrPhone: data.emailOrPhone, password: data.password })
 
-      if (result.success && result.user) {
-        toast.success(t.success)
-
-        // Role-based redirect
-        if (result.user.role === "ADMIN") {
-          router.push(`/${lang}/dashboard`)
-        } else {
-          router.push(`/${lang}`)
-        }
+    if (result.success && result.user) {
+      // Redirect — success toast is handled by the global interceptor
+      if (result.user.role === "ADMIN") {
+        router.push(`/${lang}/dashboard`)
       } else {
-        // Server errors still use toasts
-        toast.error(resolveErrorMessage(result.code, result.error))
+        router.push(`/${lang}`)
       }
-    } catch {
-      toast.error(t.errors.serverError)
     }
+    // Error toasts are handled automatically by the global interceptor
   }
 
   /** Determine field state for InputField props */
@@ -144,13 +122,13 @@ function LoginPage() {
 
         {/* Forgot Password */}
         <div className="flex items-center justify-end mb-8">
-          <button
-            type="button"
+          <Link
+            href={`/${lang}/forgot-password`}
             className="text-sm text-primary hover:underline cursor-pointer"
-            disabled={isSubmitting}
+            tabIndex={isSubmitting ? -1 : undefined}
           >
             {t.forgotPassword}
-          </button>
+          </Link>
         </div>
 
         {/* Submit Button */}

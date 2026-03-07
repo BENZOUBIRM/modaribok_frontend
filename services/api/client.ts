@@ -9,6 +9,8 @@
  */
 
 import axios from "axios"
+import { getCodeConfig } from "@/lib/error-codes"
+import { showApiToast } from "@/lib/api-toast"
 
 /* ──────────────── Constants ──────────────── */
 
@@ -54,13 +56,48 @@ apiClient.interceptors.request.use(
 /* ──────────────── Response Interceptor ──────────────── */
 
 /**
- * Global response error handler.
- * 401 errors are handled by the auth provider bootstrap logic,
- * not here — so we don't aggressively clear the token on every 401.
+ * Global response handler.
+ *
+ * Success path: if the response body contains a `code` and the code
+ * is configured for auto-toasting, show the toast.
+ *
+ * Error path: extract `code` from the error body and auto-toast.
+ * Network errors (no response) show a NETWORK_ERROR toast.
+ *
+ * Set `_skipToast: true` on the request config to suppress.
  */
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const code = response.data?.code as string | undefined
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const skip = (response.config as any)?._skipToast === true
+
+    if (code && !skip) {
+      const cfg = getCodeConfig(code)
+      if (cfg.autoToast) {
+        showApiToast(code)
+      }
+    }
+    return response
+  },
   (error) => {
+    if (axios.isAxiosError(error)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const skip = (error.config as any)?._skipToast === true
+
+      if (!skip) {
+        const code = error.response?.data?.code as string | undefined
+        if (code) {
+          const cfg = getCodeConfig(code)
+          if (cfg.autoToast) {
+            showApiToast(code)
+          }
+        } else {
+          // Network error — no response at all
+          showApiToast("NETWORK_ERROR")
+        }
+      }
+    }
     return Promise.reject(error)
   },
 )

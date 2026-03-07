@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { showApiToast } from "@/lib/api-toast"
 import { useAuth } from "@/providers/auth-provider"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { extractUserFromJwt } from "@/lib/jwt"
@@ -64,6 +65,7 @@ export default function OAuth2CallbackPage() {
 
       // Store token + user in localStorage and update auth state
       loginWithOAuth2(token, user)
+      showApiToast("OAUTH2_SUCCESS_019")
 
       // Redirect admins to dashboard, others to home
       if (user?.role === "ADMIN") {

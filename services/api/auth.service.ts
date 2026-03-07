@@ -114,6 +114,53 @@ export async function signup(
   }
 }
 
+/* ──────────────── Forgot Password ──────────────── */
+
+/**
+ * Request a password reset link.
+ * POST /auth/forgot-password with { emailOrPhone }
+ */
+export async function forgotPassword(
+  emailOrPhone: string,
+): Promise<import("@/types/auth").ForgotPasswordResult> {
+  try {
+    const response = await apiClient.post("/auth/forgot-password", { emailOrPhone })
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleAuthError(error)
+  }
+}
+
+/* ──────────────── Reset Password ──────────────── */
+
+/**
+ * Reset the password using a token from the email link.
+ * POST /auth/reset-password with { token, newPassword, confirmPassword }
+ */
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<import("@/types/auth").ResetPasswordResult> {
+  try {
+    const response = await apiClient.post("/auth/reset-password", {
+      token,
+      newPassword,
+      confirmPassword,
+    })
+    return {
+      success: true,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleAuthError(error)
+  }
+}
+
 /* ──────────────── Logout ──────────────── */
 
 /**
@@ -123,7 +170,8 @@ export async function signup(
  */
 export async function logout(): Promise<{ success: boolean; code?: string }> {
   try {
-    await apiClient.post("/auth/logout")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await apiClient.post("/auth/logout", null, { _skipToast: true } as any)
     return { success: true, code: "AUTH_LOGOUT_SUCCESS_013" }
   } catch {
     // Even if the server call fails, still clear local data
@@ -139,21 +187,17 @@ export async function logout(): Promise<{ success: boolean; code?: string }> {
  * Normalize API errors into a consistent shape.
  * Maps Axios error responses → { success: false, error, code }.
  */
-function handleAuthError(error: unknown): { success: false; error: string; code?: string } {
+function handleAuthError(error: unknown): { success: false; code?: string } {
   if (isAxiosError(error) && error.response) {
-    const { data, status } = error.response
-
     return {
       success: false,
-      error: data?.message || `Request failed with status ${status}`,
-      code: data?.code,
+      code: error.response.data?.code,
     }
   }
 
   // Network error or something unexpected
   return {
     success: false,
-    error: "networkError",
     code: "NETWORK_ERROR",
   }
 }

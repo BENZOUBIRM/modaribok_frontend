@@ -98,7 +98,6 @@ export interface AuthContextValue {
 export interface LoginResult {
   success: boolean
   user?: User
-  error?: string
   /** Backend error code for i18n mapping */
   code?: string
 }
@@ -107,6 +106,35 @@ export interface LoginResult {
 export interface SignupResult {
   success: boolean
   data?: unknown
-  error?: string
+  code?: string
+}
+
+/* ──────────────── Forgot Password ──────────────── */
+
+/** POST /auth/forgot-password — response body data */
+export interface ForgotPasswordData {
+  sentVia: "email" | "whatsapp"
+  sentTo: string
+  message: string
+}
+
+/** Result returned by the forgotPassword action */
+export interface ForgotPasswordResult {
+  success: boolean
+  data?: ForgotPasswordData
+  code?: string
+}
+
+/* ──────────────── Reset Password ──────────────── */
+
+/** POST /auth/reset-password — response body data */
+export interface ResetPasswordData {
+  message: string
+  userId: number
+}
+
+/** Result returned by the resetPassword action */
+export interface ResetPasswordResult {
+  success: boolean
   code?: string
 }
