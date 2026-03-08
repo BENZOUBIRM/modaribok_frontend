@@ -1,0 +1,17 @@
+{
+  "home": "الرئيسية",
+  "services": "خدمات",
+  "aboutUs": "من نحن",
+  "contactUs": "اتصل بنا",
+  "login": "تسجيل الدخول",
+  "signup": "إنشاء حساب",
+  "logout": "تسجيل الخروج",
+  "welcome": "مرحباً",
+  "darkMode": "الوضع الداكن",
+  "lightMode": "الوضع الفاتح",
+  "language": "اللغة",
+  "dashboard": "لوحة التحكم",
+  "searchPlaceholder": "بحث...",
+  "notifications": "الإشعارات",
+  "messages": "الرسائل"
+}

@@ -1,0 +1,17 @@
+{
+  "home": "Home",
+  "services": "Services",
+  "aboutUs": "About Us",
+  "contactUs": "Contact Us",
+  "login": "Login",
+  "signup": "Sign Up",
+  "logout": "Logout",
+  "welcome": "Welcome",
+  "darkMode": "Dark Mode",
+  "lightMode": "Light Mode",
+  "language": "Language",
+  "dashboard": "Dashboard",
+  "searchPlaceholder": "Search...",
+  "notifications": "Notifications",
+  "messages": "Messages"
+}

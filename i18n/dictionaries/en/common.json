@@ -1,0 +1,16 @@
+{
+  "appName": "Modaribok",
+  "loading": "Loading...",
+  "signingIn": "Signing you in…",
+  "error": "An error occurred",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "back": "Back",
+  "next": "Next",
+  "submit": "Submit",
+  "confirm": "Confirm",
+  "close": "Close",
+  "search": "Search..."
+}

@@ -1,0 +1,30 @@
+{
+  "createPost": "Create Post",
+  "whatsOnYourMind": "What's on your mind?",
+  "addPhoto": "Add Photo",
+  "addVideo": "Add Video",
+  "privacy": "Privacy",
+  "privacyPublic": "Public",
+  "latestPosts": "Latest Posts",
+  "likes": "Likes",
+  "comments": "Comments",
+  "shares": "Shares",
+  "writeComment": "Write a comment...",
+  "reply": "Reply",
+  "viewReplies": "View replies",
+  "hideReplies": "Hide replies",
+  "sendComment": "Send",
+  "like": "Like",
+  "comment": "Comment",
+  "share": "Share",
+  "viewAllComments": "View all comments",
+  "showMore": "Show more",
+  "showLess": "Show less",
+  "cancel": "Cancel",
+  "ago": {
+    "now": "just now",
+    "minutes": "{count}m ago",
+    "hours": "{count}h ago",
+    "days": "{count}d ago"
+  }
+}

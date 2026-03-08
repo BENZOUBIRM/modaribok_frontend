@@ -1,0 +1,8 @@
+{
+  "welcomeTitle": "Welcome to Modaribok",
+  "welcomeSubtitle": "You are now logged in.",
+  "tagline": "Your sports journey starts here",
+  "logoutSuccess": "Logged out successfully!",
+  "logoutError": "Logout failed. Please try again.",
+  "signupSuccess": "Account created successfully! Please sign in."
+}
