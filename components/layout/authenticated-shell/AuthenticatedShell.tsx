@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { Icon } from "@iconify/react"
-import { toast } from "sonner"
 
 import { Toaster } from "@/components/ui/primitives/sonner"
 import { ApiToastProvider } from "@/providers/api-toast-provider"
@@ -52,7 +50,6 @@ export default function AuthenticatedShell({
   const { dictionary, lang, isRTL } = useDictionary()
   const { isAuthenticated, isLoading, logout } = useAuth()
   const { theme, setTheme } = useTheme()
-  const router = useRouter()
 
   const sidebar = useSidebar()
   const activityPanel = useActivityPanel()
@@ -86,10 +83,7 @@ export default function AuthenticatedShell({
   const handleLogout = async () => {
     setShowLogoutConfirm(false)
     await logout()
-    toast.success(dictionary.home.logoutSuccess, {
-      description: dictionary.home.logoutSuccessDescription,
-    })
-    router.push(`/${lang}/login`)
+    window.location.replace(`/${lang}/login`)
   }
 
   // Unified logout request — close overlays first, then show dialog

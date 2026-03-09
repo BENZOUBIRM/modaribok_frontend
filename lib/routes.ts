@@ -87,3 +87,47 @@ export const DEFAULT_ROUTES = {
   AFTER_LOGIN: DASHBOARD_ROUTES.HOME,
   AFTER_LOGOUT: AUTH_ROUTES.LOGIN,
 } as const
+
+/**
+ * Route classification for access control.
+ * Slugs are the path segments after the locale prefix (e.g. "login", "dashboard").
+ */
+
+/** Routes only accessible to unauthenticated users */
+export const GUEST_ONLY_SLUGS = [
+  "login",
+  "signup",
+  "forgot-password",
+  "reset-password",
+] as const
+
+/** Routes that require authentication */
+export const PROTECTED_SLUGS = [
+  "dashboard",
+  "users",
+  "products",
+  "trainers",
+  "gyms",
+  "events",
+  "fields",
+  "stores",
+  "orders",
+  "settings",
+] as const
+
+/** Routes accessible by anyone (guest or authenticated) */
+export const PUBLIC_SLUGS = [
+  "",          // home page (/{lang})
+  "auth",      // OAuth callback routes
+  "oauth2",    // OAuth2 callback routes
+] as const
+
+/**
+ * All known first-level route slugs under /{lang}/...
+ * Used to determine if a path is a valid app route.
+ */
+export const KNOWN_SLUGS = [
+  ...GUEST_ONLY_SLUGS,
+  ...PROTECTED_SLUGS,
+  ...PUBLIC_SLUGS,
+] as const

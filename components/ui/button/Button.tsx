@@ -76,7 +76,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         ref={ref}
-        data-slot="button"
+        {...(!asChild && { "data-slot": "button" })}
         data-variant={variant}
         data-size={size}
         disabled={isDisabled}
