@@ -130,7 +130,7 @@ function PhoneInputFieldInner({
       </span>
     )
     validationIcon = errorMessage ? (
-      <ValidationTooltip content={errorMessage} variant="error">
+      <ValidationTooltip content={errorMessage} variant="error" anchor="fixed-end">
         {icon}
       </ValidationTooltip>
     ) : icon
@@ -141,7 +141,7 @@ function PhoneInputFieldInner({
       </span>
     )
     validationIcon = successMessage ? (
-      <ValidationTooltip content={successMessage} variant="success">
+      <ValidationTooltip content={successMessage} variant="success" anchor="fixed-end">
         {icon}
       </ValidationTooltip>
     ) : icon

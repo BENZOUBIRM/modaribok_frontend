@@ -77,9 +77,10 @@ export default function AppSidebar({
   }, [isMobile, isOpen])
 
   const getHref = (path: string) => path === "/" ? `/${lang}` : `/${lang}${path}`
+  const bare = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/"
   const isActive = (path: string) => {
-    if (path === "/") return pathname === `/${lang}` || pathname === `/${lang}/`
-    return pathname === `/${lang}${path}` || pathname.startsWith(`/${lang}${path}/`)
+    if (path === "/") return bare === "/"
+    return bare === path || bare.startsWith(`${path}/`)
   }
 
   // Mobile sidebar
@@ -103,7 +104,7 @@ export default function AppSidebar({
               exit={{ x: isRTL ? "100%" : "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className={cn(
-                "fixed top-0 h-full w-60 bg-background border-border z-[70] flex flex-col",
+                "fixed top-0 h-full w-60 bg-card border-border z-[70] flex flex-col",
                 isRTL ? "right-0 border-l" : "left-0 border-r"
               )}
             >

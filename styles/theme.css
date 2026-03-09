@@ -6,14 +6,21 @@
 :root {
   --radius: 0.625rem;
 
-  /* ── Core Backgrounds ── */
-  --background: #F5F6FA;        /* Page background */
+  /* ── Core Backgrounds ──
+     Layout hierarchy (light mode):
+       • --background  (#EDF3FA) — main outlet / page (largest area, slightly darker for eye comfort)
+       • --card        (#F9FBFD) — panels: navbar, sidebar, activity panel, publication cards
+       • --navbar      (#F9FBFD) — navbar (same as card, used with backdrop-blur)
+       • --surface     (#FFFFFF) — small interactive surfaces: inputs, comment bubbles
+       • --popover     (#FFFFFF) — dropdowns, tooltips, dialogs
+  */
+  --background: #EDF3FA;        /* Main outlet / page background */
   --foreground: #1F2A3D;        /* Primary text */
-  --navbar: #F9FBFD;            /* Navbar background (distinct from page) */
-  --surface: #EDF3FA;           /* Subtle surface / section background */
+  --navbar: #F9FBFD;            /* Navbar — matches panel color */
+  --surface: #FFFFFF;           /* Small interactive surfaces (inputs, comment bubbles) */
 
   /* ── Cards & Popovers ── */
-  --card: #FFFFFF;
+  --card: #F9FBFD;
   --card-foreground: #1F2A3D;
   --popover: #FFFFFF;
   --popover-foreground: #1F2A3D;
@@ -66,8 +73,8 @@
   --sidebar: #F9FBFD;
   --sidebar-foreground: #1F2A3D;
   --sidebar-primary: #2869E8;
-  --sidebar-primary-foreground: #F9FBFD;
-  --sidebar-accent: #F9FBFD;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FFFFFF;
   --sidebar-accent-foreground: #1F2A3D;
   --sidebar-border: #DADDE2;
   --sidebar-ring: #2869E8;

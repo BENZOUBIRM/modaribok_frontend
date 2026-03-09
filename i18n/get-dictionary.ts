@@ -15,6 +15,7 @@ const dictionaries = {
       import("./dictionaries/en/events.json").then((m) => m.default),
       import("./dictionaries/en/suggestions.json").then((m) => m.default),
       import("./dictionaries/en/api-messages.json").then((m) => m.default),
+      import("./dictionaries/en/errors.json").then((m) => m.default),
     ] as const),
   ar: () =>
     Promise.all([
@@ -29,6 +30,7 @@ const dictionaries = {
       import("./dictionaries/ar/events.json").then((m) => m.default),
       import("./dictionaries/ar/suggestions.json").then((m) => m.default),
       import("./dictionaries/ar/api-messages.json").then((m) => m.default),
+      import("./dictionaries/ar/errors.json").then((m) => m.default),
     ] as const),
 }
 
@@ -36,18 +38,18 @@ export type Dictionary = Awaited<ReturnType<(typeof dictionaries)["en"]>> extend
   readonly [
     infer Common, infer Navbar, infer Home, infer Auth, infer Sidebar,
     infer Activity, infer Feed, infer Profile, infer Events, infer Suggestions,
-    infer ApiMessages,
+    infer ApiMessages, infer Errors,
   ]
   ? {
       common: Common; navbar: Navbar; home: Home; auth: Auth; sidebar: Sidebar;
       activity: Activity; feed: Feed; profile: Profile; events: Events;
-      suggestions: Suggestions; apiMessages: ApiMessages;
+      suggestions: Suggestions; apiMessages: ApiMessages; errors: Errors;
     }
   : never
 
 const KEYS = [
   "common", "navbar", "home", "auth", "sidebar",
-  "activity", "feed", "profile", "events", "suggestions", "apiMessages",
+  "activity", "feed", "profile", "events", "suggestions", "apiMessages", "errors",
 ] as const
 
 export async function getDictionary(locale: Locale): Promise<Dictionary> {

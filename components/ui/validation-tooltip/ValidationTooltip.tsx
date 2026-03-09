@@ -9,6 +9,13 @@ interface ValidationTooltipProps {
   variant: "error" | "success"
   /** The trigger element (usually an icon) */
   children: React.ReactNode
+  /**
+   * Bubble anchor strategy.
+   * - "auto" (default): direction-aware (right in LTR, left in RTL)
+   * - "fixed-end": always anchors right — use when the icon is at
+   *   physical right regardless of direction (e.g. phone input).
+   */
+  anchor?: "auto" | "fixed-end"
   /** Additional class names on the wrapper */
   className?: string
 }
@@ -21,6 +28,7 @@ function ValidationTooltip({
   content,
   variant,
   children,
+  anchor = "auto",
   className,
 }: ValidationTooltipProps) {
   return (
@@ -30,6 +38,7 @@ function ValidationTooltip({
         className={cn(
           styles.bubble,
           variant === "error" ? styles.error : styles.success,
+          anchor === "fixed-end" && styles.bubbleFixedEnd,
         )}
         role="tooltip"
       >

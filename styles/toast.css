@@ -1,0 +1,64 @@
+/* ================================================
+   Toast / Sonner — Gradient Backgrounds
+   Matches Figma design: gradient from variant color
+   on the text side to transparent on the icon side.
+   RTL-aware via logical properties.
+   ================================================ */
+
+/* ── Success: green gradient ── */
+.toast-success {
+  background: linear-gradient(to left, #bbf7d0, #dcfce7 40%, #f0fdf4 70%, #f8fef9);
+  border: 1px solid #bbf7d0;
+}
+:is([dir="rtl"]) .toast-success {
+  background: linear-gradient(to right, #bbf7d0, #dcfce7 40%, #f0fdf4 70%, #f8fef9);
+}
+
+/* ── Error: red/pink gradient ── */
+.toast-error {
+  background: linear-gradient(to left, #fecdd3, #ffe4e6 40%, #fff1f2 70%, #fff8f8);
+  border: 1px solid #fecdd3;
+}
+:is([dir="rtl"]) .toast-error {
+  background: linear-gradient(to right, #fecdd3, #ffe4e6 40%, #fff1f2 70%, #fff8f8);
+}
+
+/* ── Warning: yellow/amber gradient ── */
+.toast-warning {
+  background: linear-gradient(to left, #fde68a, #fef3c7 40%, #fefce8 70%, #fffef5);
+  border: 1px solid #fde68a;
+}
+:is([dir="rtl"]) .toast-warning {
+  background: linear-gradient(to right, #fde68a, #fef3c7 40%, #fefce8 70%, #fffef5);
+}
+
+/* ── Info: blue gradient ── */
+.toast-info {
+  background: linear-gradient(to left, #bfdbfe, #dbeafe 40%, #eff6ff 70%, #f8fbff);
+  border: 1px solid #bfdbfe;
+}
+:is([dir="rtl"]) .toast-info {
+  background: linear-gradient(to right, #bfdbfe, #dbeafe 40%, #eff6ff 70%, #f8fbff);
+}
+
+/* ── Dark mode: solid colored backgrounds (override gradients) ── */
+:is(.dark) .toast-success,
+:is(.dark) :is([dir="rtl"]) .toast-success {
+  background: rgb(34 197 94);
+  border-color: transparent;
+}
+:is(.dark) .toast-error,
+:is(.dark) :is([dir="rtl"]) .toast-error {
+  background: rgb(239 68 68);
+  border-color: transparent;
+}
+:is(.dark) .toast-warning,
+:is(.dark) :is([dir="rtl"]) .toast-warning {
+  background: rgb(250 204 21);
+  border-color: transparent;
+}
+:is(.dark) .toast-info,
+:is(.dark) :is([dir="rtl"]) .toast-info {
+  background: rgb(59 130 246);
+  border-color: transparent;
+}

@@ -18,6 +18,7 @@ import {
   getPasswordRequirements,
   isPasswordValid,
 } from "@/lib/validations/auth"
+import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
 
 function ResetPasswordPage() {
   const { dictionary, lang, isRTL } = useDictionary()
@@ -47,6 +48,9 @@ function ResetPasswordPage() {
   const passwordValue = watch("newPassword")
   const passwordReqs = getPasswordRequirements(passwordValue ?? "", v)
   const allPasswordMet = isPasswordValid(passwordValue ?? "")
+
+  // Re-trigger validation after client-side language switch
+  useRetriggerOnLangChange(errors, trigger)
 
   // Re-validate confirmPassword whenever newPassword changes
   React.useEffect(() => {

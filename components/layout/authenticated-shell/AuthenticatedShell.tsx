@@ -86,7 +86,9 @@ export default function AuthenticatedShell({
   const handleLogout = async () => {
     setShowLogoutConfirm(false)
     await logout()
-    toast.success(dictionary.home.logoutSuccess)
+    toast.success(dictionary.home.logoutSuccess, {
+      description: dictionary.home.logoutSuccessDescription,
+    })
     router.push(`/${lang}/login`)
   }
 
@@ -202,7 +204,7 @@ export default function AuthenticatedShell({
           <div className="flex flex-1 overflow-hidden">
             <main
               id="main-content"
-              className="flex-1 overflow-auto min-w-0"
+              className="flex-1 overflow-auto min-w-0 bg-background"
             >
               {children}
             </main>

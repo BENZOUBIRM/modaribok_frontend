@@ -46,7 +46,7 @@ function HomePage() {
   // Authenticated view — Social feed
   if (isAuthenticated && user) {
     return (
-      <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
+      <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto py-6 px-4 space-y-4">
         {/* Mobile search bar — visible only below sm (when navbar search is hidden) */}
         <MobileSearchBar />
         <CreatePublication />

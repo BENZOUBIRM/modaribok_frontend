@@ -1,142 +1,502 @@
 {
-  "ERROR_SYSTEM_000": "An unexpected system error occurred. Please try again later.",
-  "SUCCESS": "Operation completed successfully.",
-  "MALFORMED_JSONE_017": "The request data is malformed. Please try again.",
+  "ERROR_SYSTEM_000": {
+    "title": "System Error",
+    "description": "An internal error occurred. Please try again later."
+  },
+  "SUCCESS": {
+    "title": "Success",
+    "description": "The operation completed successfully."
+  },
+  "MALFORMED_JSONE_017": {
+    "title": "Invalid Request",
+    "description": "The request data is malformed. Please check and try again."
+  },
 
-  "AUTH_SUCCESS_000": "Logged in successfully!",
-  "AUTH_USER_CREATED_003": "Account created successfully! Please sign in.",
-  "AUTH_USER_PROFILE_COMPLETED_006": "Your profile has been updated successfully.",
-  "AUTH_LOGOUT_SUCCESS_013": "Logged out successfully!",
+  "AUTH_SUCCESS_000": {
+    "title": "Login Successful",
+    "description": "Welcome back! You have been signed in."
+  },
+  "AUTH_USER_CREATED_003": {
+    "title": "Account Created",
+    "description": "Your account has been created. Please sign in."
+  },
+  "AUTH_USER_PROFILE_COMPLETED_006": {
+    "title": "Profile Completed",
+    "description": "Your profile information has been saved successfully."
+  },
+  "AUTH_LOGOUT_SUCCESS_013": {
+    "title": "Logged Out",
+    "description": "You have been signed out of your account."
+  },
 
-  "AUTH_PHONE_EXISTS_001": "This phone number is already registered.",
-  "AUTH_EMAIL_EXISTS_002": "This email address is already registered.",
-  "AUTH_USER_NOT_FOUND_EMAIL_004": "No account found with this email.",
-  "AUTH_USER_NOT_FOUND_EMAIL_005": "No account found with this phone number.",
-  "AUTH_USER_NOT_FOUND_007": "Account not found. Please check your credentials.",
-  "AUTH_PASSWORD_INCORRECT_009": "Incorrect password. Please try again.",
+  "AUTH_PHONE_EXISTS_001": {
+    "title": "Phone Already Registered",
+    "description": "An account with this phone number already exists."
+  },
+  "AUTH_EMAIL_EXISTS_002": {
+    "title": "Email Already Registered",
+    "description": "An account with this email address already exists."
+  },
+  "AUTH_USER_NOT_FOUND_EMAIL_004": {
+    "title": "Account Not Found",
+    "description": "No account is associated with this email address."
+  },
+  "AUTH_USER_NOT_FOUND_EMAIL_005": {
+    "title": "Account Not Found",
+    "description": "No account is associated with this email address."
+  },
+  "AUTH_USER_NOT_FOUND_007": {
+    "title": "User Not Found",
+    "description": "The requested user account could not be found."
+  },
+  "AUTH_PASSWORD_INCORRECT_009": {
+    "title": "Incorrect Password",
+    "description": "The password you entered is incorrect. Please try again."
+  },
 
-  "AUTH_VALIDATION_ERROR_001": "Please check your input and try again.",
-  "AUTH_EMAIL_INVALID_002": "Please enter a valid email address.",
-  "AUTH_PASSWORD_TOO_SHORT_003": "Password must be at least 8 characters.",
-  "AUTH_EMAIL_REQUIRED_004": "Email address is required.",
-  "AUTH_PHONE_REQUIRED_005": "Phone number is required.",
-  "AUTH_PASSWORD_REQUIRED_006": "Password is required.",
-  "AUTH_FIRST_NAME_REQUIRED_007": "First name is required.",
-  "AUTH_LAST_NAME_REQUIRED_008": "Last name is required.",
-  "AUTH_EMAIL_OR_PHONE_PRVD_012": "Please provide either an email or phone number.",
-  "AUTH_BIRTHDAY_MUST_PAST_015": "Birthday must be a past date.",
-  "AUTH_GENDER_INVALID_016": "Please select a valid gender.",
+  "AUTH_VALIDATION_ERROR_001": {
+    "title": "Validation Error",
+    "description": "Please check your input and correct the highlighted fields."
+  },
+  "AUTH_EMAIL_INVALID_002": {
+    "title": "Invalid Email",
+    "description": "Please enter a valid email address."
+  },
+  "AUTH_PASSWORD_TOO_SHORT_003": {
+    "title": "Password Too Short",
+    "description": "Your password must be at least 8 characters long."
+  },
+  "AUTH_EMAIL_REQUIRED_004": {
+    "title": "Email Required",
+    "description": "Please provide your email address to continue."
+  },
+  "AUTH_PHONE_REQUIRED_005": {
+    "title": "Phone Required",
+    "description": "Please provide your phone number to continue."
+  },
+  "AUTH_PASSWORD_REQUIRED_006": {
+    "title": "Password Required",
+    "description": "Please enter a password to continue."
+  },
+  "AUTH_FIRST_NAME_REQUIRED_007": {
+    "title": "First Name Required",
+    "description": "Please enter your first name."
+  },
+  "AUTH_LAST_NAME_REQUIRED_008": {
+    "title": "Last Name Required",
+    "description": "Please enter your last name."
+  },
+  "AUTH_EMAIL_OR_PHONE_PRVD_012": {
+    "title": "Contact Info Required",
+    "description": "Please provide either an email address or phone number."
+  },
+  "AUTH_BIRTHDAY_MUST_PAST_015": {
+    "title": "Invalid Birthday",
+    "description": "Your date of birth must be a date in the past."
+  },
+  "AUTH_GENDER_INVALID_016": {
+    "title": "Invalid Gender",
+    "description": "Please select a valid gender option."
+  },
 
-  "AUTH_TOKEN_INVALID_009": "Your session is invalid. Please sign in again.",
-  "AUTH_TOKEN_EXPIRED_010": "Your session has expired. Please sign in again.",
-  "AUTH_TOKEN_ERROR_011": "Authentication error. Please sign in again.",
-  "AUTH_TOKEN_REQUIRED_018": "Authentication required. Please sign in.",
+  "AUTH_TOKEN_INVALID_009": {
+    "title": "Invalid Token",
+    "description": "Your authentication token is invalid. Please sign in again."
+  },
+  "AUTH_TOKEN_EXPIRED_010": {
+    "title": "Session Expired",
+    "description": "Your session has expired. Please sign in again."
+  },
+  "AUTH_TOKEN_ERROR_011": {
+    "title": "Authentication Error",
+    "description": "There was a problem with your authentication. Please sign in again."
+  },
+  "AUTH_TOKEN_REQUIRED_018": {
+    "title": "Login Required",
+    "description": "You need to be signed in to access this feature."
+  },
 
-  "AUTH_FORGOT_PASSWORD_SUCCESS_EMAIL_026": "Password reset link sent to your email.",
-  "AUTH_FORGOT_PASSWORD_SUCCESS_WHATSAPP_027": "Password reset code sent via WhatsApp.",
-  "AUTH_EMAIL_SEND_FAILED_028": "Failed to send email. Please try again later.",
-  "AUTH_WHATSAPP_SEND_FAILED_029": "Failed to send WhatsApp message. Please try again later.",
-  "AUTH_RESET_PASSWORD_SUCCESS_030": "Password reset successfully! Please sign in with your new password.",
-  "AUTH_RESET_TOKEN_INVALID_031": "Invalid reset link. Please request a new one.",
-  "AUTH_RESET_TOKEN_EXPIRED_032": "Reset link has expired. Please request a new one.",
-  "AUTH_PASSWORD_MISMATCH_033": "Passwords do not match.",
-  "AUTH_RESET_TOKEN_BLACKLISTED_034": "This reset link has already been used. Please request a new one.",
+  "AUTH_FORGOT_PASSWORD_SUCCESS_EMAIL_026": {
+    "title": "Reset Email Sent",
+    "description": "A password reset link has been sent to your email."
+  },
+  "AUTH_FORGOT_PASSWORD_SUCCESS_WHATSAPP_027": {
+    "title": "Reset Code Sent",
+    "description": "A password reset code has been sent via WhatsApp."
+  },
+  "AUTH_EMAIL_SEND_FAILED_028": {
+    "title": "Email Send Failed",
+    "description": "We couldn't send the email. Please try again later."
+  },
+  "AUTH_WHATSAPP_SEND_FAILED_029": {
+    "title": "WhatsApp Send Failed",
+    "description": "We couldn't send the WhatsApp message. Please try again later."
+  },
+  "AUTH_RESET_PASSWORD_SUCCESS_030": {
+    "title": "Password Reset",
+    "description": "Your password has been changed successfully. Please sign in."
+  },
+  "AUTH_RESET_TOKEN_INVALID_031": {
+    "title": "Invalid Reset Link",
+    "description": "This password reset link is invalid. Please request a new one."
+  },
+  "AUTH_RESET_TOKEN_EXPIRED_032": {
+    "title": "Link Expired",
+    "description": "This password reset link has expired. Please request a new one."
+  },
+  "AUTH_PASSWORD_MISMATCH_033": {
+    "title": "Passwords Don't Match",
+    "description": "The passwords you entered do not match. Please try again."
+  },
+  "AUTH_RESET_TOKEN_BLACKLISTED_034": {
+    "title": "Link Already Used",
+    "description": "This reset link has already been used. Please request a new one."
+  },
 
-  "OAUTH2_SUCCESS_019": "Signed in with Google successfully!",
-  "OAUTH2_USER_CREATED_020": "Account created with Google successfully!",
-  "OAUTH2_USER_UPDATED_021": "Google account info updated.",
-  "OAUTH2_AUTHENTICATION_FAILED_022": "Google authentication failed. Please try again.",
-  "OAUTH2_EMAIL_CONFLICT_023": "An account with this email already exists.",
-  "OAUTH2_PROVIDER_NOT_SUPPORTED_024": "This login provider is not supported.",
-  "OAUTH2_USER_INFO_MISSING_025": "Could not retrieve your account information. Please try again.",
+  "OAUTH2_SUCCESS_019": {
+    "title": "Login Successful",
+    "description": "You have been signed in with your Google account."
+  },
+  "OAUTH2_USER_CREATED_020": {
+    "title": "Account Created",
+    "description": "Your account has been created using your Google profile."
+  },
+  "OAUTH2_USER_UPDATED_021": {
+    "title": "Profile Updated",
+    "description": "Your profile has been updated with your Google information."
+  },
+  "OAUTH2_AUTHENTICATION_FAILED_022": {
+    "title": "Authentication Failed",
+    "description": "Google sign-in failed. Please try again."
+  },
+  "OAUTH2_EMAIL_CONFLICT_023": {
+    "title": "Email Conflict",
+    "description": "An account with this email already exists with a different sign-in method."
+  },
+  "OAUTH2_PROVIDER_NOT_SUPPORTED_024": {
+    "title": "Provider Not Supported",
+    "description": "This sign-in provider is not currently supported."
+  },
+  "OAUTH2_USER_INFO_MISSING_025": {
+    "title": "Missing Information",
+    "description": "Could not retrieve your account info from the provider."
+  },
 
-  "ROLE_CREATED_010": "Role created successfully.",
-  "ROLE_DELETED_011": "Role deleted successfully.",
-  "ROLE_UPDATED_012": "Role updated successfully.",
-  "ROLE_EXISTE_013": "This role already exists.",
-  "ROLE_NOT_FOUND_014": "Role not found.",
-  "ROLE_NAME_ALREADY_EXISTE_015": "A role with this name already exists.",
+  "ROLE_CREATED_010": {
+    "title": "Role Created",
+    "description": "The new role has been created successfully."
+  },
+  "ROLE_DELETED_011": {
+    "title": "Role Deleted",
+    "description": "The role has been permanently deleted."
+  },
+  "ROLE_UPDATED_012": {
+    "title": "Role Updated",
+    "description": "The role has been updated successfully."
+  },
+  "ROLE_EXISTE_013": {
+    "title": "Role Already Exists",
+    "description": "A role with this configuration already exists."
+  },
+  "ROLE_NOT_FOUND_014": {
+    "title": "Role Not Found",
+    "description": "The requested role could not be found."
+  },
+  "ROLE_NAME_ALREADY_EXISTE_015": {
+    "title": "Name Taken",
+    "description": "A role with this name already exists. Please choose another."
+  },
 
-  "SPORT_NAME_REQUIRED_001": "Sport name is required.",
-  "SPORT_ALREADY_EXISTE_002": "This sport already exists.",
-  "SPORT_CREATED_003": "Sport created successfully.",
-  "SPORT_NAME_NOT_EXISTE_004": "Sport not found.",
-  "SPORT_NOT_FOUND_BY_ID_005": "Sport not found.",
-  "SPORT_UPDATED_006": "Sport updated successfully.",
-  "SPORT_DELETED_007": "Sport deleted successfully.",
+  "SPORT_NAME_REQUIRED_001": {
+    "title": "Name Required",
+    "description": "Please provide a name for the sport."
+  },
+  "SPORT_ALREADY_EXISTE_002": {
+    "title": "Sport Exists",
+    "description": "A sport with this name already exists."
+  },
+  "SPORT_CREATED_003": {
+    "title": "Sport Created",
+    "description": "The new sport has been added successfully."
+  },
+  "SPORT_NAME_NOT_EXISTE_004": {
+    "title": "Sport Not Found",
+    "description": "No sport with this name was found."
+  },
+  "SPORT_NOT_FOUND_BY_ID_005": {
+    "title": "Sport Not Found",
+    "description": "The requested sport could not be found."
+  },
+  "SPORT_UPDATED_006": {
+    "title": "Sport Updated",
+    "description": "The sport has been updated successfully."
+  },
+  "SPORT_DELETED_007": {
+    "title": "Sport Deleted",
+    "description": "The sport has been permanently deleted."
+  },
 
-  "CERTIFICAT_NAME_REQUIRED_001": "Certificate name is required.",
-  "CERTIFICAT_CREATED_003": "Certificate created successfully.",
-  "CERTIFICAT_NOT_FOUND_BY_ID_005": "Certificate not found.",
-  "CERTIFICAT_UPDATED_006": "Certificate updated successfully.",
-  "CERTIFICAT_DELETED_007": "Certificate deleted successfully.",
+  "CERTIFICAT_NAME_REQUIRED_001": {
+    "title": "Name Required",
+    "description": "Please provide a name for the certificate."
+  },
+  "CERTIFICAT_CREATED_003": {
+    "title": "Certificate Created",
+    "description": "The new certificate has been added successfully."
+  },
+  "CERTIFICAT_NOT_FOUND_BY_ID_005": {
+    "title": "Certificate Not Found",
+    "description": "The requested certificate could not be found."
+  },
+  "CERTIFICAT_UPDATED_006": {
+    "title": "Certificate Updated",
+    "description": "The certificate has been updated successfully."
+  },
+  "CERTIFICAT_DELETED_007": {
+    "title": "Certificate Deleted",
+    "description": "The certificate has been permanently deleted."
+  },
 
-  "FILE_STORAGE_ERROR_001": "File storage error. Please try again.",
-  "FILE_NOT_FOUND_002": "File not found.",
-  "FILE_EMPTY_003": "The uploaded file is empty.",
-  "FILE_TOO_LARGE_004": "File is too large. Please upload a smaller file.",
-  "FILE_TYPE_NOT_ALLOWED_005": "This file type is not allowed.",
-  "FILE_NOT_FOUND_001": "File not found.",
+  "FILE_STORAGE_ERROR_001": {
+    "title": "Storage Error",
+    "description": "There was a problem saving your file. Please try again."
+  },
+  "FILE_NOT_FOUND_002": {
+    "title": "File Not Found",
+    "description": "The requested file could not be found."
+  },
+  "FILE_EMPTY_003": {
+    "title": "Empty File",
+    "description": "The uploaded file is empty. Please select a valid file."
+  },
+  "FILE_TOO_LARGE_004": {
+    "title": "File Too Large",
+    "description": "The file exceeds the maximum allowed size."
+  },
+  "FILE_TYPE_NOT_ALLOWED_005": {
+    "title": "File Type Not Allowed",
+    "description": "This file type is not supported. Please upload a different format."
+  },
+  "FILE_NOT_FOUND_001": {
+    "title": "File Not Found",
+    "description": "The requested file could not be located."
+  },
 
-  "PUBLICATION_CREATED_001": "Post published successfully!",
-  "PUBLICATION_CONTENT_OR_MEDIA_REQUIRED_002": "Please add some text or media to your post.",
-  "PUBLICATION_MAX_MEDIA_EXCEEDED_003": "Maximum number of media files exceeded.",
-  "PUBLICATION_NOT_FOUND_004": "Post not found.",
-  "PUBLICATION_SHARED_NOT_FOUND_005": "The shared post was not found.",
-  "PUBLICATION_DELETED_007": "Post deleted successfully.",
-  "PUBLICATION_INVALID_VISIBILITY_010": "Invalid visibility setting.",
-  "PUBLICATION_UPDATED_SUCCESS": "Post updated successfully.",
-  "PUBLICATION_UNAUTHORIZED_009": "You don't have permission to modify this post.",
+  "PUBLICATION_CREATED_001": {
+    "title": "Post Published",
+    "description": "Your publication has been shared successfully."
+  },
+  "PUBLICATION_CONTENT_OR_MEDIA_REQUIRED_002": {
+    "title": "Content Required",
+    "description": "Please add some text or media to your publication."
+  },
+  "PUBLICATION_MAX_MEDIA_EXCEEDED_003": {
+    "title": "Too Many Files",
+    "description": "You have exceeded the maximum number of media attachments."
+  },
+  "PUBLICATION_NOT_FOUND_004": {
+    "title": "Post Not Found",
+    "description": "This publication is no longer available."
+  },
+  "PUBLICATION_SHARED_NOT_FOUND_005": {
+    "title": "Shared Post Not Found",
+    "description": "The shared publication could not be found."
+  },
+  "PUBLICATION_DELETED_007": {
+    "title": "Post Deleted",
+    "description": "Your publication has been permanently removed."
+  },
+  "PUBLICATION_INVALID_VISIBILITY_010": {
+    "title": "Invalid Visibility",
+    "description": "Please select a valid visibility option for your post."
+  },
+  "PUBLICATION_UPDATED_SUCCESS": {
+    "title": "Post Updated",
+    "description": "Your publication has been updated successfully."
+  },
+  "PUBLICATION_UNAUTHORIZED_009": {
+    "title": "Not Authorized",
+    "description": "You don't have permission to modify this publication."
+  },
 
-  "REACTION_TOGGLED_SUCCESS": "Reaction updated.",
-  "REACTION_INVALID_TYPE_001": "Invalid reaction type.",
+  "REACTION_TOGGLED_SUCCESS": {
+    "title": "Reaction Updated",
+    "description": "Your reaction has been recorded."
+  },
+  "REACTION_INVALID_TYPE_001": {
+    "title": "Invalid Reaction",
+    "description": "The selected reaction type is not valid."
+  },
 
-  "INVALID_ENTITY_TYPE_002": "Invalid entity type.",
+  "INVALID_ENTITY_TYPE_002": {
+    "title": "Invalid Entity",
+    "description": "The specified entity type is not recognized."
+  },
 
-  "COMMENT_CREATED_SUCCESS": "Comment posted.",
-  "COMMENT_DELETED_SUCCESS": "Comment deleted.",
-  "COMMENT_NOT_FOUND_001": "Comment not found.",
-  "COMMENT_CONTENT_REQUIRED_002": "Comment cannot be empty.",
-  "COMMENT_PARENT_MISMATCH_003": "Reply doesn't belong to this post.",
-  "COMMENT_UNAUTHORIZED_004": "You don't have permission to modify this comment.",
+  "COMMENT_CREATED_SUCCESS": {
+    "title": "Comment Added",
+    "description": "Your comment has been posted."
+  },
+  "COMMENT_DELETED_SUCCESS": {
+    "title": "Comment Deleted",
+    "description": "Your comment has been removed."
+  },
+  "COMMENT_NOT_FOUND_001": {
+    "title": "Comment Not Found",
+    "description": "This comment is no longer available."
+  },
+  "COMMENT_CONTENT_REQUIRED_002": {
+    "title": "Comment Empty",
+    "description": "Please write something before posting your comment."
+  },
+  "COMMENT_PARENT_MISMATCH_003": {
+    "title": "Reply Error",
+    "description": "The reply could not be linked to the parent comment."
+  },
+  "COMMENT_UNAUTHORIZED_004": {
+    "title": "Not Authorized",
+    "description": "You don't have permission to modify this comment."
+  },
 
-  "PUBLICATION_REPORTED_SUCCESS": "Post reported successfully. Thank you.",
-  "PUBLICATION_ALREADY_REPORTED_001": "You have already reported this post.",
+  "PUBLICATION_REPORTED_SUCCESS": {
+    "title": "Report Submitted",
+    "description": "Thank you for reporting. We will review this content."
+  },
+  "PUBLICATION_ALREADY_REPORTED_001": {
+    "title": "Already Reported",
+    "description": "You have already reported this publication."
+  },
 
-  "PUBLICATION_HIDDEN_SUCCESS": "Post hidden from your feed.",
-  "PUBLICATION_RESTORED_SUCCESS": "Post restored to your feed.",
-  "HIDE_REASON_REQUIRED_001": "Please provide a reason for hiding this post.",
-  "HIDE_REASON_TOO_LONG": "Hide reason is too long.",
+  "PUBLICATION_HIDDEN_SUCCESS": {
+    "title": "Post Hidden",
+    "description": "This publication has been hidden from your feed."
+  },
+  "PUBLICATION_RESTORED_SUCCESS": {
+    "title": "Post Restored",
+    "description": "This publication has been restored to your feed."
+  },
+  "HIDE_REASON_REQUIRED_001": {
+    "title": "Reason Required",
+    "description": "Please provide a reason for hiding this publication."
+  },
+  "HIDE_REASON_TOO_LONG": {
+    "title": "Reason Too Long",
+    "description": "Your reason exceeds the maximum allowed length."
+  },
 
-  "ACCOUNT_TYPE_CHANGED_SUCCESS": "Account type changed successfully.",
-  "INVALID_ACCOUNT_TYPE": "Invalid account type.",
-  "ACCOUNT_TYPE_REQUIRED": "Account type is required.",
+  "ACCOUNT_TYPE_CHANGED_SUCCESS": {
+    "title": "Account Updated",
+    "description": "Your account type has been changed successfully."
+  },
+  "INVALID_ACCOUNT_TYPE": {
+    "title": "Invalid Account Type",
+    "description": "The selected account type is not valid."
+  },
+  "ACCOUNT_TYPE_REQUIRED": {
+    "title": "Account Type Required",
+    "description": "Please select an account type to continue."
+  },
 
-  "FIRST_NAME_SIZE_INVALID": "First name must be between 2 and 30 characters.",
-  "LAST_NAME_SIZE_INVALID": "Last name must be between 2 and 30 characters.",
-  "EMAIL_TOO_LONG": "Email address is too long.",
-  "PASSWORD_WEAK": "Password is too weak. Please use a stronger password.",
-  "EMAIL_OR_PHONE_INVALID_LENGTH": "Email or phone number length is invalid.",
-  "ROLE_NAME_REQUIRED": "Role name is required.",
-  "ROLE_NAME_SIZE_INVALID": "Role name must be between 2 and 50 characters.",
-  "CONTENT_REQUIRED": "Content is required.",
-  "CONTENT_TOO_LONG": "Content is too long.",
-  "REACTION_TYPE_REQUIRED": "Reaction type is required.",
-  "REASON_REQUIRED": "A reason is required.",
-  "DESCRIPTION_TOO_LONG": "Description is too long.",
-  "PUBLICATION_CONTENT_TOO_LONG": "Post content is too long.",
+  "FIRST_NAME_SIZE_INVALID": {
+    "title": "Invalid First Name",
+    "description": "First name must be between 2 and 50 characters."
+  },
+  "LAST_NAME_SIZE_INVALID": {
+    "title": "Invalid Last Name",
+    "description": "Last name must be between 2 and 50 characters."
+  },
+  "EMAIL_TOO_LONG": {
+    "title": "Email Too Long",
+    "description": "Email address exceeds the maximum allowed length."
+  },
+  "PASSWORD_WEAK": {
+    "title": "Weak Password",
+    "description": "Please choose a stronger password with mixed characters."
+  },
+  "EMAIL_OR_PHONE_INVALID_LENGTH": {
+    "title": "Invalid Length",
+    "description": "Email or phone number has an invalid length."
+  },
+  "ROLE_NAME_REQUIRED": {
+    "title": "Role Name Required",
+    "description": "Please provide a name for the role."
+  },
+  "ROLE_NAME_SIZE_INVALID": {
+    "title": "Invalid Role Name",
+    "description": "Role name must be between 2 and 50 characters."
+  },
+  "CONTENT_REQUIRED": {
+    "title": "Content Required",
+    "description": "Please provide content before submitting."
+  },
+  "CONTENT_TOO_LONG": {
+    "title": "Content Too Long",
+    "description": "Your content exceeds the maximum allowed length."
+  },
+  "REACTION_TYPE_REQUIRED": {
+    "title": "Reaction Required",
+    "description": "Please select a reaction type."
+  },
+  "REASON_REQUIRED": {
+    "title": "Reason Required",
+    "description": "Please provide a reason to continue."
+  },
+  "DESCRIPTION_TOO_LONG": {
+    "title": "Description Too Long",
+    "description": "Your description exceeds the maximum allowed length."
+  },
+  "PUBLICATION_CONTENT_TOO_LONG": {
+    "title": "Post Too Long",
+    "description": "Your publication exceeds the maximum character limit."
+  },
 
-  "FOLLOW_SUCCESS": "You are now following this user.",
-  "UNFOLLOW_SUCCESS": "You have unfollowed this user.",
-  "FOLLOW_REQUEST_ACCEPTED": "Follow request accepted.",
-  "FOLLOW_REQUEST_REJECTED": "Follow request rejected.",
-  "FOLLOW_ALREADY_EXISTS": "You are already following this user.",
-  "FOLLOW_NOT_FOUND": "Follow relationship not found.",
-  "FOLLOW_CANNOT_FOLLOW_YOURSELF": "You cannot follow yourself.",
-  "FOLLOW_REQUEST_NOT_FOUND": "Follow request not found.",
-  "FOLLOW_REQUEST_NOT_PENDING": "This follow request is no longer pending.",
-  "FOLLOW_ACCOUNT_NOT_PRIVATE": "This account is not private.",
+  "FOLLOW_SUCCESS": {
+    "title": "Following",
+    "description": "You are now following this user."
+  },
+  "UNFOLLOW_SUCCESS": {
+    "title": "Unfollowed",
+    "description": "You have unfollowed this user."
+  },
+  "FOLLOW_REQUEST_ACCEPTED": {
+    "title": "Request Accepted",
+    "description": "The follow request has been accepted."
+  },
+  "FOLLOW_REQUEST_REJECTED": {
+    "title": "Request Rejected",
+    "description": "The follow request has been declined."
+  },
+  "FOLLOW_ALREADY_EXISTS": {
+    "title": "Already Following",
+    "description": "You are already following this user."
+  },
+  "FOLLOW_NOT_FOUND": {
+    "title": "Follow Not Found",
+    "description": "The follow relationship could not be found."
+  },
+  "FOLLOW_CANNOT_FOLLOW_YOURSELF": {
+    "title": "Cannot Follow",
+    "description": "You cannot follow your own account."
+  },
+  "FOLLOW_REQUEST_NOT_FOUND": {
+    "title": "Request Not Found",
+    "description": "The follow request could not be found."
+  },
+  "FOLLOW_REQUEST_NOT_PENDING": {
+    "title": "Request Not Pending",
+    "description": "This follow request is no longer pending."
+  },
+  "FOLLOW_ACCOUNT_NOT_PRIVATE": {
+    "title": "Public Account",
+    "description": "This account is public. No follow request needed."
+  },
 
-  "NETWORK_ERROR": "Network error. Please check your connection.",
-  "UNKNOWN_ERROR": "Something went wrong. Please try again."
+  "NETWORK_ERROR": {
+    "title": "Connection Error",
+    "description": "Please check your internet connection and try again."
+  },
+  "UNKNOWN_ERROR": {
+    "title": "Unexpected Error",
+    "description": "Something went wrong. Please try again later."
+  }
 }

@@ -14,6 +14,7 @@ import { InputField } from "@/components/ui/input-field"
 import { Button } from "@/components/ui/button"
 import type { LoginFormData } from "@/lib/validations/auth"
 import { getLoginRules } from "@/lib/validations/auth"
+import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
 
 /** Backend OAuth2 authorization URL for Google */
 const GOOGLE_OAUTH2_URL =
@@ -30,6 +31,7 @@ function LoginPage() {
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<LoginFormData>({
     mode: "onChange",
@@ -40,6 +42,9 @@ function LoginPage() {
   })
 
   const rules = getLoginRules(v)
+
+  // Re-trigger validation after client-side language switch
+  useRetriggerOnLangChange(errors, trigger)
 
   // Prevent Chrome from auto-filling fields on page load.
   // Fields start readOnly; when the user clicks/focuses, readOnly is removed
@@ -148,7 +153,7 @@ function LoginPage() {
           <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-background px-4 text-muted-foreground">
+          <span className="bg-card px-4 text-muted-foreground">
             {t.orContinueWith}
           </span>
         </div>

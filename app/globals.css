@@ -6,6 +6,7 @@
 @import "../styles/scrollbar.css";
 @import "../styles/autofill.css";
 @import "../styles/phone-input.css";
+@import "../styles/toast.css";
 
 @custom-variant dark (&:is(.dark *));
 

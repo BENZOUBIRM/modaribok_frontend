@@ -127,7 +127,7 @@ export default function ActivityPanelMobile({
               exit={{ x: isRTL ? "-100%" : "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className={cn(
-                "fixed top-0 h-full w-80 bg-background border-border z-[70] flex flex-col",
+                "fixed top-0 h-full w-80 bg-card border-border z-[70] flex flex-col",
                 isRTL ? "left-0 border-r" : "right-0 border-l"
               )}
             >

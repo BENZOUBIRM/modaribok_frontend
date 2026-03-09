@@ -28,27 +28,36 @@ export function setToastDictionary(dict: any): void {
 
 /* ──────────────── Resolve Message ──────────────── */
 
+interface ApiMessageEntry {
+  title: string
+  description?: string
+}
+
 interface ResolvedMessage {
-  message: string
+  title: string
+  description?: string
   variant: ToastVariant
 }
 
 /**
- * Look up a backend code → i18n message + toast variant.
+ * Look up a backend code → i18n title + description + toast variant.
  *
  * Falls back to `apiMessages.UNKNOWN_ERROR` when the code
  * has no translation entry.
  */
 export function resolveApiMessage(code: string): ResolvedMessage {
   const config = getCodeConfig(code)
-  const messages = _dictionary?.apiMessages as Record<string, string> | undefined
+  const messages = _dictionary?.apiMessages as Record<string, ApiMessageEntry | string> | undefined
 
-  const message =
-    messages?.[code] ??
-    messages?.UNKNOWN_ERROR ??
-    "An unexpected error occurred."
+  const entry = messages?.[code] ?? messages?.UNKNOWN_ERROR
+  const fallback: ApiMessageEntry = { title: "An unexpected error occurred." }
 
-  return { message, variant: config.variant }
+  // Support both { title, description } objects and legacy flat strings
+  const resolved: ApiMessageEntry =
+    typeof entry === "string" ? { title: entry } :
+    entry ?? fallback
+
+  return { title: resolved.title, description: resolved.description, variant: config.variant }
 }
 
 /* ──────────────── Show Toast ──────────────── */
@@ -67,8 +76,8 @@ interface ShowToastOptions {
  * be called manually from any page/component.
  */
 export function showApiToast(code: string, options?: ShowToastOptions): void {
-  const { message, variant } = resolveApiMessage(code)
-  const text = options?.override ?? message
+  const { title, description, variant } = resolveApiMessage(code)
+  const text = options?.override ?? title
 
   const toastFn =
     variant === "success" ? toast.success :
@@ -78,6 +87,6 @@ export function showApiToast(code: string, options?: ShowToastOptions): void {
 
   toastFn(text, {
     id: code,
-    description: options?.description,
+    description: options?.description ?? description,
   })
 }

@@ -74,7 +74,11 @@ export default async function LangLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DictionaryProvider dictionary={dictionary} lang={locale}>
+          <DictionaryProvider
+            dictionary={dictionary}
+            lang={locale}
+            fontClasses={{ en: workSans.className, ar: neoSansArabic.className }}
+          >
             <AuthProvider>
               <AuthenticatedShell>
                 {children}

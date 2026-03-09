@@ -58,6 +58,28 @@
   left: 10px;
 }
 
+/* ── Fixed-end anchor — always right-aligned (ignores direction) ── */
+.bubbleFixedEnd {
+  right: -4px;
+  left: auto;
+}
+
+.bubbleFixedEnd::after {
+  right: 10px;
+  left: auto;
+}
+
+/* Override the direction-specific rules for fixed-end (same specificity, later = wins) */
+:global([dir="rtl"]) .bubbleFixedEnd {
+  right: -4px;
+  left: auto;
+}
+
+:global([dir="rtl"]) .bubbleFixedEnd::after {
+  right: 10px;
+  left: auto;
+}
+
 /* ── Error variant ── */
 .error {
   background-color: var(--destructive-light);

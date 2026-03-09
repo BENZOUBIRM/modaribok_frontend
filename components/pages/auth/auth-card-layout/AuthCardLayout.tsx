@@ -29,7 +29,7 @@ function AuthCardLayout({ children, formClassName }: AuthCardLayoutProps) {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-6 lg:p-10">
       <div
         className={cn(
-          "w-full max-w-5xl bg-background rounded-2xl shadow-lg border border-border",
+          "w-full max-w-5xl bg-card rounded-2xl shadow-lg border border-border",
           "dark:shadow-[0_10px_15px_-3px_rgb(255,255,255,0.05),0_4px_6px_-4px_rgb(255,255,255,0.05)]",
           "overflow-hidden flex flex-col lg:flex-row",
           "min-h-125 lg:min-h-150"
@@ -55,7 +55,7 @@ function AuthCardLayout({ children, formClassName }: AuthCardLayoutProps) {
         {/* Right Side — Form */}
         <div
           className={cn(
-            "flex-1 flex flex-col justify-center lg:w-1/2 bg-background",
+            "flex-1 flex flex-col justify-center lg:w-1/2 bg-card",
             formClassName
           )}
         >

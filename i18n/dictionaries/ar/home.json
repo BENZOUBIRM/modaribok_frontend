@@ -2,7 +2,8 @@
   "welcomeTitle": "مرحباً بك في مدربك",
   "welcomeSubtitle": "أنت الآن مسجل الدخول.",
   "tagline": "رحلتك الرياضية تبدأ هنا",
-  "logoutSuccess": "تم تسجيل الخروج بنجاح!",
+  "logoutSuccess": "تم تسجيل الخروج",
+  "logoutSuccessDescription": "تم تسجيل خروجك من حسابك.",
   "logoutError": "فشل تسجيل الخروج. يرجى المحاولة مرة أخرى.",
   "signupSuccess": "تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول."
 }

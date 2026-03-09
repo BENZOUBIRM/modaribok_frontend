@@ -42,17 +42,17 @@ export default function OAuth2CallbackPage() {
     // ── Error from backend ──
     if (status === "error" || (!token && errorMessage)) {
       const errorKey = errorMessage || "unknown"
-      const t = dictionary.auth.oauth2Errors
-      const message =
-        (t as Record<string, string>)[errorKey] ?? t.generic
-      toast.error(message)
+      const t = dictionary.auth.oauth2Errors as Record<string, { title: string; description?: string }>
+      const entry = t[errorKey] ?? t.generic
+      toast.error(entry.title, { description: entry.description })
       router.replace(`/${lang}/login`)
       return
     }
 
     // ── No token at all ──
     if (!token) {
-      toast.error(dictionary.auth.oauth2Errors.generic)
+      const generic = dictionary.auth.oauth2Errors.generic
+      toast.error(generic.title, { description: generic.description })
       router.replace(`/${lang}/login`)
       return
     }
@@ -72,7 +72,8 @@ export default function OAuth2CallbackPage() {
         router.replace(`/${lang}`)
       }
     } catch {
-      toast.error(dictionary.auth.oauth2Errors.generic)
+      const generic = dictionary.auth.oauth2Errors.generic
+      toast.error(generic.title, { description: generic.description })
       router.replace(`/${lang}/login`)
     }
   }, [searchParams, router, lang, loginWithOAuth2, dictionary])

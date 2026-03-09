@@ -1,142 +1,502 @@
 {
-  "ERROR_SYSTEM_000": "حدث خطأ غير متوقع في النظام. يرجى المحاولة لاحقاً.",
-  "SUCCESS": "تمت العملية بنجاح.",
-  "MALFORMED_JSONE_017": "بيانات الطلب غير صالحة. يرجى المحاولة مرة أخرى.",
+  "ERROR_SYSTEM_000": {
+    "title": "خطأ في النظام",
+    "description": "حدث خطأ داخلي. يرجى المحاولة لاحقاً."
+  },
+  "SUCCESS": {
+    "title": "تمت العملية",
+    "description": "تمت العملية بنجاح."
+  },
+  "MALFORMED_JSONE_017": {
+    "title": "طلب غير صالح",
+    "description": "بيانات الطلب غير صحيحة. يرجى التحقق والمحاولة مرة أخرى."
+  },
 
-  "AUTH_SUCCESS_000": "تم تسجيل الدخول بنجاح!",
-  "AUTH_USER_CREATED_003": "تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.",
-  "AUTH_USER_PROFILE_COMPLETED_006": "تم تحديث ملفك الشخصي بنجاح.",
-  "AUTH_LOGOUT_SUCCESS_013": "تم تسجيل الخروج بنجاح!",
+  "AUTH_SUCCESS_000": {
+    "title": "تم تسجيل الدخول",
+    "description": "مرحباً بعودتك! تم تسجيل دخولك بنجاح."
+  },
+  "AUTH_USER_CREATED_003": {
+    "title": "تم إنشاء الحساب",
+    "description": "تم إنشاء حسابك بنجاح. يرجى تسجيل الدخول."
+  },
+  "AUTH_USER_PROFILE_COMPLETED_006": {
+    "title": "اكتمل الملف الشخصي",
+    "description": "تم حفظ معلومات ملفك الشخصي بنجاح."
+  },
+  "AUTH_LOGOUT_SUCCESS_013": {
+    "title": "تم تسجيل الخروج",
+    "description": "تم تسجيل خروجك من حسابك."
+  },
 
-  "AUTH_PHONE_EXISTS_001": "رقم الهاتف مسجل بالفعل.",
-  "AUTH_EMAIL_EXISTS_002": "البريد الإلكتروني مسجل بالفعل.",
-  "AUTH_USER_NOT_FOUND_EMAIL_004": "لم يتم العثور على حساب بهذا البريد الإلكتروني.",
-  "AUTH_USER_NOT_FOUND_EMAIL_005": "لم يتم العثور على حساب بهذا الرقم.",
-  "AUTH_USER_NOT_FOUND_007": "لم يتم العثور على الحساب. يرجى التحقق من بياناتك.",
-  "AUTH_PASSWORD_INCORRECT_009": "كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+  "AUTH_PHONE_EXISTS_001": {
+    "title": "الهاتف مسجل مسبقاً",
+    "description": "يوجد حساب مرتبط بهذا الرقم بالفعل."
+  },
+  "AUTH_EMAIL_EXISTS_002": {
+    "title": "البريد مسجل مسبقاً",
+    "description": "يوجد حساب مرتبط بهذا البريد الإلكتروني بالفعل."
+  },
+  "AUTH_USER_NOT_FOUND_EMAIL_004": {
+    "title": "الحساب غير موجود",
+    "description": "لا يوجد حساب مرتبط بهذا البريد الإلكتروني."
+  },
+  "AUTH_USER_NOT_FOUND_EMAIL_005": {
+    "title": "الحساب غير موجود",
+    "description": "لا يوجد حساب مرتبط بهذا البريد الإلكتروني."
+  },
+  "AUTH_USER_NOT_FOUND_007": {
+    "title": "المستخدم غير موجود",
+    "description": "تعذر العثور على حساب المستخدم المطلوب."
+  },
+  "AUTH_PASSWORD_INCORRECT_009": {
+    "title": "كلمة مرور خاطئة",
+    "description": "كلمة المرور التي أدخلتها غير صحيحة. يرجى المحاولة مرة أخرى."
+  },
 
-  "AUTH_VALIDATION_ERROR_001": "يرجى التحقق من البيانات والمحاولة مرة أخرى.",
-  "AUTH_EMAIL_INVALID_002": "يرجى إدخال بريد إلكتروني صالح.",
-  "AUTH_PASSWORD_TOO_SHORT_003": "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
-  "AUTH_EMAIL_REQUIRED_004": "البريد الإلكتروني مطلوب.",
-  "AUTH_PHONE_REQUIRED_005": "رقم الهاتف مطلوب.",
-  "AUTH_PASSWORD_REQUIRED_006": "كلمة المرور مطلوبة.",
-  "AUTH_FIRST_NAME_REQUIRED_007": "الاسم الأول مطلوب.",
-  "AUTH_LAST_NAME_REQUIRED_008": "اسم العائلة مطلوب.",
-  "AUTH_EMAIL_OR_PHONE_PRVD_012": "يرجى تقديم بريد إلكتروني أو رقم هاتف.",
-  "AUTH_BIRTHDAY_MUST_PAST_015": "يجب أن يكون تاريخ الميلاد في الماضي.",
-  "AUTH_GENDER_INVALID_016": "يرجى اختيار جنس صالح.",
+  "AUTH_VALIDATION_ERROR_001": {
+    "title": "خطأ في التحقق",
+    "description": "يرجى التحقق من المدخلات وتصحيح الحقول المحددة."
+  },
+  "AUTH_EMAIL_INVALID_002": {
+    "title": "بريد إلكتروني غير صالح",
+    "description": "يرجى إدخال عنوان بريد إلكتروني صحيح."
+  },
+  "AUTH_PASSWORD_TOO_SHORT_003": {
+    "title": "كلمة المرور قصيرة",
+    "description": "يجب أن تكون كلمة المرور 8 أحرف على الأقل."
+  },
+  "AUTH_EMAIL_REQUIRED_004": {
+    "title": "البريد الإلكتروني مطلوب",
+    "description": "يرجى إدخال بريدك الإلكتروني للمتابعة."
+  },
+  "AUTH_PHONE_REQUIRED_005": {
+    "title": "رقم الهاتف مطلوب",
+    "description": "يرجى إدخال رقم هاتفك للمتابعة."
+  },
+  "AUTH_PASSWORD_REQUIRED_006": {
+    "title": "كلمة المرور مطلوبة",
+    "description": "يرجى إدخال كلمة المرور للمتابعة."
+  },
+  "AUTH_FIRST_NAME_REQUIRED_007": {
+    "title": "الاسم الأول مطلوب",
+    "description": "يرجى إدخال اسمك الأول."
+  },
+  "AUTH_LAST_NAME_REQUIRED_008": {
+    "title": "اسم العائلة مطلوب",
+    "description": "يرجى إدخال اسم عائلتك."
+  },
+  "AUTH_EMAIL_OR_PHONE_PRVD_012": {
+    "title": "معلومات التواصل مطلوبة",
+    "description": "يرجى تقديم بريد إلكتروني أو رقم هاتف."
+  },
+  "AUTH_BIRTHDAY_MUST_PAST_015": {
+    "title": "تاريخ ميلاد غير صالح",
+    "description": "يجب أن يكون تاريخ الميلاد في الماضي."
+  },
+  "AUTH_GENDER_INVALID_016": {
+    "title": "الجنس غير صالح",
+    "description": "يرجى اختيار خيار جنس صحيح."
+  },
 
-  "AUTH_TOKEN_INVALID_009": "جلستك غير صالحة. يرجى تسجيل الدخول مجدداً.",
-  "AUTH_TOKEN_EXPIRED_010": "انتهت صلاحية جلستك. يرجى تسجيل الدخول مجدداً.",
-  "AUTH_TOKEN_ERROR_011": "خطأ في المصادقة. يرجى تسجيل الدخول مجدداً.",
-  "AUTH_TOKEN_REQUIRED_018": "المصادقة مطلوبة. يرجى تسجيل الدخول.",
+  "AUTH_TOKEN_INVALID_009": {
+    "title": "رمز غير صالح",
+    "description": "رمز المصادقة غير صالح. يرجى تسجيل الدخول مرة أخرى."
+  },
+  "AUTH_TOKEN_EXPIRED_010": {
+    "title": "انتهت الجلسة",
+    "description": "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى."
+  },
+  "AUTH_TOKEN_ERROR_011": {
+    "title": "خطأ في المصادقة",
+    "description": "حدثت مشكلة في المصادقة. يرجى تسجيل الدخول مرة أخرى."
+  },
+  "AUTH_TOKEN_REQUIRED_018": {
+    "title": "تسجيل الدخول مطلوب",
+    "description": "يجب تسجيل الدخول للوصول إلى هذه الميزة."
+  },
 
-  "AUTH_FORGOT_PASSWORD_SUCCESS_EMAIL_026": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
-  "AUTH_FORGOT_PASSWORD_SUCCESS_WHATSAPP_027": "تم إرسال رمز إعادة تعيين كلمة المرور عبر واتساب.",
-  "AUTH_EMAIL_SEND_FAILED_028": "فشل إرسال البريد الإلكتروني. يرجى المحاولة لاحقاً.",
-  "AUTH_WHATSAPP_SEND_FAILED_029": "فشل إرسال رسالة واتساب. يرجى المحاولة لاحقاً.",
-  "AUTH_RESET_PASSWORD_SUCCESS_030": "تم إعادة تعيين كلمة المرور بنجاح! يرجى تسجيل الدخول بكلمة المرور الجديدة.",
-  "AUTH_RESET_TOKEN_INVALID_031": "رابط إعادة التعيين غير صالح. يرجى طلب رابط جديد.",
-  "AUTH_RESET_TOKEN_EXPIRED_032": "انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.",
-  "AUTH_PASSWORD_MISMATCH_033": "كلمتا المرور غير متطابقتين.",
-  "AUTH_RESET_TOKEN_BLACKLISTED_034": "تم استخدام رابط إعادة التعيين هذا بالفعل. يرجى طلب رابط جديد.",
+  "AUTH_FORGOT_PASSWORD_SUCCESS_EMAIL_026": {
+    "title": "تم إرسال البريد",
+    "description": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك."
+  },
+  "AUTH_FORGOT_PASSWORD_SUCCESS_WHATSAPP_027": {
+    "title": "تم إرسال الرمز",
+    "description": "تم إرسال رمز إعادة التعيين عبر واتساب."
+  },
+  "AUTH_EMAIL_SEND_FAILED_028": {
+    "title": "فشل إرسال البريد",
+    "description": "تعذر إرسال البريد الإلكتروني. يرجى المحاولة لاحقاً."
+  },
+  "AUTH_WHATSAPP_SEND_FAILED_029": {
+    "title": "فشل إرسال واتساب",
+    "description": "تعذر إرسال رسالة واتساب. يرجى المحاولة لاحقاً."
+  },
+  "AUTH_RESET_PASSWORD_SUCCESS_030": {
+    "title": "تم تغيير كلمة المرور",
+    "description": "تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول."
+  },
+  "AUTH_RESET_TOKEN_INVALID_031": {
+    "title": "رابط غير صالح",
+    "description": "رابط إعادة التعيين غير صالح. يرجى طلب رابط جديد."
+  },
+  "AUTH_RESET_TOKEN_EXPIRED_032": {
+    "title": "انتهت صلاحية الرابط",
+    "description": "انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد."
+  },
+  "AUTH_PASSWORD_MISMATCH_033": {
+    "title": "كلمتا المرور غير متطابقتين",
+    "description": "كلمتا المرور المدخلتان غير متطابقتين. يرجى المحاولة مرة أخرى."
+  },
+  "AUTH_RESET_TOKEN_BLACKLISTED_034": {
+    "title": "الرابط مستخدم مسبقاً",
+    "description": "تم استخدام رابط إعادة التعيين بالفعل. يرجى طلب رابط جديد."
+  },
 
-  "OAUTH2_SUCCESS_019": "تم تسجيل الدخول بحساب Google بنجاح!",
-  "OAUTH2_USER_CREATED_020": "تم إنشاء الحساب بواسطة Google بنجاح!",
-  "OAUTH2_USER_UPDATED_021": "تم تحديث معلومات حساب Google.",
-  "OAUTH2_AUTHENTICATION_FAILED_022": "فشلت مصادقة Google. يرجى المحاولة مرة أخرى.",
-  "OAUTH2_EMAIL_CONFLICT_023": "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
-  "OAUTH2_PROVIDER_NOT_SUPPORTED_024": "مزود تسجيل الدخول هذا غير مدعوم.",
-  "OAUTH2_USER_INFO_MISSING_025": "تعذر الحصول على معلومات حسابك. يرجى المحاولة مرة أخرى.",
+  "OAUTH2_SUCCESS_019": {
+    "title": "تم تسجيل الدخول",
+    "description": "تم تسجيل دخولك بحساب Google الخاص بك."
+  },
+  "OAUTH2_USER_CREATED_020": {
+    "title": "تم إنشاء الحساب",
+    "description": "تم إنشاء حسابك باستخدام ملفك الشخصي على Google."
+  },
+  "OAUTH2_USER_UPDATED_021": {
+    "title": "تم تحديث الملف",
+    "description": "تم تحديث ملفك الشخصي بمعلومات Google."
+  },
+  "OAUTH2_AUTHENTICATION_FAILED_022": {
+    "title": "فشلت المصادقة",
+    "description": "فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى."
+  },
+  "OAUTH2_EMAIL_CONFLICT_023": {
+    "title": "تعارض في البريد",
+    "description": "يوجد حساب بهذا البريد مسجل بطريقة دخول مختلفة."
+  },
+  "OAUTH2_PROVIDER_NOT_SUPPORTED_024": {
+    "title": "مزود غير مدعوم",
+    "description": "مزود تسجيل الدخول هذا غير مدعوم حالياً."
+  },
+  "OAUTH2_USER_INFO_MISSING_025": {
+    "title": "معلومات ناقصة",
+    "description": "تعذر الحصول على معلومات حسابك من المزود."
+  },
 
-  "ROLE_CREATED_010": "تم إنشاء الدور بنجاح.",
-  "ROLE_DELETED_011": "تم حذف الدور بنجاح.",
-  "ROLE_UPDATED_012": "تم تحديث الدور بنجاح.",
-  "ROLE_EXISTE_013": "هذا الدور موجود بالفعل.",
-  "ROLE_NOT_FOUND_014": "الدور غير موجود.",
-  "ROLE_NAME_ALREADY_EXISTE_015": "يوجد دور بهذا الاسم بالفعل.",
+  "ROLE_CREATED_010": {
+    "title": "تم إنشاء الدور",
+    "description": "تم إنشاء الدور الجديد بنجاح."
+  },
+  "ROLE_DELETED_011": {
+    "title": "تم حذف الدور",
+    "description": "تم حذف الدور نهائياً."
+  },
+  "ROLE_UPDATED_012": {
+    "title": "تم تحديث الدور",
+    "description": "تم تحديث الدور بنجاح."
+  },
+  "ROLE_EXISTE_013": {
+    "title": "الدور موجود",
+    "description": "يوجد دور بهذا التكوين بالفعل."
+  },
+  "ROLE_NOT_FOUND_014": {
+    "title": "الدور غير موجود",
+    "description": "تعذر العثور على الدور المطلوب."
+  },
+  "ROLE_NAME_ALREADY_EXISTE_015": {
+    "title": "الاسم مستخدم",
+    "description": "يوجد دور بهذا الاسم بالفعل. يرجى اختيار اسم آخر."
+  },
 
-  "SPORT_NAME_REQUIRED_001": "اسم الرياضة مطلوب.",
-  "SPORT_ALREADY_EXISTE_002": "هذه الرياضة موجودة بالفعل.",
-  "SPORT_CREATED_003": "تم إنشاء الرياضة بنجاح.",
-  "SPORT_NAME_NOT_EXISTE_004": "الرياضة غير موجودة.",
-  "SPORT_NOT_FOUND_BY_ID_005": "الرياضة غير موجودة.",
-  "SPORT_UPDATED_006": "تم تحديث الرياضة بنجاح.",
-  "SPORT_DELETED_007": "تم حذف الرياضة بنجاح.",
+  "SPORT_NAME_REQUIRED_001": {
+    "title": "الاسم مطلوب",
+    "description": "يرجى إدخال اسم للرياضة."
+  },
+  "SPORT_ALREADY_EXISTE_002": {
+    "title": "الرياضة موجودة",
+    "description": "توجد رياضة بهذا الاسم بالفعل."
+  },
+  "SPORT_CREATED_003": {
+    "title": "تم إنشاء الرياضة",
+    "description": "تمت إضافة الرياضة الجديدة بنجاح."
+  },
+  "SPORT_NAME_NOT_EXISTE_004": {
+    "title": "الرياضة غير موجودة",
+    "description": "لم يتم العثور على رياضة بهذا الاسم."
+  },
+  "SPORT_NOT_FOUND_BY_ID_005": {
+    "title": "الرياضة غير موجودة",
+    "description": "تعذر العثور على الرياضة المطلوبة."
+  },
+  "SPORT_UPDATED_006": {
+    "title": "تم تحديث الرياضة",
+    "description": "تم تحديث الرياضة بنجاح."
+  },
+  "SPORT_DELETED_007": {
+    "title": "تم حذف الرياضة",
+    "description": "تم حذف الرياضة نهائياً."
+  },
 
-  "CERTIFICAT_NAME_REQUIRED_001": "اسم الشهادة مطلوب.",
-  "CERTIFICAT_CREATED_003": "تم إنشاء الشهادة بنجاح.",
-  "CERTIFICAT_NOT_FOUND_BY_ID_005": "الشهادة غير موجودة.",
-  "CERTIFICAT_UPDATED_006": "تم تحديث الشهادة بنجاح.",
-  "CERTIFICAT_DELETED_007": "تم حذف الشهادة بنجاح.",
+  "CERTIFICAT_NAME_REQUIRED_001": {
+    "title": "الاسم مطلوب",
+    "description": "يرجى إدخال اسم للشهادة."
+  },
+  "CERTIFICAT_CREATED_003": {
+    "title": "تم إنشاء الشهادة",
+    "description": "تمت إضافة الشهادة الجديدة بنجاح."
+  },
+  "CERTIFICAT_NOT_FOUND_BY_ID_005": {
+    "title": "الشهادة غير موجودة",
+    "description": "تعذر العثور على الشهادة المطلوبة."
+  },
+  "CERTIFICAT_UPDATED_006": {
+    "title": "تم تحديث الشهادة",
+    "description": "تم تحديث الشهادة بنجاح."
+  },
+  "CERTIFICAT_DELETED_007": {
+    "title": "تم حذف الشهادة",
+    "description": "تم حذف الشهادة نهائياً."
+  },
 
-  "FILE_STORAGE_ERROR_001": "خطأ في تخزين الملف. يرجى المحاولة مرة أخرى.",
-  "FILE_NOT_FOUND_002": "الملف غير موجود.",
-  "FILE_EMPTY_003": "الملف المرفوع فارغ.",
-  "FILE_TOO_LARGE_004": "الملف كبير جداً. يرجى رفع ملف أصغر.",
-  "FILE_TYPE_NOT_ALLOWED_005": "نوع الملف غير مسموح به.",
-  "FILE_NOT_FOUND_001": "الملف غير موجود.",
+  "FILE_STORAGE_ERROR_001": {
+    "title": "خطأ في التخزين",
+    "description": "حدثت مشكلة في حفظ ملفك. يرجى المحاولة مرة أخرى."
+  },
+  "FILE_NOT_FOUND_002": {
+    "title": "الملف غير موجود",
+    "description": "تعذر العثور على الملف المطلوب."
+  },
+  "FILE_EMPTY_003": {
+    "title": "ملف فارغ",
+    "description": "الملف المرفوع فارغ. يرجى اختيار ملف صالح."
+  },
+  "FILE_TOO_LARGE_004": {
+    "title": "الملف كبير جداً",
+    "description": "حجم الملف يتجاوز الحد الأقصى المسموح به."
+  },
+  "FILE_TYPE_NOT_ALLOWED_005": {
+    "title": "نوع الملف غير مسموح",
+    "description": "نوع الملف هذا غير مدعوم. يرجى رفع صيغة مختلفة."
+  },
+  "FILE_NOT_FOUND_001": {
+    "title": "الملف غير موجود",
+    "description": "تعذر تحديد موقع الملف المطلوب."
+  },
 
-  "PUBLICATION_CREATED_001": "تم نشر المنشور بنجاح!",
-  "PUBLICATION_CONTENT_OR_MEDIA_REQUIRED_002": "يرجى إضافة نص أو وسائط إلى منشورك.",
-  "PUBLICATION_MAX_MEDIA_EXCEEDED_003": "تم تجاوز الحد الأقصى لعدد ملفات الوسائط.",
-  "PUBLICATION_NOT_FOUND_004": "المنشور غير موجود.",
-  "PUBLICATION_SHARED_NOT_FOUND_005": "المنشور المُشارك غير موجود.",
-  "PUBLICATION_DELETED_007": "تم حذف المنشور بنجاح.",
-  "PUBLICATION_INVALID_VISIBILITY_010": "إعداد الخصوصية غير صالح.",
-  "PUBLICATION_UPDATED_SUCCESS": "تم تحديث المنشور بنجاح.",
-  "PUBLICATION_UNAUTHORIZED_009": "ليس لديك صلاحية لتعديل هذا المنشور.",
+  "PUBLICATION_CREATED_001": {
+    "title": "تم نشر المنشور",
+    "description": "تمت مشاركة منشورك بنجاح."
+  },
+  "PUBLICATION_CONTENT_OR_MEDIA_REQUIRED_002": {
+    "title": "المحتوى مطلوب",
+    "description": "يرجى إضافة نص أو وسائط إلى منشورك."
+  },
+  "PUBLICATION_MAX_MEDIA_EXCEEDED_003": {
+    "title": "ملفات كثيرة",
+    "description": "لقد تجاوزت الحد الأقصى لعدد المرفقات."
+  },
+  "PUBLICATION_NOT_FOUND_004": {
+    "title": "المنشور غير موجود",
+    "description": "هذا المنشور لم يعد متاحاً."
+  },
+  "PUBLICATION_SHARED_NOT_FOUND_005": {
+    "title": "المنشور المشارك غير موجود",
+    "description": "تعذر العثور على المنشور المشارك."
+  },
+  "PUBLICATION_DELETED_007": {
+    "title": "تم حذف المنشور",
+    "description": "تم حذف منشورك نهائياً."
+  },
+  "PUBLICATION_INVALID_VISIBILITY_010": {
+    "title": "خيار ظهور غير صالح",
+    "description": "يرجى اختيار خيار ظهور صحيح لمنشورك."
+  },
+  "PUBLICATION_UPDATED_SUCCESS": {
+    "title": "تم تحديث المنشور",
+    "description": "تم تحديث منشورك بنجاح."
+  },
+  "PUBLICATION_UNAUTHORIZED_009": {
+    "title": "غير مصرح",
+    "description": "ليس لديك صلاحية تعديل هذا المنشور."
+  },
 
-  "REACTION_TOGGLED_SUCCESS": "تم تحديث التفاعل.",
-  "REACTION_INVALID_TYPE_001": "نوع التفاعل غير صالح.",
+  "REACTION_TOGGLED_SUCCESS": {
+    "title": "تم تحديث التفاعل",
+    "description": "تم تسجيل تفاعلك."
+  },
+  "REACTION_INVALID_TYPE_001": {
+    "title": "تفاعل غير صالح",
+    "description": "نوع التفاعل المحدد غير صالح."
+  },
 
-  "INVALID_ENTITY_TYPE_002": "نوع الكيان غير صالح.",
+  "INVALID_ENTITY_TYPE_002": {
+    "title": "كيان غير صالح",
+    "description": "نوع الكيان المحدد غير معروف."
+  },
 
-  "COMMENT_CREATED_SUCCESS": "تم نشر التعليق.",
-  "COMMENT_DELETED_SUCCESS": "تم حذف التعليق.",
-  "COMMENT_NOT_FOUND_001": "التعليق غير موجود.",
-  "COMMENT_CONTENT_REQUIRED_002": "لا يمكن أن يكون التعليق فارغاً.",
-  "COMMENT_PARENT_MISMATCH_003": "الرد لا ينتمي لهذا المنشور.",
-  "COMMENT_UNAUTHORIZED_004": "ليس لديك صلاحية لتعديل هذا التعليق.",
+  "COMMENT_CREATED_SUCCESS": {
+    "title": "تمت إضافة التعليق",
+    "description": "تم نشر تعليقك."
+  },
+  "COMMENT_DELETED_SUCCESS": {
+    "title": "تم حذف التعليق",
+    "description": "تم حذف تعليقك."
+  },
+  "COMMENT_NOT_FOUND_001": {
+    "title": "التعليق غير موجود",
+    "description": "هذا التعليق لم يعد متاحاً."
+  },
+  "COMMENT_CONTENT_REQUIRED_002": {
+    "title": "التعليق فارغ",
+    "description": "يرجى كتابة شيء قبل نشر تعليقك."
+  },
+  "COMMENT_PARENT_MISMATCH_003": {
+    "title": "خطأ في الرد",
+    "description": "تعذر ربط الرد بالتعليق الأصلي."
+  },
+  "COMMENT_UNAUTHORIZED_004": {
+    "title": "غير مصرح",
+    "description": "ليس لديك صلاحية تعديل هذا التعليق."
+  },
 
-  "PUBLICATION_REPORTED_SUCCESS": "تم الإبلاغ عن المنشور بنجاح. شكراً لك.",
-  "PUBLICATION_ALREADY_REPORTED_001": "لقد أبلغت عن هذا المنشور بالفعل.",
+  "PUBLICATION_REPORTED_SUCCESS": {
+    "title": "تم تقديم البلاغ",
+    "description": "شكراً للإبلاغ. سنراجع هذا المحتوى."
+  },
+  "PUBLICATION_ALREADY_REPORTED_001": {
+    "title": "تم الإبلاغ مسبقاً",
+    "description": "لقد أبلغت عن هذا المنشور بالفعل."
+  },
 
-  "PUBLICATION_HIDDEN_SUCCESS": "تم إخفاء المنشور من خلاصتك.",
-  "PUBLICATION_RESTORED_SUCCESS": "تم استعادة المنشور في خلاصتك.",
-  "HIDE_REASON_REQUIRED_001": "يرجى تقديم سبب لإخفاء هذا المنشور.",
-  "HIDE_REASON_TOO_LONG": "سبب الإخفاء طويل جداً.",
+  "PUBLICATION_HIDDEN_SUCCESS": {
+    "title": "تم إخفاء المنشور",
+    "description": "تم إخفاء هذا المنشور من خلاصتك."
+  },
+  "PUBLICATION_RESTORED_SUCCESS": {
+    "title": "تم استعادة المنشور",
+    "description": "تم استعادة هذا المنشور إلى خلاصتك."
+  },
+  "HIDE_REASON_REQUIRED_001": {
+    "title": "السبب مطلوب",
+    "description": "يرجى تقديم سبب لإخفاء هذا المنشور."
+  },
+  "HIDE_REASON_TOO_LONG": {
+    "title": "السبب طويل جداً",
+    "description": "سبب الإخفاء يتجاوز الطول الأقصى المسموح."
+  },
 
-  "ACCOUNT_TYPE_CHANGED_SUCCESS": "تم تغيير نوع الحساب بنجاح.",
-  "INVALID_ACCOUNT_TYPE": "نوع الحساب غير صالح.",
-  "ACCOUNT_TYPE_REQUIRED": "نوع الحساب مطلوب.",
+  "ACCOUNT_TYPE_CHANGED_SUCCESS": {
+    "title": "تم تحديث الحساب",
+    "description": "تم تغيير نوع حسابك بنجاح."
+  },
+  "INVALID_ACCOUNT_TYPE": {
+    "title": "نوع حساب غير صالح",
+    "description": "نوع الحساب المحدد غير صالح."
+  },
+  "ACCOUNT_TYPE_REQUIRED": {
+    "title": "نوع الحساب مطلوب",
+    "description": "يرجى اختيار نوع حساب للمتابعة."
+  },
 
-  "FIRST_NAME_SIZE_INVALID": "يجب أن يكون الاسم الأول بين 2 و 30 حرفاً.",
-  "LAST_NAME_SIZE_INVALID": "يجب أن يكون اسم العائلة بين 2 و 30 حرفاً.",
-  "EMAIL_TOO_LONG": "البريد الإلكتروني طويل جداً.",
-  "PASSWORD_WEAK": "كلمة المرور ضعيفة جداً. يرجى استخدام كلمة مرور أقوى.",
-  "EMAIL_OR_PHONE_INVALID_LENGTH": "طول البريد الإلكتروني أو رقم الهاتف غير صالح.",
-  "ROLE_NAME_REQUIRED": "اسم الدور مطلوب.",
-  "ROLE_NAME_SIZE_INVALID": "يجب أن يكون اسم الدور بين 2 و 50 حرفاً.",
-  "CONTENT_REQUIRED": "المحتوى مطلوب.",
-  "CONTENT_TOO_LONG": "المحتوى طويل جداً.",
-  "REACTION_TYPE_REQUIRED": "نوع التفاعل مطلوب.",
-  "REASON_REQUIRED": "السبب مطلوب.",
-  "DESCRIPTION_TOO_LONG": "الوصف طويل جداً.",
-  "PUBLICATION_CONTENT_TOO_LONG": "محتوى المنشور طويل جداً.",
+  "FIRST_NAME_SIZE_INVALID": {
+    "title": "الاسم الأول غير صالح",
+    "description": "يجب أن يكون الاسم الأول بين 2 و 50 حرفاً."
+  },
+  "LAST_NAME_SIZE_INVALID": {
+    "title": "اسم العائلة غير صالح",
+    "description": "يجب أن يكون اسم العائلة بين 2 و 50 حرفاً."
+  },
+  "EMAIL_TOO_LONG": {
+    "title": "البريد طويل جداً",
+    "description": "عنوان البريد الإلكتروني يتجاوز الطول الأقصى المسموح."
+  },
+  "PASSWORD_WEAK": {
+    "title": "كلمة مرور ضعيفة",
+    "description": "يرجى اختيار كلمة مرور أقوى بأحرف متنوعة."
+  },
+  "EMAIL_OR_PHONE_INVALID_LENGTH": {
+    "title": "طول غير صالح",
+    "description": "البريد الإلكتروني أو رقم الهاتف بطول غير صالح."
+  },
+  "ROLE_NAME_REQUIRED": {
+    "title": "اسم الدور مطلوب",
+    "description": "يرجى إدخال اسم للدور."
+  },
+  "ROLE_NAME_SIZE_INVALID": {
+    "title": "اسم الدور غير صالح",
+    "description": "يجب أن يكون اسم الدور بين 2 و 50 حرفاً."
+  },
+  "CONTENT_REQUIRED": {
+    "title": "المحتوى مطلوب",
+    "description": "يرجى إدخال محتوى قبل الإرسال."
+  },
+  "CONTENT_TOO_LONG": {
+    "title": "المحتوى طويل جداً",
+    "description": "المحتوى يتجاوز الطول الأقصى المسموح."
+  },
+  "REACTION_TYPE_REQUIRED": {
+    "title": "التفاعل مطلوب",
+    "description": "يرجى اختيار نوع تفاعل."
+  },
+  "REASON_REQUIRED": {
+    "title": "السبب مطلوب",
+    "description": "يرجى تقديم سبب للمتابعة."
+  },
+  "DESCRIPTION_TOO_LONG": {
+    "title": "الوصف طويل جداً",
+    "description": "الوصف يتجاوز الطول الأقصى المسموح."
+  },
+  "PUBLICATION_CONTENT_TOO_LONG": {
+    "title": "المنشور طويل جداً",
+    "description": "منشورك يتجاوز الحد الأقصى لعدد الأحرف."
+  },
 
-  "FOLLOW_SUCCESS": "أنت الآن تتابع هذا المستخدم.",
-  "UNFOLLOW_SUCCESS": "تم إلغاء متابعة هذا المستخدم.",
-  "FOLLOW_REQUEST_ACCEPTED": "تم قبول طلب المتابعة.",
-  "FOLLOW_REQUEST_REJECTED": "تم رفض طلب المتابعة.",
-  "FOLLOW_ALREADY_EXISTS": "أنت تتابع هذا المستخدم بالفعل.",
-  "FOLLOW_NOT_FOUND": "علاقة المتابعة غير موجودة.",
-  "FOLLOW_CANNOT_FOLLOW_YOURSELF": "لا يمكنك متابعة نفسك.",
-  "FOLLOW_REQUEST_NOT_FOUND": "طلب المتابعة غير موجود.",
-  "FOLLOW_REQUEST_NOT_PENDING": "طلب المتابعة هذا لم يعد معلقاً.",
-  "FOLLOW_ACCOUNT_NOT_PRIVATE": "هذا الحساب ليس خاصاً.",
+  "FOLLOW_SUCCESS": {
+    "title": "تمت المتابعة",
+    "description": "أنت الآن تتابع هذا المستخدم."
+  },
+  "UNFOLLOW_SUCCESS": {
+    "title": "تم إلغاء المتابعة",
+    "description": "لقد ألغيت متابعة هذا المستخدم."
+  },
+  "FOLLOW_REQUEST_ACCEPTED": {
+    "title": "تم قبول الطلب",
+    "description": "تم قبول طلب المتابعة."
+  },
+  "FOLLOW_REQUEST_REJECTED": {
+    "title": "تم رفض الطلب",
+    "description": "تم رفض طلب المتابعة."
+  },
+  "FOLLOW_ALREADY_EXISTS": {
+    "title": "متابع بالفعل",
+    "description": "أنت تتابع هذا المستخدم بالفعل."
+  },
+  "FOLLOW_NOT_FOUND": {
+    "title": "المتابعة غير موجودة",
+    "description": "تعذر العثور على علاقة المتابعة."
+  },
+  "FOLLOW_CANNOT_FOLLOW_YOURSELF": {
+    "title": "لا يمكن المتابعة",
+    "description": "لا يمكنك متابعة حسابك الخاص."
+  },
+  "FOLLOW_REQUEST_NOT_FOUND": {
+    "title": "الطلب غير موجود",
+    "description": "تعذر العثور على طلب المتابعة."
+  },
+  "FOLLOW_REQUEST_NOT_PENDING": {
+    "title": "الطلب ليس معلقاً",
+    "description": "طلب المتابعة هذا لم يعد معلقاً."
+  },
+  "FOLLOW_ACCOUNT_NOT_PRIVATE": {
+    "title": "حساب عام",
+    "description": "هذا الحساب عام. لا حاجة لطلب متابعة."
+  },
 
-  "NETWORK_ERROR": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
-  "UNKNOWN_ERROR": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  "NETWORK_ERROR": {
+    "title": "خطأ في الاتصال",
+    "description": "يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."
+  },
+  "UNKNOWN_ERROR": {
+    "title": "خطأ غير متوقع",
+    "description": "حدث خطأ ما. يرجى المحاولة لاحقاً."
+  }
 }

@@ -3,14 +3,14 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Icon } from "@iconify/react"
 
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
-import { localeNames, type Locale } from "@/i18n/settings"
+import { localeNames } from "@/i18n/settings"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -32,35 +32,28 @@ export function Navbar({
   sidebarExpanded?: boolean
   onLogout?: () => void
 }) {
-  const { dictionary, lang, isRTL } = useDictionary()
+  const { dictionary, lang, isRTL, switchLocale } = useDictionary()
   const { isAuthenticated } = useAuth()
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
-  const router = useRouter()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Switch language by replacing the locale segment in the URL
-  const switchLocale = (newLocale: Locale) => {
-    const segments = pathname.split("/")
-    segments[1] = newLocale
-    const newPath = segments.join("/") || `/${newLocale}`
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`
-    router.push(newPath)
-  }
+  // Strip locale prefix for active-link detection (pathname may be stale after client-side locale switch)
+  const bare = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/"
 
   // Guest-only nav links — split into page links and auth links with a divider
   const pageLinks = [
-    { href: `/${lang}`, label: dictionary.navbar.home },
-    { href: `/${lang}/about`, label: dictionary.navbar.aboutUs },
-    { href: `/${lang}/contact`, label: dictionary.navbar.contactUs },
+    { href: `/${lang}`, path: "/", label: dictionary.navbar.home },
+    { href: `/${lang}/about`, path: "/about", label: dictionary.navbar.aboutUs },
+    { href: `/${lang}/contact`, path: "/contact", label: dictionary.navbar.contactUs },
   ]
   const authLinks = [
-    { href: `/${lang}/login`, label: dictionary.navbar.login },
-    { href: `/${lang}/signup`, label: dictionary.navbar.signup },
+    { href: `/${lang}/login`, path: "/login", label: dictionary.navbar.login },
+    { href: `/${lang}/signup`, path: "/signup", label: dictionary.navbar.signup },
   ]
 
   return (
@@ -149,7 +142,7 @@ export function Navbar({
         {!isAuthenticated && (
           <div className="hidden sm:flex items-center gap-1">
             {pageLinks.map((link) => {
-              const isActive = pathname === link.href
+              const isActive = link.path === "/" ? bare === "/" : bare === link.path
               return (
                 <Link
                   key={link.href}
@@ -168,7 +161,7 @@ export function Navbar({
             {/* Divider between page links and auth links */}
             <div className="w-px h-6 bg-border mx-1" />
             {authLinks.map((link) => {
-              const isActive = pathname === link.href
+              const isActive = bare === link.path
               return (
                 <Link
                   key={link.href}

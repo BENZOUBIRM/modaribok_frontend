@@ -1,0 +1,15 @@
+{
+  "notFound": {
+    "title": "Page Not Found",
+    "heading": "404",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "backHome": "Back to Homepage"
+  },
+  "serverError": {
+    "title": "Something Went Wrong",
+    "heading": "500",
+    "description": "An unexpected error occurred. Please try again.",
+    "retry": "Try Again",
+    "backHome": "Back to Homepage"
+  }
+}

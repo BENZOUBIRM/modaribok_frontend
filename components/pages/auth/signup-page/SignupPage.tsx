@@ -21,6 +21,7 @@ import {
   isPasswordValid,
 } from "@/lib/validations/auth"
 import { removeDialCode } from "react-international-phone"
+import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
 
 /** Backend OAuth2 authorization URL for Google */
 const GOOGLE_OAUTH2_URL =
@@ -53,6 +54,7 @@ function SignupPage() {
     handleSubmit,
     control,
     watch,
+    trigger,
     formState: { errors, isSubmitting, isSubmitted, dirtyFields },
   } = useForm<SignupFormData>({
     mode: "onChange",
@@ -67,6 +69,9 @@ function SignupPage() {
   })
 
   const rules = getSignupRules(v)
+
+  // Re-trigger validation after client-side language switch
+  useRetriggerOnLangChange(errors, trigger)
 
   // Track dial code for phone validation (updated by PhoneInputField callback)
   const dialCodeRef = React.useRef("212")
@@ -275,7 +280,7 @@ function SignupPage() {
           <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-4 text-muted-foreground">
+          <span className="bg-card px-4 text-muted-foreground">
             {t.orContinueWith}
           </span>
         </div>

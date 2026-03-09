@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { forgotPassword } from "@/services/api/auth.service"
 import type { ForgotPasswordFormData } from "@/lib/validations/auth"
 import { getForgotPasswordRules } from "@/lib/validations/auth"
+import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
 import type { ForgotPasswordData } from "@/types/auth"
 
 function ForgotPasswordPage() {
@@ -24,6 +25,7 @@ function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<ForgotPasswordFormData>({
     mode: "onChange",
@@ -31,6 +33,9 @@ function ForgotPasswordPage() {
   })
 
   const rules = getForgotPasswordRules(v)
+
+  // Re-trigger validation after client-side language switch
+  useRetriggerOnLangChange(errors, trigger)
 
   // Chrome autofill prevention (same pattern as LoginPage)
   const [readOnly, setReadOnly] = React.useState(true)
