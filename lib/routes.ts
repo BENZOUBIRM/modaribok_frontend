@@ -84,7 +84,7 @@ export const ROUTES = {
 } as const
 
 export const DEFAULT_ROUTES = {
-  AFTER_LOGIN: DASHBOARD_ROUTES.HOME,
+  AFTER_LOGIN: (lang: string) => `/${lang}`,
   AFTER_LOGOUT: AUTH_ROUTES.LOGIN,
 } as const
 

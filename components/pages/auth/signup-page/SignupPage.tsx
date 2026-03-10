@@ -1,8 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
@@ -14,6 +12,7 @@ import { ImageUploadField } from "@/components/ui/image-upload-field"
 import { PasswordRequirements } from "@/components/ui/password-requirements"
 import { Callout } from "@/components/ui/callout"
 import { Button } from "@/components/ui/button"
+import { NavLink } from "@/components/ui/nav-link"
 import type { SignupFormData } from "@/lib/validations/auth"
 import {
   getSignupRules,
@@ -22,6 +21,7 @@ import {
 } from "@/lib/validations/auth"
 import { removeDialCode } from "react-international-phone"
 import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
+import { useNavRouter } from "@/hooks/use-nav-router"
 
 /** Backend OAuth2 authorization URL for Google */
 const GOOGLE_OAUTH2_URL =
@@ -45,7 +45,7 @@ function SignupPage() {
   const [signupSuccess, setSignupSuccess] = React.useState(false)
   const { dictionary, lang } = useDictionary()
   const { signup } = useAuth()
-  const router = useRouter()
+  const router = useNavRouter()
   const t = dictionary.auth.signup
   const v = dictionary.auth.validation
 
@@ -305,12 +305,12 @@ function SignupPage() {
       {/* Login Link */}
       <p className="text-center text-xs text-muted-foreground">
         {t.haveAccount}{" "}
-        <Link
+        <NavLink
           href={`/${lang}/login`}
           className="text-primary hover:underline font-medium"
         >
           {t.loginLink}
-        </Link>
+        </NavLink>
       </p>
     </AuthCardLayout>
   )

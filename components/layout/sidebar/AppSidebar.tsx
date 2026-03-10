@@ -1,10 +1,11 @@
 "use client"
 
-import Link from "next/link"
+import { NavLink } from "@/components/ui/nav-link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { useAuth } from "@/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
@@ -13,6 +14,7 @@ import Image from "next/image"
 const navItems = [
   { path: "/", icon: "solar:widget-4-bold", translationKey: "home" },
   { path: "/search", icon: "solar:magnifer-linear", translationKey: "search", mobileOnly: true },
+  { path: "/dashboard", icon: "solar:chart-square-bold", translationKey: "dashboard", adminOnly: true },
   { path: "/products", icon: "solar:cart-3-bold", translationKey: "products" },
   { path: "/trainers", icon: "solar:users-group-rounded-bold", translationKey: "trainers" },
   { path: "/gyms", icon: "solar:dumbbells-bold", translationKey: "gyms" },
@@ -43,8 +45,13 @@ export default function AppSidebar({
   onLogout,
 }: SidebarProps) {
   const { dictionary, lang, isRTL } = useDictionary()
+  const { user } = useAuth()
   const pathname = usePathname()
   const [showScrollTop, setShowScrollTop] = useState(false)
+
+  const visibleItems = navItems.filter(
+    (item) => !('adminOnly' in item && item.adminOnly) || user?.role === "ADMIN"
+  )
 
   useEffect(() => {
     const mainContent = document.getElementById("main-content")
@@ -117,7 +124,7 @@ export default function AppSidebar({
                     {dictionary.common.appName}
                   </span>
                 </div> */}
-                <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
+                <NavLink href={`/${lang}`} className="flex items-center gap-2 shrink-0">
                           <Image
                             src="/images/logo.png"
                             alt="Modaribok"
@@ -126,7 +133,7 @@ export default function AppSidebar({
                             className="h-8 w-auto"
                             priority
                           />
-                        </Link>
+                        </NavLink>
                 <Button variant="ghost" size="icon" onClick={onClose}>
                   <Icon icon="material-symbols:close-rounded" className="size-5" />
                 </Button>
@@ -134,10 +141,10 @@ export default function AppSidebar({
 
               <nav className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-1">
-                  {navItems.map((item) => {
+                  {visibleItems.map((item) => {
                     const active = isActive(item.path)
                     return (
-                      <Link
+                      <NavLink
                         key={item.path}
                         href={getHref(item.path)}
                         onClick={onClose}
@@ -166,7 +173,7 @@ export default function AppSidebar({
                         >
                           {dictionary.sidebar[item.translationKey as keyof typeof dictionary.sidebar]}
                         </motion.span>
-                      </Link>
+                      </NavLink>
                     )
                   })}
                 </div>
@@ -218,7 +225,7 @@ export default function AppSidebar({
               </div>
               <span className="font-bold text-lg truncate">{dictionary.common.appName}</span> */}
               
-                <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
+                <NavLink href={`/${lang}`} className="flex items-center gap-2 shrink-0">
                     <Image
                         src="/images/logo.png"
                         alt="Modaribok"
@@ -227,7 +234,7 @@ export default function AppSidebar({
                         className="h-8 w-auto"
                         priority
                     />
-                </Link>
+                </NavLink>
             </div>
           )}
           <Button
@@ -249,10 +256,10 @@ export default function AppSidebar({
           isCollapsed && "scrollbar-hidden"
         )}>
           <div className="space-y-1">
-            {navItems.filter(item => !item.mobileOnly).map((item) => {
+            {visibleItems.filter(item => !item.mobileOnly).map((item) => {
               const active = isActive(item.path)
               return (
-                <Link
+                <NavLink
                   key={item.path}
                   href={getHref(item.path)}
                   className={cn(
@@ -286,7 +293,7 @@ export default function AppSidebar({
                       {dictionary.sidebar[item.translationKey as keyof typeof dictionary.sidebar]}
                     </motion.span>
                   )}
-                </Link>
+                </NavLink>
               )
             })}
           </div>

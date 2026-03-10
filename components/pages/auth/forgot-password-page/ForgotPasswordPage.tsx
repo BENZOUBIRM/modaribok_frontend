@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { Icon } from "@iconify/react"
 
@@ -9,6 +8,7 @@ import { useDictionary } from "@/providers/dictionary-provider"
 import { AuthCardLayout } from "@/components/pages/auth/auth-card-layout"
 import { InputField } from "@/components/ui/input-field"
 import { Button } from "@/components/ui/button"
+import { NavLink } from "@/components/ui/nav-link"
 import { forgotPassword } from "@/services/api/auth.service"
 import type { ForgotPasswordFormData } from "@/lib/validations/auth"
 import { getForgotPasswordRules } from "@/lib/validations/auth"
@@ -103,12 +103,12 @@ function ForgotPasswordPage() {
             >
               {t.tryAgain}
             </Button>
-            <Link
+            <NavLink
               href={`/${lang}/login`}
               className="text-sm text-primary hover:underline font-medium text-center"
             >
               {t.backToLogin}
-            </Link>
+            </NavLink>
           </div>
         </div>
       </AuthCardLayout>
@@ -158,7 +158,7 @@ function ForgotPasswordPage() {
 
       {/* Back to Login */}
       <p className="text-center text-sm text-muted-foreground">
-        <Link
+        <NavLink
           href={`/${lang}/login`}
           className="text-primary hover:underline font-medium"
         >
@@ -167,7 +167,7 @@ function ForgotPasswordPage() {
             className="inline size-4 align-text-bottom ltr:mr-1 rtl:ml-1"
           />
           {t.backToLogin}
-        </Link>
+        </NavLink>
       </p>
     </AuthCardLayout>
   )

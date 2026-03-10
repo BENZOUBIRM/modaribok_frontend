@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { defaultLocale, locales, type Locale } from "@/i18n/settings"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
   // Check if the pathname already has a locale prefix
@@ -10,17 +10,6 @@ export function middleware(request: NextRequest) {
   )
 
   if (pathnameHasLocale) return NextResponse.next()
-
-  // Skip static files and API routes
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/images") ||
-    pathname.startsWith("/fonts") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next()
-  }
 
   // Try to get locale from cookie
   const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value

@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { Icon } from "@iconify/react"
 
@@ -11,6 +10,8 @@ import { AuthCardLayout } from "@/components/pages/auth/auth-card-layout"
 import { InputField } from "@/components/ui/input-field"
 import { PasswordRequirements } from "@/components/ui/password-requirements"
 import { Button } from "@/components/ui/button"
+import { NavLink } from "@/components/ui/nav-link"
+import { useNavRouter } from "@/hooks/use-nav-router"
 import { resetPassword } from "@/services/api/auth.service"
 import type { ResetPasswordFormData } from "@/lib/validations/auth"
 import {
@@ -22,7 +23,7 @@ import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
 
 function ResetPasswordPage() {
   const { dictionary, lang, isRTL } = useDictionary()
-  const router = useRouter()
+  const router = useNavRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
 
@@ -127,15 +128,15 @@ function ResetPasswordPage() {
           </p>
 
           <div className="flex flex-col gap-3 w-full max-w-xs">
-            <Link href={`/${lang}/forgot-password`}>
+            <NavLink href={`/${lang}/forgot-password`}>
               <Button className="w-full">{t.requestNewLink}</Button>
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               href={`/${lang}/login`}
               className="text-sm text-primary hover:underline font-medium text-center"
             >
               {t.backToLogin}
-            </Link>
+            </NavLink>
           </div>
         </div>
       </AuthCardLayout>
@@ -197,7 +198,7 @@ function ResetPasswordPage() {
 
       {/* Back to Login */}
       <p className="text-center text-sm text-muted-foreground">
-        <Link
+        <NavLink
           href={`/${lang}/login`}
           className="text-primary hover:underline font-medium"
         >
@@ -206,7 +207,7 @@ function ResetPasswordPage() {
             className="inline size-4 align-text-bottom ltr:mr-1 rtl:ml-1"
           />
           {t.backToLogin}
-        </Link>
+        </NavLink>
       </p>
     </AuthCardLayout>
   )

@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Image from "next/image"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Icon } from "@iconify/react"
@@ -12,6 +11,7 @@ import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { localeNames } from "@/i18n/settings"
 import { Button } from "@/components/ui/button"
+import { NavLink } from "@/components/ui/nav-link"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,7 +76,7 @@ export function Navbar({
             </Button>
             {/* Show logo only when sidebar is collapsed (no logo showing there) */}
             {!sidebarExpanded && (
-              <Link href={`/${lang}`} className="hidden lg:flex items-center gap-2 shrink-0">
+              <NavLink href={`/${lang}`} className="hidden lg:flex items-center gap-2 shrink-0">
                 <Image
                   src="/images/logo.png"
                   alt="Modaribok"
@@ -85,7 +85,7 @@ export function Navbar({
                   className="h-8 w-auto"
                   priority
                 />
-              </Link>
+              </NavLink>
             )}
           </>
         ) : (
@@ -102,7 +102,7 @@ export function Navbar({
                 <Icon icon="solar:hamburger-menu-linear" className="size-5" />
               </Button>
             )}
-            <Link href={`/${lang}`} className="flex items-center gap-2 shrink-0">
+            <NavLink href={`/${lang}`} className="flex items-center gap-2 shrink-0">
               <Image
                 src="/images/logo.png"
                 alt="Modaribok"
@@ -111,7 +111,7 @@ export function Navbar({
                 className="h-8 w-auto"
                 priority
               />
-            </Link>
+            </NavLink>
           </div>
         )}
 
@@ -144,7 +144,7 @@ export function Navbar({
             {pageLinks.map((link) => {
               const isActive = link.path === "/" ? bare === "/" : bare === link.path
               return (
-                <Link
+                <NavLink
                   key={link.href}
                   href={link.href}
                   className={cn(
@@ -155,7 +155,7 @@ export function Navbar({
                   )}
                 >
                   {link.label}
-                </Link>
+                </NavLink>
               )
             })}
             {/* Divider between page links and auth links */}
@@ -163,7 +163,7 @@ export function Navbar({
             {authLinks.map((link) => {
               const isActive = bare === link.path
               return (
-                <Link
+                <NavLink
                   key={link.href}
                   href={link.href}
                   className={cn(
@@ -174,7 +174,7 @@ export function Navbar({
                   )}
                 >
                   {link.label}
-                </Link>
+                </NavLink>
               )
             })}
           </div>

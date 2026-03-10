@@ -9,6 +9,7 @@ import type { Locale } from "@/i18n/settings"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { DictionaryProvider } from "@/providers/dictionary-provider"
 import { AuthProvider } from "@/providers/auth-provider"
+import { NavigationProvider } from "@/providers/navigation-provider"
 import { AuthenticatedShell } from "@/components/layout/authenticated-shell"
 
 export async function generateMetadata({
@@ -80,9 +81,11 @@ export default async function LangLayout({
             fontClasses={{ en: workSans.className, ar: neoSansArabic.className }}
           >
             <AuthProvider>
-              <AuthenticatedShell>
-                {children}
-              </AuthenticatedShell>
+              <NavigationProvider>
+                <AuthenticatedShell>
+                  {children}
+                </AuthenticatedShell>
+              </NavigationProvider>
             </AuthProvider>
           </DictionaryProvider>
         </ThemeProvider>

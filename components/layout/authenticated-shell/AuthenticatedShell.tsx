@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { Icon } from "@iconify/react"
@@ -12,6 +13,7 @@ import { useAuth } from "@/providers/auth-provider"
 import { useSidebar } from "@/hooks/use-sidebar"
 import { useActivityPanel } from "@/hooks/use-activity-panel"
 import { cn } from "@/lib/utils"
+import { useNavigation } from "@/providers/navigation-provider"
 
 import { Navbar } from "@/components/layout/navbar"
 import { AppSidebar } from "@/components/layout/sidebar"
@@ -50,13 +52,44 @@ export default function AuthenticatedShell({
   const { dictionary, lang, isRTL } = useDictionary()
   const { isAuthenticated, isLoading, logout } = useAuth()
   const { theme, setTheme } = useTheme()
+  const router = useRouter()
+  const pathname = usePathname()
 
+  const { isNavigating } = useNavigation()
   const sidebar = useSidebar()
   const activityPanel = useActivityPanel()
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [guestSidebarOpen, setGuestSidebarOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear isLoggingOut once we've arrived at the login page
+  useEffect(() => {
+    if (isLoggingOut && pathname.endsWith("/login")) {
+      setIsLoggingOut(false)
+      if (logoutTimerRef.current) {
+        clearTimeout(logoutTimerRef.current)
+        logoutTimerRef.current = null
+      }
+    }
+  }, [isLoggingOut, pathname])
+
+  // Safety: clear isLoggingOut after 5s to prevent stuck state
+  useEffect(() => {
+    if (!isLoggingOut) return
+    logoutTimerRef.current = setTimeout(() => {
+      setIsLoggingOut(false)
+      logoutTimerRef.current = null
+    }, 5000)
+    return () => {
+      if (logoutTimerRef.current) {
+        clearTimeout(logoutTimerRef.current)
+        logoutTimerRef.current = null
+      }
+    }
+  }, [isLoggingOut])
 
   // Scroll-to-top listener
   useEffect(() => {
@@ -82,8 +115,9 @@ export default function AuthenticatedShell({
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false)
+    setIsLoggingOut(true)
     await logout()
-    window.location.replace(`/${lang}/login`)
+    router.replace(`/${lang}/login`)
   }
 
   // Unified logout request — close overlays first, then show dialog
@@ -98,8 +132,8 @@ export default function AuthenticatedShell({
     }
   }
 
-  /* ── Loading state ───────────────────────────────────────────── */
-  if (isLoading) {
+  /* ── Loading / logging-out state ─────────────────────────────── */
+  if (isLoading || isLoggingOut) {
     return (
       <>
         <Toaster position="top-center" offset="80px" dir={isRTL ? "rtl" : "ltr"} />
@@ -127,7 +161,13 @@ export default function AuthenticatedShell({
           theme={theme}
           onThemeToggle={toggleTheme}
         />
-        <main className="pt-16">{children}</main>
+        <main className="pt-16">
+          {isNavigating ? (
+            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            </div>
+          ) : children}
+        </main>
       </>
     )
   }
@@ -200,7 +240,11 @@ export default function AuthenticatedShell({
               id="main-content"
               className="flex-1 overflow-auto min-w-0 bg-background"
             >
-              {children}
+              {isNavigating ? (
+                <div className="flex flex-1 min-h-full items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+                </div>
+              ) : children}
             </main>
 
             {/* Desktop toggle/close strip */}

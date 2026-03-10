@@ -1,14 +1,14 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { Icon } from "@iconify/react"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { Button } from "@/components/ui/button"
+import { useNavRouter } from "@/hooks/use-nav-router"
 
 export function NotFoundPage() {
   const { dictionary, lang } = useDictionary()
-  const router = useRouter()
+  const router = useNavRouter()
   const t = dictionary.errors.notFound
 
   return (

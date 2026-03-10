@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -10,6 +9,7 @@ import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { NavLink } from "@/components/ui/nav-link"
 
 /** Navigation links shown in the top section of the guest sidebar. */
 const guestNavItems = [
@@ -93,7 +93,7 @@ export default function GuestSidebar({
           >
             {/* ── Header ── */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <Link
+              <NavLink
                 href={`/${lang}`}
                 className="flex items-center gap-2 shrink-0"
                 onClick={onClose}
@@ -106,7 +106,7 @@ export default function GuestSidebar({
                   className="h-8 w-auto"
                   priority
                 />
-              </Link>
+              </NavLink>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <Icon
                   icon="material-symbols:close-rounded"
@@ -121,7 +121,7 @@ export default function GuestSidebar({
                 {guestNavItems.map((item) => {
                   const active = isActive(item.path)
                   return (
-                    <Link
+                    <NavLink
                       key={item.path}
                       href={getHref(item.path)}
                       onClick={onClose}
@@ -156,7 +156,7 @@ export default function GuestSidebar({
                       >
                         {t[item.translationKey as keyof typeof t]}
                       </motion.span>
-                    </Link>
+                    </NavLink>
                   )
                 })}
               </div>
@@ -165,7 +165,7 @@ export default function GuestSidebar({
             {/* ── Bottom: Auth Links + Theme ── */}
             <div className="p-4 border-t border-border space-y-2">
               {/* Login */}
-              <Link
+              <NavLink
                 href={`/${lang}/login`}
                 onClick={onClose}
                 className={cn(
@@ -177,10 +177,10 @@ export default function GuestSidebar({
               >
                 <Icon icon="solar:login-3-bold" className="size-4" />
                 {t.login}
-              </Link>
+              </NavLink>
 
               {/* Signup */}
-              <Link
+              <NavLink
                 href={`/${lang}/signup`}
                 onClick={onClose}
                 className={cn(
@@ -192,7 +192,7 @@ export default function GuestSidebar({
               >
                 <Icon icon="solar:user-plus-bold" className="size-4" />
                 {t.signup}
-              </Link>
+              </NavLink>
 
               {/* Theme toggle */}
               <div className="flex justify-center pt-1">

@@ -1,8 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { Icon } from "@iconify/react"
 
@@ -12,9 +10,11 @@ import { useAuth } from "@/providers/auth-provider"
 import { AuthCardLayout } from "@/components/pages/auth/auth-card-layout"
 import { InputField } from "@/components/ui/input-field"
 import { Button } from "@/components/ui/button"
+import { NavLink } from "@/components/ui/nav-link"
 import type { LoginFormData } from "@/lib/validations/auth"
 import { getLoginRules } from "@/lib/validations/auth"
 import { useRetriggerOnLangChange } from "@/hooks/use-retrigger-on-lang-change"
+import { useNavRouter } from "@/hooks/use-nav-router"
 
 /** Backend OAuth2 authorization URL for Google */
 const GOOGLE_OAUTH2_URL =
@@ -24,7 +24,7 @@ const GOOGLE_OAUTH2_URL =
 function LoginPage() {
   const { dictionary, lang, isRTL } = useDictionary()
   const { login } = useAuth()
-  const router = useRouter()
+  const router = useNavRouter()
   const t = dictionary.auth.login
   const v = dictionary.auth.validation
 
@@ -46,23 +46,13 @@ function LoginPage() {
   // Re-trigger validation after client-side language switch
   useRetriggerOnLangChange(errors, trigger)
 
-  // Prevent Chrome from auto-filling fields on page load.
-  // Fields start readOnly; when the user clicks/focuses, readOnly is removed
-  // and Chrome shows the saved-credentials dropdown instead.
-  const [readOnly, setReadOnly] = React.useState(true)
-  const handleFocus = () => { if (readOnly) setReadOnly(false) }
-
   // Handle form submission
   const onSubmit = async (data: LoginFormData) => {
     const result = await login({ emailOrPhone: data.emailOrPhone, password: data.password })
 
     if (result.success && result.user) {
       // Redirect — success toast is handled by the global interceptor
-      if (result.user.role === "ADMIN") {
-        router.push(`/${lang}/dashboard`)
-      } else {
-        router.push(`/${lang}`)
-      }
+      router.push(`/${lang}`)
     }
     // Error toasts are handled automatically by the global interceptor
   }
@@ -92,7 +82,7 @@ function LoginPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
         {/* Email Field */}
         <div className="mb-5">
           <InputField
@@ -100,8 +90,6 @@ function LoginPage() {
             placeholder={t.emailPlaceholder}
             type="text"
             autoComplete="username"
-            readOnly={readOnly}
-            onFocus={handleFocus}
             disabled={isSubmitting}
             className="h-11 text-base"
             {...register("emailOrPhone", rules.emailOrPhone)}
@@ -116,8 +104,6 @@ function LoginPage() {
             placeholder={t.passwordPlaceholder}
             type="password"
             autoComplete="current-password"
-            readOnly={readOnly}
-            onFocus={handleFocus}
             disabled={isSubmitting}
             className="h-11 text-base"
             {...register("password", rules.password)}
@@ -127,13 +113,13 @@ function LoginPage() {
 
         {/* Forgot Password */}
         <div className="flex items-center justify-end mb-8">
-          <Link
+          <NavLink
             href={`/${lang}/forgot-password`}
             className="text-sm text-primary hover:underline cursor-pointer"
             tabIndex={isSubmitting ? -1 : undefined}
           >
             {t.forgotPassword}
-          </Link>
+          </NavLink>
         </div>
 
         {/* Submit Button */}
@@ -178,12 +164,12 @@ function LoginPage() {
       {/* Signup Link */}
       <p className="text-center text-sm text-muted-foreground">
         {t.noAccount}{" "}
-        <Link
+        <NavLink
           href={`/${lang}/signup`}
           className="text-primary hover:underline font-medium"
         >
           {t.signupLink}
-        </Link>
+        </NavLink>
       </p>
     </AuthCardLayout>
   )
