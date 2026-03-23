@@ -1,4 +1,83 @@
 {
+  "title": "الملف الشخصي",
+  "subtitle": "يمكنك تعديل بياناتك بسهولة من خلال ملفك الشخصي.",
+  "completeProfileButton": "إكمال الملف الشخصي",
+  "incompleteAlertTitle": "ملفك الشخصي غير مكتمل",
+  "incompleteAlertDescription": "يرجى إكمال بيانات ملفك الشخصي للوصول إلى جميع الميزات.",
+  "welcomeLine": "أهلاً بك، سعدون بوجودك هنا",
+  "stats": {
+    "eventsDone": "تم الأداء",
+    "ordersDone": "تم الطلب",
+    "totalRequests": "إجمالي الطلبات"
+  },
+  "sections": {
+    "generalSettings": "الإعدادات العامة",
+    "personalInfo": "المعلومات الشخصية",
+    "orders": "طلباتي",
+    "avatarHelp": "يمكنك اختيار صورتك الشخصية وإضافة لمسة خاصة على حسابك.",
+    "personalInfoHelp": "يمكنك تحديث بياناتك الشخصية لتبقى معلومات حسابك دقيقة.",
+    "securityInfo": "تحديث المعلومات بأمان",
+    "securityInfoHelp": "يمكنك تحديث بيانات التواصل الخاصة بك عبر خطوات آمنة للتحقق."
+  },
+  "avatarSection": {
+    "title": "صورة الملف الشخصي",
+    "description": "اختر صورتك الشخصية بصيغة png أو jpeg أو jpg.",
+    "changeButton": "تغيير الصورة",
+    "removeButton": "حذف",
+    "previewAlt": "معاينة الصورة الشخصية"
+  },
+  "form": {
+    "firstName": "الاسم الأول",
+    "lastName": "الاسم الثاني",
+    "country": "الدولة",
+    "countryPlaceholder": "اختر الدولة",
+    "city": "المدينة",
+    "cityPlaceholder": "اختر المدينة",
+    "gender": "الجنس",
+    "genderPlaceholder": "اختر الجنس",
+    "birthday": "تاريخ الميلاد",
+    "sports": "الرياضات",
+    "sportsPlaceholder": "اختر الرياضات",
+    "completeButton": "إكمال الملف",
+    "saveButton": "حفظ التغييرات",
+    "genders": {
+      "male": "ذكر",
+      "female": "أنثى"
+    }
+  },
+  "security": {
+    "phone": "رقم الهاتف",
+    "changePhone": "تغيير رقم الهاتف",
+    "email": "البريد الإلكتروني",
+    "changeEmail": "تغيير البريد الإلكتروني"
+  },
+  "menu": {
+    "generalSettings": "الإعدادات العامة",
+    "notificationsSection": "الإشعارات",
+    "personalInfo": "المعلومات الشخصية",
+    "orders": "طلباتي",
+    "offers": "العروض",
+    "addresses": "عناويني",
+    "privacySection": "الأمان والخصوصية",
+    "notifications": "الإشعارات",
+    "passwordSecurity": "كلمة المرور والأمان",
+    "privacyPolicy": "الشروط وسياسة الخصوصية",
+    "deleteAccount": "حذف الحساب",
+    "accountSection": "الحساب",
+    "logout": "تسجيل الخروج"
+  },
+  "actions": {
+    "save": "حفظ",
+    "saveChanges": "حفظ التغييرات",
+    "edit": "تعديل",
+    "cancel": "إلغاء"
+  },
+  "validation": {
+    "invalidDate": "يجب أن يكون التاريخ في الماضي",
+    "invalidGender": "يرجى اختيار جنس صحيح",
+    "invalidCountry": "يرجى اختيار دولة صحيحة",
+    "invalidCity": "يرجى اختيار مدينة صحيحة"
+  },
   "posts": "منشور",
   "followers": "متابعين",
   "following": "أتابع"

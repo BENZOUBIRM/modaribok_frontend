@@ -1,4 +1,83 @@
 {
+  "title": "Personal Profile",
+  "subtitle": "You can update your information from your personal profile here.",
+  "completeProfileButton": "Complete Profile",
+  "incompleteAlertTitle": "Your profile is incomplete",
+  "incompleteAlertDescription": "Please complete your profile details to unlock all features.",
+  "welcomeLine": "Welcome back, we missed you here",
+  "stats": {
+    "eventsDone": "Events done",
+    "ordersDone": "Orders done",
+    "totalRequests": "Total requests"
+  },
+  "sections": {
+    "generalSettings": "General settings",
+    "personalInfo": "Personal information",
+    "orders": "My orders",
+    "avatarHelp": "Choose your profile image and add a personal touch to your account.",
+    "personalInfoHelp": "You can update your personal details to keep your account accurate.",
+    "securityInfo": "Update info securely",
+    "securityInfoHelp": "You can update your contact information with secure verification."
+  },
+  "avatarSection": {
+    "title": "Profile Picture",
+    "description": "Choose a png, jpeg or jpg profile image.",
+    "changeButton": "Change photo",
+    "removeButton": "Remove",
+    "previewAlt": "Profile image preview"
+  },
+  "form": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "country": "Country",
+    "countryPlaceholder": "Select country",
+    "city": "City",
+    "cityPlaceholder": "Select city",
+    "gender": "Gender",
+    "genderPlaceholder": "Select gender",
+    "birthday": "Date of birth",
+    "sports": "Sports",
+    "sportsPlaceholder": "Select sports",
+    "completeButton": "Complete profile",
+    "saveButton": "Save changes",
+    "genders": {
+      "male": "Male",
+      "female": "Female"
+    }
+  },
+  "security": {
+    "phone": "Phone number",
+    "changePhone": "Change phone number",
+    "email": "Email",
+    "changeEmail": "Change email"
+  },
+  "menu": {
+    "generalSettings": "General settings",
+    "notificationsSection": "Notifications",
+    "personalInfo": "Personal information",
+    "orders": "My orders",
+    "offers": "Offers",
+    "addresses": "My addresses",
+    "privacySection": "Security & privacy",
+    "notifications": "Notifications",
+    "passwordSecurity": "Password & security",
+    "privacyPolicy": "Terms & privacy policy",
+    "deleteAccount": "Delete account",
+    "accountSection": "Account",
+    "logout": "Log out"
+  },
+  "actions": {
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "edit": "Edit",
+    "cancel": "Cancel"
+  },
+  "validation": {
+    "invalidDate": "Date must be in the past",
+    "invalidGender": "Please select a valid gender",
+    "invalidCountry": "Please select a valid country",
+    "invalidCity": "Please select a valid city"
+  },
   "posts": "Posts",
   "followers": "Followers",
   "following": "Following"

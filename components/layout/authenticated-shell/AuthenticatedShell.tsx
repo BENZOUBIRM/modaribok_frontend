@@ -295,6 +295,7 @@ export default function AuthenticatedShell({
         {!activityPanel.isMobile && (
           <ActivityPanelDesktop
             isOpen={activityPanel.isOpen}
+            onLogout={requestLogout}
           />
         )}
       </div>
@@ -305,6 +306,7 @@ export default function AuthenticatedShell({
           isOpen={activityPanel.isOpen}
           onClose={activityPanel.close}
           onToggle={activityPanel.toggle}
+          onLogout={requestLogout}
         />
       )}
 

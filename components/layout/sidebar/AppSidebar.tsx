@@ -101,7 +101,7 @@ export default function AppSidebar({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-60"
               onClick={onClose}
             />
 
@@ -111,7 +111,7 @@ export default function AppSidebar({
               exit={{ x: isRTL ? "100%" : "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className={cn(
-                "fixed top-0 h-full w-60 bg-card border-border z-[70] flex flex-col",
+                "fixed top-0 h-full w-60 bg-card border-border z-70 flex flex-col",
                 isRTL ? "right-0 border-l" : "left-0 border-r"
               )}
             >
@@ -180,6 +180,22 @@ export default function AppSidebar({
               </nav>
 
               <div className="p-4 border-t border-border">
+                <div className="mb-3">
+                  <NavLink
+                    href={getHref("/profile")}
+                    onClick={onClose}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border",
+                      isActive("/profile")
+                        ? "bg-primary/15 text-primary border-primary/40"
+                        : "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10",
+                    )}
+                  >
+                    <Icon icon="solar:user-id-bold" className="size-4 shrink-0" />
+                    <span>{dictionary.sidebar.profile}</span>
+                  </NavLink>
+                </div>
+
                 <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="outline"
@@ -300,6 +316,38 @@ export default function AppSidebar({
         </nav>
 
         <div className="p-4 border-t border-border shrink-0 overflow-hidden">
+          {isCollapsed ? (
+            <div className="mb-3 flex justify-center">
+              <NavLink
+                href={getHref("/profile")}
+                className={cn(
+                  "flex items-center justify-center size-9 rounded-md border transition-colors",
+                  isActive("/profile")
+                    ? "text-primary bg-primary/15 border-primary/40"
+                    : "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10",
+                )}
+                title={dictionary.sidebar.profile}
+              >
+                <Icon icon="solar:user-id-bold" className="size-4" />
+              </NavLink>
+            </div>
+          ) : (
+            <div className="mb-3">
+              <NavLink
+                href={getHref("/profile")}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border",
+                  isActive("/profile")
+                    ? "bg-primary/15 text-primary border-primary/40"
+                    : "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10",
+                )}
+              >
+                <Icon icon="solar:user-id-bold" className="size-4 shrink-0" />
+                <span>{dictionary.sidebar.profile}</span>
+              </NavLink>
+            </div>
+          )}
+
           {isCollapsed ? (
             <div className="flex justify-center">
               {showScrollTop ? (

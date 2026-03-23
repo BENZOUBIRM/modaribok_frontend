@@ -1,0 +1,27 @@
+Audit blocked by tooling.
+
+Requested files to inspect:
+- components/layout/activity-panel/ActivityPanel.tsx
+- components/layout/activity-panel/ActivityPanel.types.ts
+- components/layout/activity-panel/ActivityPanel.module.css
+- components/layout/authenticated-shell/AuthenticatedShell.tsx
+- components/layout/authenticated-shell/AuthenticatedShell.module.css
+- components/features/profile/user-profile-card/UserProfileCard.tsx
+- components/pages/profile/profile-page/ProfilePage.tsx
+
+Observed tool behavior:
+- list_files on ., components, and components/layout returned "No files found"
+- execute_command failed with: 'sh' is not recognized as an internal or external command
+
+Impact:
+- Could not read the existing implementation
+- Could not safely identify the exact reusable brief-profile component from source
+- Could not produce a reliable file-by-file integration plan without guessing
+
+Best-effort guidance only, unverified:
+- Route detection likely belongs in the shell layer, ideally components/layout/authenticated-shell/AuthenticatedShell.tsx, so ActivityPanel can receive a mode prop based on pathname
+- ActivityPanel would then switch between normal activity/events content and a profile-specific content block
+- ProfilePage should keep only the center form and rely on the shell activity panel for the side profile/settings area
+- The reusable brief-profile component is likely in components/features/profile/user-profile-card/UserProfileCard.tsx, but this is not confirmed because the file could not be read
+
+No source files were modified.

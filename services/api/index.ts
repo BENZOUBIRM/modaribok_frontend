@@ -9,3 +9,4 @@
 export { default as apiClient } from "./client"
 export { setToken, getToken, removeToken, setStoredUser, getStoredUser } from "./client"
 export * as authService from "./auth.service"
+export * as profileService from "./profile.service"

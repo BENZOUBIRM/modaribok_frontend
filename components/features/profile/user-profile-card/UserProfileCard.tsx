@@ -3,13 +3,14 @@
 import Image from "next/image"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
+import { NavLink } from "@/components/ui/nav-link"
 
 /**
  * User profile card for the activity panel sidebar.
  * Displays avatar, name, handle, and stats (posts, followers, following).
  */
 export function UserProfileCard() {
-  const { dictionary } = useDictionary()
+  const { dictionary, lang } = useDictionary()
   const { user } = useAuth()
   const t = dictionary.profile
 
@@ -28,16 +29,18 @@ export function UserProfileCard() {
     <div className="p-4 border-b border-border">
       {/* Avatar */}
       <div className="flex flex-col items-center text-center">
-        <Image
-          src={avatarSrc}
-          alt={`${user.firstName} ${user.lastName}`}
-          width={80}
-          height={80}
-          className="size-20 rounded-full object-cover border-2 border-border"
-        />
-        <h3 className="font-bold text-foreground mt-2 text-sm">
-          {user.firstName} {user.lastName}
-        </h3>
+        <NavLink href={`/${lang}/profile`} className="group inline-flex flex-col items-center text-center">
+          <Image
+            src={avatarSrc}
+            alt={`${user.firstName} ${user.lastName}`}
+            width={80}
+            height={80}
+            className="size-20 rounded-full object-cover border-2 border-border group-hover:border-primary transition-colors"
+          />
+          <h3 className="font-bold text-foreground mt-2 text-sm group-hover:text-primary transition-colors">
+            {user.firstName} {user.lastName}
+          </h3>
+        </NavLink>
         <p className="text-xs text-muted-foreground">{handle}</p>
       </div>
 

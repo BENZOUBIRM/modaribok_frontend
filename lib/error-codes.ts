@@ -31,6 +31,7 @@ export const ERROR_CODE_REGISTRY: Record<string, CodeConfig> = {
   AUTH_SUCCESS_000:                           { variant: "success", autoToast: true  },
   AUTH_USER_CREATED_003:                      { variant: "success", autoToast: true  },
   AUTH_USER_PROFILE_COMPLETED_006:            { variant: "success", autoToast: true  },
+  USER_PROFILE_RETRIEVED_SUCCESS:             { variant: "success", autoToast: false },
   AUTH_LOGOUT_SUCCESS_013:                    { variant: "success", autoToast: true  },
 
   /* ── Auth — Errors ── */
