@@ -542,7 +542,7 @@ export function ProfilePage() {
 
                                   {!filteredCountryOptions.length && (
                                     <div className="px-3 py-2 text-sm text-muted-foreground">
-                                      {dictionary.common.noResults}
+                                      {lang === "ar" ? "لا توجد نتائج" : "No results"}
                                     </div>
                                   )}
                                 </div>
