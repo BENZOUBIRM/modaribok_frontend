@@ -1,24 +1,30 @@
-import { GetCity, GetCountries, GetState } from "react-country-state-city"
+import { City, Country } from "country-state-city"
 import type { CityOption, CountryOption } from "@/types"
 
 const countriesCache: { value: CountryOption[] | null } = { value: null }
 const citiesCache = new Map<number, CityOption[]>()
+const countryIdToIso2 = new Map<number, string>()
 
 export async function loadCountries(): Promise<CountryOption[]> {
   if (countriesCache.value) {
     return countriesCache.value
   }
 
-  const countries = await GetCountries()
+  const countries = Country.getAllCountries()
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
 
   const mapped = countries
-    .map((country) => ({
-      id: country.id,
+    .map((country, index) => ({
+      id: index + 1,
       name: country.name,
-      iso2: country.iso2,
-      flag: iso2ToFlagEmoji(country.iso2),
+      iso2: country.isoCode,
+      flag: iso2ToFlagEmoji(country.isoCode),
     }))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+
+  countryIdToIso2.clear()
+  mapped.forEach((country) => {
+    countryIdToIso2.set(country.id, country.iso2)
+  })
 
   countriesCache.value = mapped
   return mapped
@@ -29,13 +35,20 @@ export async function loadCitiesByCountry(countryId: number): Promise<CityOption
     return citiesCache.get(countryId) ?? []
   }
 
-  const states = await GetState(countryId)
+  if (!countriesCache.value) {
+    await loadCountries()
+  }
 
-  const cityLists = await Promise.all(states.map((state) => GetCity(countryId, state.id)))
+  const iso2 = countryIdToIso2.get(countryId)
+  if (!iso2) {
+    return []
+  }
+
+  const rawCities = City.getCitiesOfCountry(iso2) ?? []
 
   const unique = new Map<string, CityOption>()
 
-  cityLists.flat().forEach((city) => {
+  rawCities.forEach((city, index) => {
     const key = city.name.trim().toLowerCase()
 
     if (!key || unique.has(key)) {
@@ -43,7 +56,7 @@ export async function loadCitiesByCountry(countryId: number): Promise<CityOption
     }
 
     unique.set(key, {
-      id: city.id,
+      id: index + 1,
       name: city.name,
     })
   })

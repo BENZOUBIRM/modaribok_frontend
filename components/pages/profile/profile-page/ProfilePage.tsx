@@ -15,6 +15,9 @@ import { InputField } from "@/components/ui/input-field"
 import { SelectField } from "@/components/ui/select-field"
 import { Callout } from "@/components/ui/callout"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/primitives/label"
+import { Calendar } from "@/components/ui/primitives/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/primitives/popover"
 import { cn } from "@/lib/utils"
 import { loadCitiesByCountry, loadCountries } from "@/lib/country-city"
 import { getProfileRules } from "@/lib/validations/profile"
@@ -32,6 +35,23 @@ function toDateInputValue(date: string | null): string {
   const parsed = new Date(date)
   if (Number.isNaN(parsed.getTime())) return ""
   return parsed.toISOString().slice(0, 10)
+}
+
+function fromDateInputValue(date: string): Date | undefined {
+  if (!date) return undefined
+  const [year, month, day] = date.split("-").map(Number)
+  if (!year || !month || !day) return undefined
+
+  const parsed = new Date(year, month - 1, day)
+  if (Number.isNaN(parsed.getTime())) return undefined
+  return parsed
+}
+
+function toLocalDateValue(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 interface ProfileSectionLayoutProps {
@@ -88,6 +108,14 @@ export function ProfilePage() {
   const [emailDraft, setEmailDraft] = React.useState("")
   const [countrySearch, setCountrySearch] = React.useState("")
   const [countryMenuOpen, setCountryMenuOpen] = React.useState(false)
+  const [citySearch, setCitySearch] = React.useState("")
+  const [cityMenuOpen, setCityMenuOpen] = React.useState(false)
+  const [birthdayOpen, setBirthdayOpen] = React.useState(false)
+  const countryDropdownRef = React.useRef<HTMLDivElement | null>(null)
+  const cityDropdownRef = React.useRef<HTMLDivElement | null>(null)
+  const countryTriggerRef = React.useRef<HTMLButtonElement | null>(null)
+  const cityTriggerRef = React.useRef<HTMLButtonElement | null>(null)
+  const birthdayTriggerId = React.useId()
 
   const {
     control,
@@ -117,6 +145,7 @@ export function ProfilePage() {
   })
 
   const selectedCountryId = useWatch({ control, name: "country" })
+  const selectedCityValue = useWatch({ control, name: "city" })
   const watchedFirstName = useWatch({ control, name: "firstName" })
   const watchedLastName = useWatch({ control, name: "lastName" })
 
@@ -220,6 +249,7 @@ export function ProfilePage() {
     const loadCities = async () => {
       if (!selectedCountryId) {
         setCities([])
+        setCityMenuOpen(false)
         setValue("city", "", { shouldDirty: true, shouldValidate: true })
         return
       }
@@ -227,6 +257,7 @@ export function ProfilePage() {
       const selectedCountry = countries.find((country) => String(country.id) === selectedCountryId)
       if (!selectedCountry) {
         setCities([])
+        setCityMenuOpen(false)
         setValue("city", "", { shouldDirty: true, shouldValidate: true })
         return
       }
@@ -270,11 +301,39 @@ export function ProfilePage() {
     }
   }, [countryMenuOpen])
 
+  React.useEffect(() => {
+    if (!cityMenuOpen) {
+      setCitySearch("")
+    }
+  }, [cityMenuOpen])
+
+  React.useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node
+
+      if (countryMenuOpen && countryDropdownRef.current && !countryDropdownRef.current.contains(target)) {
+        setCountryMenuOpen(false)
+      }
+
+      if (cityMenuOpen && cityDropdownRef.current && !cityDropdownRef.current.contains(target)) {
+        setCityMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleOutsideClick)
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick)
+    }
+  }, [countryMenuOpen, cityMenuOpen])
+
   const countrySelectOptions = React.useMemo(
     () =>
       countries.map((country) => ({
         value: String(country.id),
-        label: `${country.flag} ${country.name}`,
+        label: country.name,
+        iso2: country.iso2,
+        searchText: `${country.iso2} ${country.name}`,
       })),
     [countries],
   )
@@ -291,13 +350,24 @@ export function ProfilePage() {
   const filteredCountryOptions = React.useMemo(
     () =>
       countrySelectOptions.filter((country) =>
-        String(country.label).toLowerCase().includes(countrySearch.trim().toLowerCase()),
+        country.searchText.toLowerCase().includes(countrySearch.trim().toLowerCase()),
       ),
     [countrySearch, countrySelectOptions],
   )
 
-  const selectedCountryLabel =
-    countrySelectOptions.find((country) => country.value === selectedCountryId)?.label ?? ""
+  const filteredCityOptions = React.useMemo(
+    () =>
+      citySelectOptions.filter((city) =>
+        String(city.label).toLowerCase().includes(citySearch.trim().toLowerCase()),
+      ),
+    [citySearch, citySelectOptions],
+  )
+
+  const selectedCountryOption =
+    countrySelectOptions.find((country) => country.value === selectedCountryId)
+
+  const selectedCityLabel =
+    citySelectOptions.find((city) => city.value === selectedCityValue)?.label ?? ""
 
   const onSubmit = async (formData: ProfileFormData) => {
     const selectedCountryName = countries.find((country) => String(country.id) === formData.country)?.name
@@ -481,12 +551,58 @@ export function ProfilePage() {
                           )}
                         />
 
-                        <InputField
-                          type="date"
-                          label={t.form.birthday}
-                          max={new Date().toISOString().slice(0, 10)}
-                          className="h-11 rounded-xl text-base"
-                          {...register("birthday", rules.birthday)}
+                        <Controller
+                          control={control}
+                          name="birthday"
+                          rules={rules.birthday}
+                          render={({ field }) => {
+                            const selectedDate = fromDateInputValue(field.value || "")
+                            const birthdayDisplay = selectedDate
+                              ? new Intl.DateTimeFormat(lang === "ar" ? "ar" : "en", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                              }).format(selectedDate)
+                              : t.form.birthday
+
+                            return (
+                              <div className="group flex flex-col gap-1.5">
+                                <Label htmlFor={birthdayTriggerId} className="text-sm font-medium">
+                                  {t.form.birthday}
+                                </Label>
+                                <Popover open={birthdayOpen} onOpenChange={setBirthdayOpen}>
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      id={birthdayTriggerId}
+                                      type="button"
+                                      className={cn(
+                                        "flex h-11 w-full items-center justify-between rounded-xl border border-field-border bg-transparent px-3 text-base shadow-xs transition-all outline-none hover:border-primary/50 group-hover:border-primary/50 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20",
+                                        isRTL ? "flex-row-reverse text-right" : "flex-row text-left",
+                                      )}
+                                    >
+                                      <span className={cn("truncate", selectedDate ? "text-foreground" : "text-muted-foreground")}>
+                                        {birthdayDisplay}
+                                      </span>
+                                      <Icon icon="solar:calendar-linear" className="size-4 shrink-0 text-muted-foreground" />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto rounded-xl border-border p-2" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={selectedDate}
+                                      onSelect={(date) => {
+                                        if (!date) return
+                                        field.onChange(toLocalDateValue(date))
+                                        setBirthdayOpen(false)
+                                      }}
+                                      disabled={(date) => date > new Date()}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            )
+                          }}
                         />
                       </div>
                     </div>
@@ -497,20 +613,45 @@ export function ProfilePage() {
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-medium">{t.form.country}</label>
-                          <div className="relative">
+                        <div className="group flex flex-col gap-1.5">
+                          <Label
+                            className="text-sm font-medium"
+                            onClick={() => {
+                              countryTriggerRef.current?.focus()
+                              setCountryMenuOpen(true)
+                            }}
+                          >
+                            {t.form.country}
+                          </Label>
+                          <div ref={countryDropdownRef} className="relative">
                             <button
+                              ref={countryTriggerRef}
                               type="button"
                               onClick={() => setCountryMenuOpen((prev) => !prev)}
                               className={cn(
-                                "flex h-11 w-full items-center rounded-xl border border-field-border bg-transparent px-3 text-base shadow-xs transition-all outline-none hover:border-primary/50 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20",
+                                "flex h-11 w-full items-center justify-between rounded-xl border border-field-border bg-transparent px-3 text-base shadow-xs transition-all outline-none hover:border-primary/50 group-hover:border-primary/50 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20",
+                                isRTL ? "flex-row-reverse" : "flex-row",
                                 isRTL ? "text-right" : "text-left",
                               )}
                             >
-                              <span className="flex-1 truncate text-foreground">
-                                {selectedCountryLabel || t.form.countryPlaceholder}
-                              </span>
+                              {selectedCountryOption ? (
+                                <span
+                                  className={cn(
+                                    "flex items-center gap-2 truncate text-foreground",
+                                    isRTL ? "flex-row-reverse justify-start text-right" : "flex-row justify-start text-left",
+                                  )}
+                                >
+                                  <img
+                                    src={`https://flagcdn.com/20x15/${selectedCountryOption.iso2.toLowerCase()}.png`}
+                                    alt=""
+                                    className="h-[15px] w-5 shrink-0 rounded-[2px] object-cover"
+                                    loading="lazy"
+                                  />
+                                  <span className="truncate">{selectedCountryOption.label}</span>
+                                </span>
+                              ) : (
+                                <span className="truncate text-foreground">{t.form.countryPlaceholder}</span>
+                              )}
                               <Icon icon="solar:alt-arrow-down-linear" className="size-4 shrink-0 text-muted-foreground" />
                             </button>
 
@@ -519,6 +660,7 @@ export function ProfilePage() {
                                 <InputField
                                   value={countrySearch}
                                   onChange={(event) => setCountrySearch(event.target.value)}
+                                  autoFocus
                                   placeholder={lang === "ar" ? "ابحث عن الدولة" : "Search country"}
                                   className="h-10 rounded-lg text-sm"
                                 />
@@ -532,11 +674,17 @@ export function ProfilePage() {
                                         setCountryMenuOpen(false)
                                       }}
                                       className={cn(
-                                        "flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
-                                        isRTL ? "text-right" : "text-left",
+                                        "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
+                                        isRTL ? "flex-row-reverse text-right" : "flex-row text-left",
                                       )}
                                     >
-                                      {option.label}
+                                      <img
+                                        src={`https://flagcdn.com/20x15/${option.iso2.toLowerCase()}.png`}
+                                        alt=""
+                                        className="h-[15px] w-5 shrink-0 rounded-[2px] object-cover"
+                                        loading="lazy"
+                                      />
+                                      <span className="truncate">{option.label}</span>
                                     </button>
                                   ))}
 
@@ -556,15 +704,77 @@ export function ProfilePage() {
                           name="city"
                           rules={rules.city}
                           render={({ field }) => (
-                            <SelectField
-                              label={t.form.city}
-                              placeholder={isCitiesLoading ? dictionary.common.loading : t.form.cityPlaceholder}
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              options={citySelectOptions}
-                              disabled={!selectedCountryId}
-                              triggerClassName="!h-11 rounded-xl px-3 text-base"
-                            />
+                            <div className="group flex flex-col gap-1.5">
+                              <Label
+                                className="text-sm font-medium"
+                                onClick={() => {
+                                  if (!selectedCountryId) return
+                                  cityTriggerRef.current?.focus()
+                                  setCityMenuOpen(true)
+                                }}
+                              >
+                                {t.form.city}
+                              </Label>
+                              <div ref={cityDropdownRef} className="relative">
+                                <button
+                                  ref={cityTriggerRef}
+                                  type="button"
+                                  disabled={!selectedCountryId}
+                                  onClick={() => {
+                                    if (!selectedCountryId) return
+                                    setCityMenuOpen((prev) => !prev)
+                                  }}
+                                  className={cn(
+                                    "flex h-11 w-full items-center justify-between rounded-xl border border-field-border bg-transparent px-3 text-base shadow-xs transition-all outline-none hover:border-primary/50 group-hover:border-primary/50 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60",
+                                    isRTL ? "flex-row-reverse" : "flex-row",
+                                    isRTL ? "text-right" : "text-left",
+                                  )}
+                                >
+                                  <span className="truncate text-foreground">
+                                    {isCitiesLoading
+                                      ? dictionary.common.loading
+                                      : selectedCityLabel || t.form.cityPlaceholder}
+                                  </span>
+                                  <Icon icon="solar:alt-arrow-down-linear" className="size-4 shrink-0 text-muted-foreground" />
+                                </button>
+
+                                {cityMenuOpen && !!selectedCountryId && (
+                                  <div className="absolute z-50 mt-2 w-full rounded-xl border border-border bg-popover p-2 shadow-lg">
+                                    <InputField
+                                      value={citySearch}
+                                      onChange={(event) => setCitySearch(event.target.value)}
+                                      autoFocus
+                                      placeholder={lang === "ar" ? "ابحث عن المدينة" : "Search city"}
+                                      className="h-10 rounded-lg text-sm"
+                                    />
+                                    <div className="mt-2 max-h-60 overflow-y-auto">
+                                      {filteredCityOptions.map((option) => (
+                                        <button
+                                          key={option.value}
+                                          type="button"
+                                          onClick={() => {
+                                            field.onChange(option.value)
+                                            setCityMenuOpen(false)
+                                          }}
+                                          className={cn(
+                                            "flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
+                                            isRTL ? "text-right" : "text-left",
+                                          )}
+                                        >
+                                          {option.label}
+                                        </button>
+                                      ))}
+
+                                      {!filteredCityOptions.length && (
+                                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                                          {lang === "ar" ? "لا توجد نتائج" : "No results"}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           )}
                         />
                       </div>
