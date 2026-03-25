@@ -6,7 +6,7 @@ import { Icon } from "@iconify/react"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { CommentInput } from "../comment-input"
-import type { MockComment } from "@/data/mock-data"
+import type { MockComment } from "@/types"
 
 /**
  * Single comment with recursive replies.

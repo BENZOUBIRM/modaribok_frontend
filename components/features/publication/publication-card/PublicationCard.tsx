@@ -7,18 +7,33 @@ import { PublicationMedia } from "../publication-media"
 import { PublicationActions } from "../publication-actions"
 import { CommentSection } from "../comments/comment-section"
 import { useDictionary } from "@/providers/dictionary-provider"
-import type { MockPost } from "@/data/mock-data"
+import type { MockPost, ReactionType } from "@/types"
 
 const TEXT_LIMIT = 200
 
 /**
  * A single publication card with header, body, media, actions, and comments.
  */
-export function PublicationCard({ post }: { post: MockPost }) {
+export function PublicationCard({
+  post,
+  onReact,
+  onAddComment,
+  isAddingComment,
+}: {
+  post: MockPost
+  onReact?: (publicationId: number, reactionType: ReactionType) => void
+  onAddComment?: (publicationId: number, content: string) => Promise<void> | void
+  isAddingComment?: boolean
+}) {
   const { dictionary } = useDictionary()
   const t = dictionary.feed
   const [isExpanded, setIsExpanded] = useState(false)
+  const [commentFocusSignal, setCommentFocusSignal] = useState(0)
   const isLong = post.text && post.text.length > TEXT_LIMIT
+
+  const handleCommentClick = () => {
+    setCommentFocusSignal((current) => current + 1)
+  }
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -68,13 +83,23 @@ export function PublicationCard({ post }: { post: MockPost }) {
 
       {/* Actions: like, comment, share */}
       <PublicationActions
+        publicationId={post.id}
         likesCount={post.likesCount}
         commentsCount={post.commentsCount}
         sharesCount={post.sharesCount}
+        reactionsCountByType={post.reactionsCountByType}
+        currentUserReaction={post.currentUserReaction}
+        onReact={onReact}
+        onCommentClick={handleCommentClick}
       />
 
       {/* Comments section */}
-      <CommentSection comments={post.comments} />
+      <CommentSection
+        comments={post.comments}
+        onAddComment={(content) => onAddComment?.(post.id, content)}
+        isAddingComment={isAddingComment}
+        focusSignal={commentFocusSignal}
+      />
     </div>
   )
 }

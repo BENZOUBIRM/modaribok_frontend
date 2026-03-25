@@ -1,17 +1,53 @@
 "use client"
 
+import * as React from "react"
 import { CommentItem } from "../comment-item"
 import { CommentInput } from "../comment-input"
-import type { MockComment } from "@/data/mock-data"
+import type { MockComment } from "@/types"
 
 /**
  * Comment section: list of comments + "write a comment" input.
  */
-export function CommentSection({ comments }: { comments: MockComment[] }) {
+export function CommentSection({
+  comments,
+  onAddComment,
+  isAddingComment,
+  focusSignal,
+}: {
+  comments: MockComment[]
+  onAddComment?: (content: string) => Promise<void> | void
+  isAddingComment?: boolean
+  focusSignal?: number
+}) {
+  const [commentText, setCommentText] = React.useState("")
+  const inputRef = React.useRef<HTMLInputElement | null>(null)
+
+  React.useEffect(() => {
+    if (typeof focusSignal === "number") {
+      inputRef.current?.focus()
+    }
+  }, [focusSignal])
+
+  const handleAddComment = async () => {
+    const trimmed = commentText.trim()
+    if (!trimmed || !onAddComment) {
+      return
+    }
+
+    await onAddComment(trimmed)
+    setCommentText("")
+  }
+
   if (!comments.length) {
     return (
       <div className="border-t border-border">
-        <CommentInput />
+        <CommentInput
+          value={commentText}
+          onChange={setCommentText}
+          onSubmit={handleAddComment}
+          isSubmitting={isAddingComment}
+          inputRef={inputRef}
+        />
       </div>
     )
   }
@@ -23,7 +59,13 @@ export function CommentSection({ comments }: { comments: MockComment[] }) {
           <CommentItem key={comment.id} comment={comment} />
         ))}
       </div>
-      <CommentInput />
+      <CommentInput
+        value={commentText}
+        onChange={setCommentText}
+        onSubmit={handleAddComment}
+        isSubmitting={isAddingComment}
+        inputRef={inputRef}
+      />
     </div>
   )
 }
