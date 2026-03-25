@@ -280,6 +280,7 @@ export function PublicationActions({
   const closeTimeoutRef = React.useRef<number | null>(null)
   const burstClearTimeoutRef = React.useRef<number | null>(null)
   const reactionScrollRef = React.useRef<HTMLDivElement | null>(null)
+  const reactionTrackRef = React.useRef<HTMLDivElement | null>(null)
   const previousReactionRef = React.useRef<ReactionType | null>(currentUserReaction ?? null)
 
   React.useEffect(() => {
@@ -393,13 +394,23 @@ export function PublicationActions({
       return
     }
 
-    const normalizedLeft = getNormalizedScrollLeft(container, isRTL)
-    const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
     const hasOverflow = container.scrollWidth > container.clientWidth + 4
+    const track = reactionTrackRef.current
+
     setHasHorizontalOverflow(hasOverflow)
-    setCanScrollLeft(normalizedLeft > 4)
-    setCanScrollRight(normalizedLeft < maxScrollLeft - 4)
-  }, [isRTL])
+
+    if (!track || !hasOverflow) {
+      setCanScrollLeft(false)
+      setCanScrollRight(false)
+      return
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const trackRect = track.getBoundingClientRect()
+
+    setCanScrollLeft(trackRect.left < containerRect.left - 2)
+    setCanScrollRight(trackRect.right > containerRect.right + 2)
+  }, [])
 
   React.useEffect(() => {
     if (!isReactionPickerOpen) {
@@ -612,7 +623,7 @@ export function PublicationActions({
               !hasHorizontalOverflow && "md:overflow-x-visible",
             )}
           >
-            <div className="flex w-max items-end gap-2 pr-1">
+            <div ref={reactionTrackRef} className="flex w-max items-end gap-2 pr-1">
               {REACTION_ORDER.map((reactionType) => (
                 <button
                   key={reactionType}
