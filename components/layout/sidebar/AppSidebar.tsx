@@ -20,7 +20,6 @@ const navItems = [
   { path: "/gyms", icon: "solar:dumbbells-bold", translationKey: "gyms" },
   { path: "/events", icon: "solar:calendar-mark-bold", translationKey: "events" },
   { path: "/stores", icon: "solar:shop-bold", translationKey: "stores" },
-  { path: "/settings", icon: "solar:settings-bold", translationKey: "settings" },
 ]
 
 interface SidebarProps {
@@ -182,17 +181,17 @@ export default function AppSidebar({
               <div className="p-4 border-t border-border">
                 <div className="mb-3">
                   <NavLink
-                    href={getHref("/profile")}
+                      href={getHref("/settings")}
                     onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border",
-                      isActive("/profile")
+                        isActive("/settings")
                         ? "bg-primary/15 text-primary border-primary/40"
                         : "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10",
                     )}
                   >
-                    <Icon icon="solar:user-id-bold" className="size-4 shrink-0" />
-                    <span>{dictionary.sidebar.profile}</span>
+                      <Icon icon="solar:settings-bold" className="size-4 shrink-0" />
+                      <span>{dictionary.sidebar.settings}</span>
                   </NavLink>
                 </div>
 
@@ -319,31 +318,31 @@ export default function AppSidebar({
           {isCollapsed ? (
             <div className="mb-3 flex justify-center">
               <NavLink
-                href={getHref("/profile")}
+                href={getHref("/settings")}
                 className={cn(
                   "flex items-center justify-center size-9 rounded-md border transition-colors",
-                  isActive("/profile")
+                  isActive("/settings")
                     ? "text-primary bg-primary/15 border-primary/40"
                     : "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10",
                 )}
-                title={dictionary.sidebar.profile}
+                title={dictionary.sidebar.settings}
               >
-                <Icon icon="solar:user-id-bold" className="size-4" />
+                <Icon icon="solar:settings-bold" className="size-4" />
               </NavLink>
             </div>
           ) : (
             <div className="mb-3">
               <NavLink
-                href={getHref("/profile")}
+                href={getHref("/settings")}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border",
-                  isActive("/profile")
+                  isActive("/settings")
                     ? "bg-primary/15 text-primary border-primary/40"
                     : "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10",
                 )}
               >
-                <Icon icon="solar:user-id-bold" className="size-4 shrink-0" />
-                <span>{dictionary.sidebar.profile}</span>
+                <Icon icon="solar:settings-bold" className="size-4 shrink-0" />
+                <span>{dictionary.sidebar.settings}</span>
               </NavLink>
             </div>
           )}

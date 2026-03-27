@@ -23,30 +23,24 @@ function PanelContent({ onLogout }: { onLogout: () => void }) {
   const pathname = usePathname()
   const { dictionary, lang, isRTL } = useDictionary()
 
-  const bare = pathname.replace(new RegExp(`^/${lang}(?=/|$)`), "") || "/"
+  const bare = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/"
   const profileSlugs = [
-    "/profile",
-    "/myorders",
-    "/offers",
-    "/addresses",
-    "/password-security",
-    "/privacy-policy",
-    "/delete-account",
+    "/settings",
   ]
   const isProfileRoute = profileSlugs.some((slug) => bare === slug || bare.startsWith(`${slug}/`))
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   const generalSettingsItems = [
-    { href: `/${lang}/profile`, label: dictionary.profile.menu.personalInfo, icon: "solar:user-linear" },
-    { href: `/${lang}/myorders`, label: dictionary.profile.menu.orders, icon: "solar:box-linear" },
-    { href: `/${lang}/offers`, label: dictionary.profile.menu.offers, icon: "solar:ticket-linear" },
-    { href: `/${lang}/addresses`, label: dictionary.profile.menu.addresses, icon: "solar:buildings-2-linear" },
+    { href: `/${lang}/settings/profile`, label: dictionary.profile.menu.personalInfo, icon: "solar:user-linear" },
+    { href: `/${lang}/settings/myorders`, label: dictionary.profile.menu.orders, icon: "solar:box-linear" },
+    { href: `/${lang}/settings/offers`, label: dictionary.profile.menu.offers, icon: "solar:ticket-linear" },
+    { href: `/${lang}/settings/addresses`, label: dictionary.profile.menu.addresses, icon: "solar:buildings-2-linear" },
   ]
 
   const securityItems = [
-    { href: `/${lang}/password-security`, label: dictionary.profile.menu.passwordSecurity, icon: "solar:key-linear" },
-    { href: `/${lang}/privacy-policy`, label: dictionary.profile.menu.privacyPolicy, icon: "solar:shield-user-linear" },
-    { href: `/${lang}/delete-account`, label: dictionary.profile.menu.deleteAccount, icon: "solar:user-cross-linear", danger: true },
+    { href: `/${lang}/settings/password-security`, label: dictionary.profile.menu.passwordSecurity, icon: "solar:key-linear" },
+    { href: `/${lang}/settings/privacy-policy`, label: dictionary.profile.menu.privacyPolicy, icon: "solar:shield-user-linear" },
+    { href: `/${lang}/settings/delete-account`, label: dictionary.profile.menu.deleteAccount, icon: "solar:user-cross-linear", danger: true },
   ]
 
   const toBarePath = (href: string) => href.replace(new RegExp(`^/${lang}(?=/|$)`), "") || "/"
@@ -226,16 +220,9 @@ export default function ActivityPanelMobile({
 }: ActivityPanelMobileProps) {
   const pathname = usePathname()
   const { dictionary, isRTL } = useDictionary()
-  const lang = pathname.split("/")[1] || "en"
-  const bare = pathname.replace(new RegExp(`^/${lang}(?=/|$)`), "") || "/"
+  const bare = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/"
   const profileSlugs = [
-    "/profile",
-    "/myorders",
-    "/offers",
-    "/addresses",
-    "/password-security",
-    "/privacy-policy",
-    "/delete-account",
+    "/settings",
   ]
   const isProfileRoute = profileSlugs.some((slug) => bare === slug || bare.startsWith(`${slug}/`))
 

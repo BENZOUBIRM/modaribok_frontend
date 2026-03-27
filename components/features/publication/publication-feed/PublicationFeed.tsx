@@ -14,6 +14,7 @@ import type {
   ReactionType,
 } from "@/types"
 import { Callout } from "@/components/ui/callout"
+import { Spinner } from "@/components/ui/spinner"
 import { PublicationCard } from "../publication-card"
 import { FriendSuggestions } from "@/components/features/suggestions"
 
@@ -178,8 +179,8 @@ export function PublicationFeed() {
       </div>
 
       {isLoading && (
-        <div className="py-8 text-center text-sm text-muted-foreground">
-          {dictionary.common.loading}
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background">
+          <Spinner className="size-12" />
         </div>
       )}
 

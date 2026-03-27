@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { Callout } from "@/components/ui/callout"
+import { Spinner } from "@/components/ui/spinner"
 import { CreatePublication } from "@/components/features/publication"
 import { PublicationFeed } from "@/components/features/publication"
 import { MobileSearchBar } from "@/components/features/search"
@@ -38,7 +39,7 @@ function HomePage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-muted-foreground text-lg">{dictionary.common.loading}</div>
+        <Spinner className="size-10" />
       </div>
     )
   }

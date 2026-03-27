@@ -557,7 +557,7 @@ export function PublicationActions({
                       "text-foreground",
                       REACTION_ACTIVE_BG_BY_TYPE[activeReactionType],
                     )
-                  : "text-muted-foreground hover:bg-muted/50",
+                  : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10",
               )}
             >
               <Icon
@@ -656,12 +656,12 @@ export function PublicationActions({
         </div>
         <button
           onClick={onCommentClick}
-          className="cursor-pointer flex-1 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+          className="cursor-pointer flex-1 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
         >
           <Icon icon="solar:chat-round-linear" className="size-5" />
           <span>{t.comment}</span>
         </button>
-        <button className="cursor-pointer flex-1 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors">
+        <button className="cursor-pointer flex-1 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10">
           <Icon icon="solar:share-linear" className="size-5" />
           <span>{t.share}</span>
         </button>

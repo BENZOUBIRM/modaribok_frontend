@@ -35,6 +35,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Spinner } from "@/components/ui/spinner"
 
 /**
  * Conditional layout shell.
@@ -55,7 +56,7 @@ export default function AuthenticatedShell({
   const router = useRouter()
   const pathname = usePathname()
 
-  const { isNavigating } = useNavigation()
+  const { isNavigating, pendingPath, completeNavigation } = useNavigation()
   const sidebar = useSidebar()
   const activityPanel = useActivityPanel()
 
@@ -64,6 +65,16 @@ export default function AuthenticatedShell({
   const [guestSidebarOpen, setGuestSidebarOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const navStartChildrenRef = useRef<React.ReactNode | null>(null)
+  const navStartPathRef = useRef<string | null>(null)
+
+  const normalizePath = (path: string) => {
+    const stripped = path.split(/[?#]/)[0]
+    if (stripped.length > 1 && stripped.endsWith("/")) {
+      return stripped.slice(0, -1)
+    }
+    return stripped
+  }
 
   // Clear isLoggingOut once we've arrived at the login page
   useEffect(() => {
@@ -75,6 +86,46 @@ export default function AuthenticatedShell({
       }
     }
   }, [isLoggingOut, pathname])
+
+  // Track the content/path snapshot at navigation start.
+  useEffect(() => {
+    if (isNavigating && navStartChildrenRef.current === null) {
+      navStartChildrenRef.current = children
+      navStartPathRef.current = normalizePath(pathname)
+      return
+    }
+
+    if (!isNavigating) {
+      navStartChildrenRef.current = null
+      navStartPathRef.current = null
+    }
+  }, [children, isNavigating, pathname])
+
+  // Finish loading only when destination path is active and route content changed.
+  useEffect(() => {
+    if (!isNavigating || !pendingPath || !navStartChildrenRef.current) return
+
+    const currentPath = normalizePath(pathname)
+    const startedFromPath = navStartPathRef.current
+    const reachedDestination = currentPath === pendingPath
+    const pathChanged = startedFromPath !== null && currentPath !== startedFromPath
+    const contentChanged = children !== navStartChildrenRef.current
+
+    if (!reachedDestination || !pathChanged || !contentChanged) return
+
+    let frame1 = 0
+    let frame2 = 0
+    frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
+        completeNavigation()
+      })
+    })
+
+    return () => {
+      if (frame1) cancelAnimationFrame(frame1)
+      if (frame2) cancelAnimationFrame(frame2)
+    }
+  }, [children, completeNavigation, isNavigating, pathname, pendingPath])
 
   // Safety: clear isLoggingOut after 5s to prevent stuck state
   useEffect(() => {
@@ -141,7 +192,7 @@ export default function AuthenticatedShell({
         <Navbar />
         <main className="pt-16">
           <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            <Spinner className="size-12" />
           </div>
         </main>
       </>
@@ -164,7 +215,7 @@ export default function AuthenticatedShell({
         <main className="pt-16">
           {isNavigating ? (
             <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+              <Spinner className="size-12" />
             </div>
           ) : children}
         </main>
@@ -242,7 +293,7 @@ export default function AuthenticatedShell({
             >
               {isNavigating ? (
                 <div className="flex flex-1 min-h-full items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+                  <Spinner tone="primary" className="size-12" />
                 </div>
               ) : children}
             </main>

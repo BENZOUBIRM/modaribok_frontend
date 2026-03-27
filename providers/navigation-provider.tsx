@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation"
 
 interface NavigationContextValue {
   isNavigating: boolean
+  pendingPath: string | null
   startNavigation: (targetPath: string) => void
+  completeNavigation: () => void
 }
 
 const NavigationContext = React.createContext<NavigationContextValue | null>(null)
@@ -13,44 +15,42 @@ const NavigationContext = React.createContext<NavigationContextValue | null>(nul
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isNavigating, setIsNavigating] = React.useState(false)
+  const [pendingPath, setPendingPath] = React.useState<string | null>(null)
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const normalizePath = React.useCallback((path: string) => {
+    const stripped = path.split(/[?#]/)[0]
+    if (stripped.length > 1 && stripped.endsWith("/")) {
+      return stripped.slice(0, -1)
+    }
+    return stripped
+  }, [])
 
   const startNavigation = React.useCallback(
     (targetPath: string) => {
-      // Strip query string and hash for comparison
-      const clean = targetPath.split(/[?#]/)[0]
-      if (clean === pathname) return
+      const clean = normalizePath(targetPath)
+      const current = normalizePath(pathname)
+      if (clean === current) return
+      setPendingPath(clean)
       setIsNavigating(true)
     },
-    [pathname],
+    [normalizePath, pathname],
   )
 
-  // Clear navigating state when pathname changes (route transition complete).
-  // Use double-rAF to ensure the new component has painted before hiding the spinner.
-  const rafRef = React.useRef<number | null>(null)
-  React.useEffect(() => {
-    if (!isNavigating) return
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = requestAnimationFrame(() => {
-        setIsNavigating(false)
-        rafRef.current = null
-        if (timerRef.current) {
-          clearTimeout(timerRef.current)
-          timerRef.current = null
-        }
-      })
-    })
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+  const completeNavigation = React.useCallback(() => {
+    setIsNavigating(false)
+    setPendingPath(null)
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
     }
-  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Safety timeout — prevent stuck spinner
   React.useEffect(() => {
     if (!isNavigating) return
     timerRef.current = setTimeout(() => {
-      setIsNavigating(false)
-      timerRef.current = null
+      completeNavigation()
     }, 5000)
     return () => {
       if (timerRef.current) {
@@ -58,11 +58,11 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         timerRef.current = null
       }
     }
-  }, [isNavigating])
+  }, [completeNavigation, isNavigating])
 
   const value = React.useMemo(
-    () => ({ isNavigating, startNavigation }),
-    [isNavigating, startNavigation],
+    () => ({ isNavigating, pendingPath, startNavigation, completeNavigation }),
+    [completeNavigation, isNavigating, pendingPath, startNavigation],
   )
 
   return (

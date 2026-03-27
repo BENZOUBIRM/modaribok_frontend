@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { NavLink } from "@/components/ui/nav-link"
@@ -23,6 +24,23 @@ export function UserProfileCard() {
     { label: t.posts, value: "548" },
     { label: t.followers, value: "12.7K" },
     { label: t.following, value: "221" },
+  ]
+
+  const subAccounts = [
+    {
+      id: "store",
+      name: lang === "ar" ? "متجر بروتين الرياضي" : "Protein Store",
+      role: lang === "ar" ? "متجر" : "Store",
+      followers: "15.6K",
+      image: "/images/default-user.jpg",
+    },
+    {
+      id: "coach",
+      name: lang === "ar" ? "كوتش سمر" : "Coach Samer",
+      role: lang === "ar" ? "مدرب" : "Coach",
+      followers: "12.7K",
+      image: "/images/default-user.jpg",
+    },
   ]
 
   return (
@@ -52,6 +70,30 @@ export function UserProfileCard() {
             <span className="text-xs text-muted-foreground">{stat.label}</span>
           </div>
         ))}
+      </div>
+
+      <div className="mt-4 border-t border-border pt-4">
+        <div className="mb-2 text-xs font-semibold text-muted-foreground">
+          {lang === "ar" ? "حساباتي الخاصة" : "Private accounts"}
+        </div>
+
+        <div className="space-y-2">
+          {subAccounts.map((account) => (
+            <div key={account.id} className="rounded-lg border border-border bg-background/50 p-2">
+              <div className="flex items-center gap-2">
+                <Image src={account.image} alt={account.name} width={36} height={36} className="size-9 rounded-md object-cover" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-medium text-foreground">{account.name}</div>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{account.role}</span>
+                    <span className="text-[10px] text-muted-foreground">{account.followers}</span>
+                  </div>
+                </div>
+                <Icon icon="solar:alt-arrow-left-linear" className="size-3 text-muted-foreground" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

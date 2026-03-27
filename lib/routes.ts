@@ -17,12 +17,12 @@ export const DASHBOARD_ROUTES = {
 
 export const USER_ROUTES = {
   PROFILE: (lang: string) => `/${lang}/profile`,
-  MY_ORDERS: (lang: string) => `/${lang}/myorders`,
-  OFFERS: (lang: string) => `/${lang}/offers`,
-  ADDRESSES: (lang: string) => `/${lang}/addresses`,
-  PASSWORD_SECURITY: (lang: string) => `/${lang}/password-security`,
-  PRIVACY_POLICY: (lang: string) => `/${lang}/privacy-policy`,
-  DELETE_ACCOUNT: (lang: string) => `/${lang}/delete-account`,
+  MY_ORDERS: (lang: string) => `/${lang}/settings/myorders`,
+  OFFERS: (lang: string) => `/${lang}/settings/offers`,
+  ADDRESSES: (lang: string) => `/${lang}/settings/addresses`,
+  PASSWORD_SECURITY: (lang: string) => `/${lang}/settings/password-security`,
+  PRIVACY_POLICY: (lang: string) => `/${lang}/settings/privacy-policy`,
+  DELETE_ACCOUNT: (lang: string) => `/${lang}/settings/delete-account`,
   LIST: (lang: string) => `/${lang}/users`,
   DETAIL: (lang: string, id: string | number) => `/${lang}/users/${id}`,
   CREATE: (lang: string) => `/${lang}/users/create`,
@@ -72,7 +72,12 @@ export const ORDER_ROUTES = {
 export const SETTINGS_ROUTES = {
   GENERAL: (lang: string) => `/${lang}/settings`,
   PROFILE: (lang: string) => `/${lang}/settings/profile`,
-  SECURITY: (lang: string) => `/${lang}/settings/security`,
+  MY_ORDERS: (lang: string) => `/${lang}/settings/myorders`,
+  OFFERS: (lang: string) => `/${lang}/settings/offers`,
+  ADDRESSES: (lang: string) => `/${lang}/settings/addresses`,
+  SECURITY: (lang: string) => `/${lang}/settings/password-security`,
+  PRIVACY_POLICY: (lang: string) => `/${lang}/settings/privacy-policy`,
+  DELETE_ACCOUNT: (lang: string) => `/${lang}/settings/delete-account`,
   NOTIFICATIONS: (lang: string) => `/${lang}/settings/notifications`,
 } as const
 

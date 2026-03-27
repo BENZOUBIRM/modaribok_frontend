@@ -21,11 +21,14 @@ export function CommentSection({
 }) {
   const [commentText, setCommentText] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement | null>(null)
+  const lastFocusSignalRef = React.useRef<number | undefined>(focusSignal)
 
   React.useEffect(() => {
-    if (typeof focusSignal === "number") {
+    if (typeof focusSignal === "number" && focusSignal !== lastFocusSignalRef.current) {
       inputRef.current?.focus()
     }
+
+    lastFocusSignalRef.current = focusSignal
   }, [focusSignal])
 
   const handleAddComment = async () => {

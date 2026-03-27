@@ -15,6 +15,7 @@ import { InputField } from "@/components/ui/input-field"
 import { SelectField } from "@/components/ui/select-field"
 import { Callout } from "@/components/ui/callout"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Label } from "@/components/ui/primitives/label"
 import { Calendar } from "@/components/ui/primitives/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/primitives/popover"
@@ -415,7 +416,7 @@ export function ProfilePage() {
   if (isLoading || !isAuthenticated || isFetching || !profile || !user) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-lg text-muted-foreground">{dictionary.common.loading}</div>
+        <Spinner className="size-10" />
       </div>
     )
   }
@@ -732,7 +733,7 @@ export function ProfilePage() {
                                 >
                                   <span className="truncate text-foreground">
                                     {isCitiesLoading
-                                      ? dictionary.common.loading
+                                      ? <Spinner className="size-4" />
                                       : selectedCityLabel || t.form.cityPlaceholder}
                                   </span>
                                   <Icon icon="solar:alt-arrow-down-linear" className="size-4 shrink-0 text-muted-foreground" />

@@ -8,6 +8,7 @@ import { PublicationActions } from "../publication-actions"
 import { CommentSection } from "../comments/comment-section"
 import { useDictionary } from "@/providers/dictionary-provider"
 import type { MockPost, ReactionType } from "@/types"
+import { NavLink } from "@/components/ui/nav-link"
 
 const TEXT_LIMIT = 200
 
@@ -25,7 +26,7 @@ export function PublicationCard({
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
   isAddingComment?: boolean
 }) {
-  const { dictionary } = useDictionary()
+  const { dictionary, lang } = useDictionary()
   const t = dictionary.feed
   const [isExpanded, setIsExpanded] = useState(false)
   const [commentFocusSignal, setCommentFocusSignal] = useState(0)
@@ -40,17 +41,19 @@ export function PublicationCard({
       {/* Header */}
       <div className="flex items-start justify-between p-4 pb-2">
         <div className="flex items-center gap-3">
-          <Image
-            src={post.author.avatarUrl}
-            alt={post.author.name}
-            width={44}
-            height={44}
-            className="size-11 rounded-full object-cover shrink-0"
-          />
+          <NavLink href={`/${lang}/profile`} className="shrink-0">
+            <Image
+              src={post.author.avatarUrl}
+              alt={post.author.name}
+              width={44}
+              height={44}
+              className="size-11 rounded-full object-cover"
+            />
+          </NavLink>
           <div>
-            <p className="text-sm font-semibold text-foreground leading-tight cursor-pointer hover:underline">
+            <NavLink href={`/${lang}/profile`} className="text-sm font-semibold text-foreground leading-tight hover:underline">
               {post.author.name}
-            </p>
+            </NavLink>
             <p className="text-xs text-muted-foreground mt-0.5">
               {post.createdAt}
             </p>

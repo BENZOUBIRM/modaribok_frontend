@@ -1,16 +1,25 @@
 import { Icon } from "@iconify/react"
 
 import { cn } from "@/lib/utils"
+import type { SpinnerProps, SpinnerTone } from "./Spinner.types"
 
-type SpinnerProps = Omit<React.ComponentProps<typeof Icon>, "icon">
+const toneClasses: Record<SpinnerTone, string> = {
+  inherit: "text-current",
+  primary: "text-primary",
+  muted: "text-muted-foreground",
+  inverse: "text-white dark:text-black",
+  success: "text-emerald-500 dark:text-emerald-400",
+  warning: "text-amber-500 dark:text-amber-400",
+  danger: "text-destructive",
+}
 
-function Spinner({ className, ...props }: SpinnerProps) {
+function Spinner({ className, tone = "inherit", ...props }: SpinnerProps) {
   return (
     <Icon
-      icon="svg-spinners:bouncing-ball"
+      icon="svg-spinners:gooey-balls-2"
       role="status"
       aria-label="Loading"
-      className={cn("size-4 animate-spin", className)}
+      className={cn("size-4", toneClasses[tone], className)}
       {...props}
     />
   )

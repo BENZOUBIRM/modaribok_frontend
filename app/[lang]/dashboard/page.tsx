@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
+import { Spinner } from "@/components/ui/spinner"
 
 /**
  * Admin Dashboard — placeholder page.
@@ -28,7 +29,7 @@ export default function DashboardPage() {
   if (isLoading || shouldRedirect) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-muted-foreground text-lg">{dictionary.common.loading}</div>
+        <Spinner className="size-10" />
       </div>
     )
   }
