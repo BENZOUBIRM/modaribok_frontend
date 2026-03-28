@@ -6,9 +6,10 @@ import { Icon } from "@iconify/react"
 import { PublicationMedia } from "../publication-media"
 import { PublicationActions } from "../publication-actions"
 import { CommentSection } from "../comments/comment-section"
+import { CreatePublication } from "../create-publication"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
-import type { MockPost, ReactionType } from "@/types"
+import type { MockPost, ReactionType, VisibilityPublication } from "@/types"
 import { NavLink } from "@/components/ui/nav-link"
 import {
   DropdownMenu,
@@ -27,6 +28,13 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/primitives/dialog"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -41,8 +49,10 @@ export function PublicationCard({
   onAddComment,
   onAddReply,
   onLoadReplies,
+  onUpdatePost,
   onDeletePost,
   isAddingComment,
+  isUpdating,
   isDeleting,
   forceSquareSingleImage,
   canDelete,
@@ -53,8 +63,13 @@ export function PublicationCard({
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
   onAddReply?: (publicationId: number, parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (publicationId: number, commentId: number) => Promise<void> | void
+  onUpdatePost?: (
+    publicationId: number,
+    payload: { content: string; visibility: VisibilityPublication },
+  ) => Promise<boolean> | boolean
   onDeletePost?: (publicationId: number) => Promise<boolean> | boolean
   isAddingComment?: boolean
+  isUpdating?: boolean
   isDeleting?: boolean
   forceSquareSingleImage?: boolean
   canDelete?: boolean
@@ -66,10 +81,15 @@ export function PublicationCard({
   const isRTL = lang === "ar"
   const [isExpanded, setIsExpanded] = useState(false)
   const [commentFocusSignal, setCommentFocusSignal] = useState(0)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const isLong = post.text && post.text.length > TEXT_LIMIT
   const isOwner = user?.id === post.author.id
   const canShowDelete = canDelete ?? isOwner
+  const canShowEdit = Boolean(onUpdatePost) && isOwner
+  const hasMenuActions = canShowDelete || canShowEdit
+  const editPostLabel = t.editPost
+  const updatePostLabel = t.updatePost
   const visibilityMeta =
     post.visibility === "PUBLIC"
       ? { icon: "solar:global-linear", label: t.privacyPublic }
@@ -93,6 +113,23 @@ export function PublicationCard({
 
   const handleCommentClick = () => {
     setCommentFocusSignal((current) => current + 1)
+  }
+
+  const handleUpdateSubmit = async (payload: {
+    content: string
+    visibility: VisibilityPublication
+    mediaFiles: File[]
+  }): Promise<boolean> => {
+    if (!onUpdatePost) {
+      return false
+    }
+
+    const updated = await onUpdatePost(post.id, payload)
+    if (updated) {
+      setShowEditModal(false)
+    }
+
+    return updated
   }
 
   return (
@@ -131,7 +168,7 @@ export function PublicationCard({
             </p>
           </div>
         </div>
-        {canShowDelete && (
+        {hasMenuActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -143,13 +180,32 @@ export function PublicationCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={lang === "ar" ? "start" : "end"} className="z-100 min-w-44">
-              <DropdownMenuItem
-                onSelect={() => setShowDeleteConfirm(true)}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Icon icon="solar:trash-bin-trash-linear" className="size-4" />
-                <span>{t.deletePost}</span>
-              </DropdownMenuItem>
+              {canShowEdit && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    if (!isUpdating) {
+                      setShowEditModal(true)
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {isUpdating ? (
+                    <Spinner className="size-4" />
+                  ) : (
+                    <Icon icon="solar:pen-linear" className="size-4" />
+                  )}
+                  <span>{isUpdating ? updatePostLabel : editPostLabel}</span>
+                </DropdownMenuItem>
+              )}
+              {canShowDelete && (
+                <DropdownMenuItem
+                  onSelect={() => setShowDeleteConfirm(true)}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Icon icon="solar:trash-bin-trash-linear" className="size-4" />
+                  <span>{t.deletePost}</span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -227,6 +283,34 @@ export function PublicationCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-3xl" showCloseButton={false}>
+          <button
+            type="button"
+            onClick={() => setShowEditModal(false)}
+            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+            title={dictionary.common.close}
+            aria-label={dictionary.common.close}
+          >
+            <Icon icon="lucide:x" className="size-5" />
+          </button>
+          <DialogHeader>
+            <DialogTitle>{editPostLabel}</DialogTitle>
+            <DialogDescription>
+              {isRTL ? "يمكنك تعديل النص والخصوصية لهذا المنشور." : "Update your post text and privacy."}
+            </DialogDescription>
+          </DialogHeader>
+          <CreatePublication
+            mode="update"
+            initialContent={post.text}
+            initialVisibility={post.visibility ?? "PUBLIC"}
+            onCancel={() => setShowEditModal(false)}
+            onSubmit={handleUpdateSubmit}
+            className="border-0"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

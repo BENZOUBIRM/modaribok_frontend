@@ -345,6 +345,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
   const [errorCode, setErrorCode] = React.useState<string | null>(null)
   const [activePostIndex, setActivePostIndex] = React.useState<number | null>(null)
   const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
+  const [updatingPostById, setUpdatingPostById] = React.useState<Record<number, boolean>>({})
   const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
   const [showCreator, setShowCreator] = React.useState(false)
 
@@ -635,6 +636,72 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
     return true
   }
 
+  const handleUpdatePost = async (
+    publicationId: number,
+    payload: { content: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
+  ): Promise<boolean> => {
+    if (updatingPostById[publicationId]) {
+      return false
+    }
+
+    setUpdatingPostById((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.updatePublication(publicationId, {
+      content: payload.content,
+      visibility: payload.visibility,
+    })
+
+    setUpdatingPostById((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success || !result.data) {
+      return false
+    }
+
+    const updatedPublication = result.data
+    const updatedImages = (updatedPublication.media ?? [])
+      .filter((media) => media.mediaType === "image")
+      .map((media) => media.thumbnailUrl || media.url)
+      .filter(Boolean)
+    const updatedOriginalImages = (updatedPublication.media ?? [])
+      .filter((media) => media.mediaType === "image")
+      .map((media) => media.url)
+      .filter(Boolean)
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) => {
+        if (item.post.id !== publicationId) {
+          return item
+        }
+
+        const previewImage = updatedImages[0] ?? updatedOriginalImages[0] ?? item.previewImage
+
+        return {
+          ...item,
+          previewImage,
+          imageCount: updatedImages.length || item.imageCount,
+          post: {
+            ...item.post,
+            text: updatedPublication.content ?? "",
+            visibility: updatedPublication.visibility,
+            images: updatedImages,
+            originalImages: updatedOriginalImages,
+            likesCount: updatedPublication.likesCount ?? item.post.likesCount,
+            commentsCount: updatedPublication.commentsCount ?? item.post.commentsCount,
+            sharesCount: updatedPublication.sharesCount ?? item.post.sharesCount,
+          },
+        }
+      }),
+    )
+
+    return true
+  }
+
   return (
     <div className="mt-4">
       <div className={`mb-3 flex ${isRTL ? "justify-start" : "justify-end"}`}>
@@ -769,8 +836,10 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
               onAddComment={handleAddComment}
               onAddReply={handleAddReply}
               onLoadReplies={handleLoadReplies}
+              onUpdatePost={handleUpdatePost}
               onDeletePost={handleDeletePost}
               isAddingComment={Boolean(addingCommentByPostId[imagePosts[activePostIndex].post.id])}
+              isUpdating={Boolean(updatingPostById[imagePosts[activePostIndex].post.id])}
               isDeleting={Boolean(deletingPostById[imagePosts[activePostIndex].post.id])}
               forceSquareSingleImage
               canDelete={Boolean(userId && user?.id === userId)}

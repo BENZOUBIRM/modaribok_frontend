@@ -54,6 +54,7 @@ export function PublicationFeed({
   const [isLoading, setIsLoading] = React.useState(true)
   const [errorCode, setErrorCode] = React.useState<string | null>(null)
   const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
+  const [updatingPostById, setUpdatingPostById] = React.useState<Record<number, boolean>>({})
   const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
 
   React.useEffect(() => {
@@ -310,6 +311,63 @@ export function PublicationFeed({
     return true
   }
 
+  const handleUpdatePost = async (
+    publicationId: number,
+    payload: { content: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
+  ): Promise<boolean> => {
+    if (updatingPostById[publicationId]) {
+      return false
+    }
+
+    setUpdatingPostById((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.updatePublication(publicationId, {
+      content: payload.content,
+      visibility: payload.visibility,
+    })
+
+    setUpdatingPostById((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success || !result.data) {
+      return false
+    }
+
+    const updatedPublication = result.data
+    const updatedImages = (updatedPublication.media ?? [])
+      .filter((media) => media.mediaType === "image")
+      .map((media) => media.thumbnailUrl || media.url)
+      .filter(Boolean)
+    const updatedOriginalImages = (updatedPublication.media ?? [])
+      .filter((media) => media.mediaType === "image")
+      .map((media) => media.url)
+      .filter(Boolean)
+
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === publicationId
+          ? {
+              ...post,
+              text: updatedPublication.content ?? "",
+              visibility: updatedPublication.visibility,
+              images: updatedImages,
+              originalImages: updatedOriginalImages,
+              likesCount: updatedPublication.likesCount ?? post.likesCount,
+              commentsCount: updatedPublication.commentsCount ?? post.commentsCount,
+              sharesCount: updatedPublication.sharesCount ?? post.sharesCount,
+            }
+          : post,
+      ),
+    )
+
+    return true
+  }
+
   return (
     <div className="space-y-4" dir={isRTL ? "rtl" : "ltr"}>
       {showHeader && (
@@ -348,8 +406,10 @@ export function PublicationFeed({
             onAddComment={handleAddComment}
             onAddReply={handleAddReply}
             onLoadReplies={handleLoadReplies}
+            onUpdatePost={handleUpdatePost}
             onDeletePost={handleDeletePost}
             isAddingComment={Boolean(addingCommentByPostId[post.id])}
+            isUpdating={Boolean(updatingPostById[post.id])}
             isDeleting={Boolean(deletingPostById[post.id])}
           />
           {/* Insert friend suggestions after the 1st post */}

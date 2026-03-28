@@ -19,6 +19,8 @@
   "like": "إعجاب",
   "comment": "تعليق",
   "share": "مشاركة",
+  "editPost": "تعديل المنشور",
+  "updatePost": "تحديث المنشور",
   "deletePost": "حذف المنشور",
   "deletePostConfirmTitle": "هل تريد حذف هذا المنشور؟",
   "deletePostConfirmMessage": "لا يمكن التراجع عن هذا الإجراء. سيتم حذف المنشور نهائياً.",

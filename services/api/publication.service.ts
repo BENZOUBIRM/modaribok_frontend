@@ -111,6 +111,42 @@ export async function createPublication(params: {
   }
 }
 
+export async function updatePublication(
+  publicationId: number,
+  params: {
+    content?: string
+    visibility?: VisibilityPublication
+  },
+): Promise<ApiResult<PublicationDto>> {
+  try {
+    const payload: {
+      content?: string
+      visibility?: VisibilityPublication
+    } = {}
+
+    if (params.content !== undefined) {
+      payload.content = params.content
+    }
+
+    if (params.visibility !== undefined) {
+      payload.visibility = params.visibility
+    }
+
+    const response = await apiClient.put<ApiResponse<PublicationDto>>(
+      `/publications/${publicationId}`,
+      payload,
+    )
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
 export async function getRootComments(
   publicationId: number,
   page = 0,

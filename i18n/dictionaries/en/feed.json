@@ -19,6 +19,8 @@
   "like": "Like",
   "comment": "Comment",
   "share": "Share",
+  "editPost": "Edit post",
+  "updatePost": "Update post",
   "deletePost": "Delete post",
   "deletePostConfirmTitle": "Delete this post?",
   "deletePostConfirmMessage": "This action cannot be undone. The post will be permanently deleted.",

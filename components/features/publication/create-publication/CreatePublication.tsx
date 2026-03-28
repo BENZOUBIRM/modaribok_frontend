@@ -27,11 +27,22 @@ type MediaAttachment = {
 /**
  * Post composer box — "What's on your mind?" area.
  */
-export function CreatePublication({ className, onPublished }: CreatePublicationProps) {
+export function CreatePublication({
+  className,
+  onPublished,
+  mode = "create",
+  initialContent,
+  initialVisibility,
+  onCancel,
+  onSubmit,
+}: CreatePublicationProps) {
   const { dictionary, isRTL } = useDictionary()
   const { user } = useAuth()
   const t = dictionary.feed
-  const [isExpanded, setIsExpanded] = React.useState(false)
+  const isUpdateMode = mode === "update"
+  const isMediaEnabled = !isUpdateMode
+  const submitLabel = isUpdateMode ? t.updatePost : t.createPost
+  const [isExpanded, setIsExpanded] = React.useState(isUpdateMode)
   const [content, setContent] = React.useState("")
   const [visibility, setVisibility] = React.useState<VisibilityPublication>("PUBLIC")
   const [isPublishing, setIsPublishing] = React.useState(false)
@@ -112,12 +123,23 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
   const makeAttachmentId = (file: File) =>
     `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`
 
-  const clearAllAttachments = () => {
+  function clearAllAttachments() {
     photoAttachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url))
     videoAttachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.url))
     setPhotoAttachments([])
     setVideoAttachments([])
   }
+
+  React.useEffect(() => {
+    if (!isUpdateMode) {
+      return
+    }
+
+    setIsExpanded(true)
+    setContent(initialContent ?? "")
+    setVisibility(initialVisibility ?? "PUBLIC")
+    clearAllAttachments()
+  }, [initialContent, initialVisibility, isUpdateMode])
 
   const handleAddPhotos = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []).filter((file) => file.type.startsWith("image/"))
@@ -184,32 +206,63 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
     ]
 
     const trimmedContent = content.trim()
-    if (!trimmedContent && mediaFiles.length === 0) {
+    if (!isUpdateMode && !trimmedContent && mediaFiles.length === 0) {
       return
     }
 
     setIsPublishing(true)
 
-    const result = await publicationService.createPublication({
-      content: trimmedContent,
-      visibility,
-      mediaFiles,
-    })
+    let isSuccess = false
+
+    if (onSubmit) {
+      const submitted = await onSubmit({
+        content: trimmedContent,
+        visibility,
+        mediaFiles,
+      })
+
+      isSuccess = Boolean(submitted)
+    } else if (isUpdateMode) {
+      setIsPublishing(false)
+      return
+    } else {
+      const result = await publicationService.createPublication({
+        content: trimmedContent,
+        visibility,
+        mediaFiles,
+      })
+
+      isSuccess = result.success
+    }
 
     setIsPublishing(false)
 
-    if (!result.success) {
+    if (!isSuccess) {
       return
     }
 
-    collapseComposer()
+    if (!isUpdateMode) {
+      collapseComposer()
+    }
+
     onPublished?.()
   }
 
   const collapseComposer = () => {
     setIsExpanded(false)
     setContent("")
+    setVisibility("PUBLIC")
     clearAllAttachments()
+  }
+
+  const handleCancel = () => {
+    if (isUpdateMode) {
+      onCancel?.()
+      return
+    }
+
+    collapseComposer()
+    onCancel?.()
   }
 
   return (
@@ -253,51 +306,59 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
 
       {/* Action buttons */}
       <div className="flex items-center justify-between border-t border-border px-4 py-2">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              setIsExpanded(true)
-              photoInputRef.current?.click()
-            }}
-            className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
-          >
-            <Icon icon="solar:gallery-bold" className="size-5 text-success" />
-            <span className="hidden sm:inline">{t.addPhoto}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsExpanded(true)
-              videoInputRef.current?.click()
-            }}
-            className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
-          >
-            <Icon icon="solar:videocamera-record-bold" className="size-5 text-destructive" />
-            <span className="hidden sm:inline">{t.addVideo}</span>
-          </button>
-        </div>
+        {isMediaEnabled ? (
+          <>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExpanded(true)
+                  photoInputRef.current?.click()
+                }}
+                className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+              >
+                <Icon icon="solar:gallery-bold" className="size-5 text-success" />
+                <span className="hidden sm:inline">{t.addPhoto}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExpanded(true)
+                  videoInputRef.current?.click()
+                }}
+                className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+              >
+                <Icon icon="solar:videocamera-record-bold" className="size-5 text-destructive" />
+                <span className="hidden sm:inline">{t.addVideo}</span>
+              </button>
+            </div>
 
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          title={t.addPhoto}
-          aria-label={t.addPhoto}
-          onChange={handleAddPhotos}
-        />
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/*"
-          multiple
-          className="hidden"
-          title={t.addVideo}
-          aria-label={t.addVideo}
-          onChange={handleAddVideos}
-        />
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              title={t.addPhoto}
+              aria-label={t.addPhoto}
+              onChange={handleAddPhotos}
+            />
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              multiple
+              className="hidden"
+              title={t.addVideo}
+              aria-label={t.addVideo}
+              onChange={handleAddVideos}
+            />
+          </>
+        ) : (
+          <div className="px-2 text-xs text-muted-foreground">
+            {isRTL ? "يمكنك تعديل النص والخصوصية فقط" : "You can edit text and privacy only"}
+          </div>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -332,7 +393,7 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
         )}
       >
         <div className="overflow-hidden">
-          {hasMediaAttachments && (
+          {isMediaEnabled && hasMediaAttachments && (
             <div className="px-4 pt-3">
               <div className="rounded-xl border border-border bg-surface/40 p-3">
                 <div className={cn("mb-3 text-xs font-semibold text-foreground", isRTL && "text-right")}>{attachmentLabels.title}</div>
@@ -423,7 +484,7 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
           <div className={cn("flex items-center justify-end gap-2 px-4 py-3", isRTL && "justify-start")}>
             <button
               type="button"
-              onClick={collapseComposer}
+              onClick={handleCancel}
               className="cursor-pointer rounded-md border border-border px-4 py-1.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
             >
               {t.cancel}
@@ -437,10 +498,10 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
               {isPublishing ? (
                 <span className="inline-flex items-center gap-1.5">
                   <Spinner className="size-4" />
-                  {t.createPost}
+                  {submitLabel}
                 </span>
               ) : (
-                t.createPost
+                submitLabel
               )}
             </button>
           </div>
@@ -469,7 +530,14 @@ export function CreatePublication({ className, onPublished }: CreatePublicationP
             </button>
 
             {previewMedia.type === "photo" ? (
-              <img src={previewMedia.url} alt={previewMedia.name} className="max-h-[70vh] w-full rounded-lg object-contain" />
+              <Image
+                src={previewMedia.url}
+                alt={previewMedia.name}
+                width={1600}
+                height={900}
+                unoptimized
+                className="max-h-[70vh] h-auto w-full rounded-lg object-contain"
+              />
             ) : (
               <video src={previewMedia.url} className="max-h-[70vh] w-full rounded-lg bg-black object-contain" controls autoPlay />
             )}
