@@ -7,6 +7,7 @@ import type {
   ReactionToggleResponseDto,
   ReactionType,
   ReactionUserDto,
+  VisibilityPublication,
 } from "@/types"
 
 interface ApiResponse<T> {
@@ -40,6 +41,76 @@ export async function getFeed(
   }
 }
 
+export async function getUserPublications(
+  userId: number,
+): Promise<ApiResult<PublicationDto[]>> {
+  try {
+    const response = await apiClient.get<ApiResponse<PublicationDto[]>>(`/publications/user/${userId}`)
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
+export async function createPublication(params: {
+  content?: string
+  visibility: VisibilityPublication
+  mediaFiles?: File[]
+  sharedPublicationId?: number | null
+}): Promise<ApiResult<PublicationDto>> {
+  try {
+    const formData = new FormData()
+
+    const publicationPayload: {
+      content?: string
+      visibility: VisibilityPublication
+      sharedPublicationId?: number | null
+    } = {
+      visibility: params.visibility,
+    }
+
+    if (params.content?.trim()) {
+      publicationPayload.content = params.content.trim()
+    }
+
+    if (params.sharedPublicationId !== undefined) {
+      publicationPayload.sharedPublicationId = params.sharedPublicationId
+    }
+
+    formData.append(
+      "publication",
+      new Blob([JSON.stringify(publicationPayload)], { type: "application/json" }),
+    )
+
+    for (const mediaFile of params.mediaFiles ?? []) {
+      formData.append("media", mediaFile)
+    }
+
+    const response = await apiClient.post<ApiResponse<PublicationDto>>(
+      "/publications",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    )
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
 export async function getRootComments(
   publicationId: number,
   page = 0,
@@ -49,6 +120,9 @@ export async function getRootComments(
     const response = await apiClient.get<ApiResponse<PaginationMeta<CommentDto>>>(
       `/publications/${publicationId}/comments`,
       {
+        // Non-critical in feed/profile listing; handled gracefully by caller.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        _skipToast: true as any,
         params: { page, size },
       },
     )
@@ -66,11 +140,16 @@ export async function getRootComments(
 export async function addComment(
   publicationId: number,
   content: string,
+  parentCommentId?: number,
 ): Promise<ApiResult<CommentDto>> {
   try {
+    const payload = parentCommentId
+      ? { content, parentCommentId }
+      : { content }
+
     const response = await apiClient.post<ApiResponse<CommentDto>>(
       `/publications/${publicationId}/comments`,
-      { content },
+      payload,
     )
 
     return {
@@ -97,6 +176,20 @@ export async function getReplies(commentId: number): Promise<ApiResult<CommentDt
   }
 }
 
+export async function deleteComment(commentId: number): Promise<ApiResult<null>> {
+  try {
+    const response = await apiClient.delete<ApiResponse<null>>(`/comments/${commentId}`)
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
 export async function getReactionUsers(
   publicationId: number,
   params?: {
@@ -109,6 +202,9 @@ export async function getReactionUsers(
     const response = await apiClient.get<ApiResponse<PaginationMeta<ReactionUserDto>>>(
       `/publications/${publicationId}/reactions/users`,
       {
+        // Non-critical in feed/profile listing; handled gracefully by caller.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        _skipToast: true as any,
         params: {
           type: params?.type,
           page: params?.page ?? 0,
@@ -136,6 +232,22 @@ export async function toggleReaction(
       `/publications/${publicationId}/reactions`,
       { type },
     )
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
+export async function deletePublication(
+  publicationId: number,
+): Promise<ApiResult<null>> {
+  try {
+    const response = await apiClient.delete<ApiResponse<null>>(`/publications/${publicationId}`)
 
     return {
       success: true,

@@ -17,6 +17,7 @@ import { Callout } from "@/components/ui/callout"
 import { Spinner } from "@/components/ui/spinner"
 import { PublicationCard } from "../publication-card"
 import { FriendSuggestions } from "@/components/features/suggestions"
+import type { PublicationFeedProps } from "./PublicationFeed.types"
 
 const REACTION_TYPES: ReactionType[] = [
   "LIKE",
@@ -37,15 +38,23 @@ const REACTION_TYPES: ReactionType[] = [
  * Main feed container — "Latest Posts" tab + list of publications.
  * Inserts friend suggestions between posts.
  */
-export function PublicationFeed() {
+export function PublicationFeed({
+  refreshKey = 0,
+  userId,
+  showHeader = true,
+  showSuggestions = true,
+  emptyState,
+}: PublicationFeedProps) {
   const { dictionary, lang } = useDictionary()
   const { user } = useAuth()
   const t = dictionary.feed
+  const isRTL = lang === "ar"
 
   const [posts, setPosts] = React.useState<FeedPost[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [errorCode, setErrorCode] = React.useState<string | null>(null)
   const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
+  const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
 
   React.useEffect(() => {
     let isMounted = true
@@ -54,18 +63,51 @@ export function PublicationFeed() {
       setIsLoading(true)
       setErrorCode(null)
 
-      const feedResult = await publicationService.getFeed(0, 10)
+      let publicationItems: PublicationDto[] = []
 
-      if (!isMounted) return
+      if (userId) {
+        const userPublicationsResult = await publicationService.getUserPublications(userId)
 
-      if (!feedResult.success || !feedResult.data) {
-        setPosts([])
-        setErrorCode(feedResult.code ?? "NETWORK_ERROR")
-        setIsLoading(false)
-        return
+        if (!isMounted) return
+
+        if (userPublicationsResult.success && userPublicationsResult.data) {
+          publicationItems = Array.isArray(userPublicationsResult.data)
+            ? userPublicationsResult.data
+            : []
+        } else {
+          const fallbackFeedResult = await publicationService.getFeed(0, 50)
+
+          if (!isMounted) return
+
+          if (!fallbackFeedResult.success || !fallbackFeedResult.data) {
+            setPosts([])
+            setErrorCode(userPublicationsResult.code ?? fallbackFeedResult.code ?? "NETWORK_ERROR")
+            setIsLoading(false)
+            return
+          }
+
+          const fallbackItems = Array.isArray(fallbackFeedResult.data)
+            ? fallbackFeedResult.data
+            : (fallbackFeedResult.data.content ?? [])
+
+          publicationItems = fallbackItems.filter((publication) => publication.user?.id === userId)
+        }
+      } else {
+        const feedResult = await publicationService.getFeed(0, 10)
+
+        if (!isMounted) return
+
+        if (!feedResult.success || !feedResult.data) {
+          setPosts([])
+          setErrorCode(feedResult.code ?? "NETWORK_ERROR")
+          setIsLoading(false)
+          return
+        }
+
+        publicationItems = Array.isArray(feedResult.data)
+          ? feedResult.data
+          : (feedResult.data.content ?? [])
       }
-
-      const publicationItems = feedResult.data.content ?? []
 
       const commentsResults = await Promise.all(
         publicationItems.map((publication) =>
@@ -94,8 +136,6 @@ export function PublicationFeed() {
           comments,
           reactionsCountByType,
           reactionState.currentUserReaction,
-          lang,
-          t.ago,
         )
       })
 
@@ -108,7 +148,7 @@ export function PublicationFeed() {
     return () => {
       isMounted = false
     }
-  }, [lang, t.ago.now, t.ago.minutes, t.ago.hours, t.ago.days, user?.id])
+  }, [lang, user?.id, refreshKey, userId])
 
   const handleReact = async (publicationId: number, reactionType: ReactionType) => {
     const result = await publicationService.toggleReaction(publicationId, reactionType)
@@ -155,7 +195,7 @@ export function PublicationFeed() {
       return
     }
 
-    const createdComment = mapCommentToFeedComment(result.data, lang, t.ago)
+    const createdComment = mapCommentToFeedComment(result.data)
 
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
@@ -170,16 +210,123 @@ export function PublicationFeed() {
     )
   }
 
+  const handleLoadReplies = async (publicationId: number, parentCommentId: number) => {
+    const result = await publicationService.getReplies(parentCommentId)
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const repliesData: CommentDto[] = result.data
+    const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === publicationId
+          ? {
+              ...post,
+              comments: replaceRepliesForComment(post.comments, parentCommentId, mappedReplies),
+            }
+          : post,
+      ),
+    )
+  }
+
+  const handleAddReply = async (
+    publicationId: number,
+    parentCommentId: number,
+    content: string,
+  ): Promise<boolean> => {
+    const trimmedContent = content.trim()
+    if (!trimmedContent) {
+      return false
+    }
+
+    const createResult = await publicationService.addComment(
+      publicationId,
+      trimmedContent,
+      parentCommentId,
+    )
+
+    if (!createResult.success || !createResult.data) {
+      return false
+    }
+
+    const createdReplyDto: CommentDto = createResult.data
+
+    const repliesResult = await publicationService.getReplies(parentCommentId)
+
+    setPosts((currentPosts) =>
+      currentPosts.map((post) => {
+        if (post.id !== publicationId) {
+          return post
+        }
+
+        if (repliesResult.success && repliesResult.data) {
+          const repliesData: CommentDto[] = repliesResult.data
+          const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+
+          return {
+            ...post,
+            comments: replaceRepliesForComment(post.comments, parentCommentId, mappedReplies),
+            commentsCount: post.commentsCount + 1,
+          }
+        }
+
+        const createdReply = mapCommentToFeedComment(createdReplyDto)
+
+        return {
+          ...post,
+          comments: appendReplyToComment(post.comments, parentCommentId, createdReply),
+          commentsCount: post.commentsCount + 1,
+        }
+      }),
+    )
+
+    return true
+  }
+
+  const handleDeletePost = async (publicationId: number) => {
+    if (deletingPostById[publicationId]) {
+      return false
+    }
+
+    setDeletingPostById((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.deletePublication(publicationId)
+
+    setDeletingPostById((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success) {
+      return false
+    }
+
+    setPosts((currentPosts) => currentPosts.filter((post) => post.id !== publicationId))
+    return true
+  }
+
   return (
-    <div className="space-y-4">
-      {/* Tab header */}
-      <div className="flex items-center gap-2">
-        <Icon icon="solar:document-text-linear" className="size-5 text-primary" />
-        <h2 className="font-bold text-base text-foreground">{t.latestPosts}</h2>
-      </div>
+    <div className="space-y-4" dir={isRTL ? "rtl" : "ltr"}>
+      {showHeader && (
+        <div className="flex items-center gap-2">
+          <Icon icon="solar:document-text-linear" className="size-5 text-primary" />
+          <h2 className="font-bold text-base text-foreground">{t.latestPosts}</h2>
+        </div>
+      )}
 
       {isLoading && (
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background">
+        <div
+          className={
+            showHeader
+              ? "flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background"
+              : "flex min-h-56 items-center justify-center rounded-lg border border-border bg-muted/20"
+          }
+        >
           <Spinner className="size-12" />
         </div>
       )}
@@ -190,6 +337,8 @@ export function PublicationFeed() {
         </Callout>
       )}
 
+      {!isLoading && !errorCode && posts.length === 0 && emptyState}
+
       {/* Posts with suggestions injected */}
       {!isLoading && !errorCode && posts.map((post, index) => (
         <div key={post.id} className="space-y-4">
@@ -197,10 +346,14 @@ export function PublicationFeed() {
             post={post}
             onReact={handleReact}
             onAddComment={handleAddComment}
+            onAddReply={handleAddReply}
+            onLoadReplies={handleLoadReplies}
+            onDeletePost={handleDeletePost}
             isAddingComment={Boolean(addingCommentByPostId[post.id])}
+            isDeleting={Boolean(deletingPostById[post.id])}
           />
           {/* Insert friend suggestions after the 1st post */}
-          {index === 0 && <FriendSuggestions />}
+          {showSuggestions && index === 0 && <FriendSuggestions />}
         </div>
       ))}
     </div>
@@ -212,8 +365,6 @@ function mapPublicationToFeedPost(
   comments: CommentDto[],
   reactionsCountByType: ReactionCountsByType,
   currentUserReaction: ReactionType | null,
-  lang: string,
-  agoTexts: { now: string; minutes: string; hours: string; days: string },
 ): FeedPost {
   const authorFirstName = publication.user?.firstName ?? ""
   const authorLastName = publication.user?.lastName ?? ""
@@ -232,21 +383,22 @@ function mapPublicationToFeedPost(
       .filter((media) => media.mediaType === "image")
       .map((media) => media.thumbnailUrl || media.url)
       .filter(Boolean),
-    createdAt: formatRelativeTime(publication.createdAt, lang, agoTexts),
+    originalImages: (publication.media ?? [])
+      .filter((media) => media.mediaType === "image")
+      .map((media) => media.url)
+      .filter(Boolean),
+    visibility: publication.visibility,
+    createdAt: formatDateTime(publication.createdAt),
     likesCount: publication.likesCount ?? 0,
     commentsCount: publication.commentsCount ?? 0,
     sharesCount: publication.sharesCount ?? 0,
-    comments: comments.map((comment) => mapCommentToFeedComment(comment, lang, agoTexts)),
+    comments: comments.map((comment) => mapCommentToFeedComment(comment)),
     reactionsCountByType,
     currentUserReaction,
   }
 }
 
-function mapCommentToFeedComment(
-  comment: CommentDto,
-  lang: string,
-  agoTexts: { now: string; minutes: string; hours: string; days: string },
-): FeedComment {
+function mapCommentToFeedComment(comment: CommentDto): FeedComment {
   const firstName = comment.user?.firstName ?? ""
   const lastName = comment.user?.lastName ?? ""
   const fullName = `${firstName} ${lastName}`.trim() || "User"
@@ -260,10 +412,113 @@ function mapCommentToFeedComment(
       avatarUrl: comment.user?.profileImageUrl || "/images/default-user.jpg",
     },
     text: comment.content,
-    createdAt: formatRelativeTime(comment.createdAt, lang, agoTexts),
+    isDeleted: comment.isDeleted,
+    createdAt: formatDateTime(comment.createdAt),
     likesCount: 0,
-    replies: (comment.replies ?? []).map((reply) => mapCommentToFeedComment(reply, lang, agoTexts)),
+    parentCommentId: comment.parentCommentId,
+    repliesCount: comment.repliesCount ?? 0,
+    replies: (comment.replies ?? []).map((reply) => mapCommentToFeedComment(reply)),
   }
+}
+
+function replaceRepliesForComment(
+  comments: FeedComment[],
+  parentCommentId: number,
+  replies: FeedComment[],
+): FeedComment[] {
+  const [updatedComments] = replaceRepliesForCommentRecursive(comments, parentCommentId, replies)
+  return updatedComments
+}
+
+function replaceRepliesForCommentRecursive(
+  comments: FeedComment[],
+  parentCommentId: number,
+  replies: FeedComment[],
+): [FeedComment[], boolean] {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === parentCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        replies,
+        repliesCount: replies.length,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const [updatedReplies, nestedUpdated] = replaceRepliesForCommentRecursive(
+      comment.replies,
+      parentCommentId,
+      replies,
+    )
+
+    if (!nestedUpdated) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: updatedReplies,
+    }
+  })
+
+  return [hasUpdated ? nextComments : comments, hasUpdated]
+}
+
+function appendReplyToComment(
+  comments: FeedComment[],
+  parentCommentId: number,
+  reply: FeedComment,
+): FeedComment[] {
+  const [updatedComments] = appendReplyToCommentRecursive(comments, parentCommentId, reply)
+  return updatedComments
+}
+
+function appendReplyToCommentRecursive(
+  comments: FeedComment[],
+  parentCommentId: number,
+  reply: FeedComment,
+): [FeedComment[], boolean] {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === parentCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        replies: [...comment.replies, reply],
+        repliesCount: comment.repliesCount + 1,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const [updatedReplies, nestedUpdated] = appendReplyToCommentRecursive(
+      comment.replies,
+      parentCommentId,
+      reply,
+    )
+
+    if (!nestedUpdated) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: updatedReplies,
+    }
+  })
+
+  return [hasUpdated ? nextComments : comments, hasUpdated]
 }
 
 function buildHandle(firstName?: string, lastName?: string): string {
@@ -271,39 +526,17 @@ function buildHandle(firstName?: string, lastName?: string): string {
   return raw ? `@${raw}` : "@user"
 }
 
-function formatRelativeTime(
-  isoDate: string,
-  lang: string,
-  agoTexts: { now: string; minutes: string; hours: string; days: string },
-): string {
+function formatDateTime(isoDate: string): string {
   const date = new Date(isoDate)
   if (Number.isNaN(date.getTime())) return ""
 
-  const diffMs = Date.now() - date.getTime()
-  if (diffMs < 60_000) {
-    return agoTexts.now
-  }
+  const day = String(date.getDate()).padStart(2, "0")
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
 
-  const minutes = Math.floor(diffMs / 60_000)
-  if (minutes < 60) {
-    return agoTexts.minutes.replace("{count}", String(minutes))
-  }
-
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) {
-    return agoTexts.hours.replace("{count}", String(hours))
-  }
-
-  const days = Math.floor(hours / 24)
-  if (days <= 30) {
-    return agoTexts.days.replace("{count}", String(days))
-  }
-
-  return new Intl.DateTimeFormat(lang === "ar" ? "ar" : "en", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date)
+  return `${day}-${month}-${year} • ${hours}:${minutes}`
 }
 
 async function loadReactionState(

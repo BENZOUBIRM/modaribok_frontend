@@ -123,8 +123,11 @@ export interface FeedComment {
   id: number
   author: FeedUser
   text: string
+  isDeleted?: boolean
   createdAt: string
   likesCount: number
+  parentCommentId: number | null
+  repliesCount: number
   replies: FeedComment[]
 }
 
@@ -133,6 +136,8 @@ export interface FeedPost {
   author: FeedUser
   text: string
   images: string[]
+  originalImages?: string[]
+  visibility?: VisibilityPublication
   createdAt: string
   likesCount: number
   commentsCount: number

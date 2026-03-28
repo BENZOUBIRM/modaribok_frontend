@@ -11,17 +11,24 @@ import type { MockComment } from "@/types"
 export function CommentSection({
   comments,
   onAddComment,
+  onAddReply,
+  onLoadReplies,
   isAddingComment,
   focusSignal,
+  scrollable,
 }: {
   comments: MockComment[]
   onAddComment?: (content: string) => Promise<void> | void
+  onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
+  onLoadReplies?: (commentId: number) => Promise<void> | void
   isAddingComment?: boolean
   focusSignal?: number
+  scrollable?: boolean
 }) {
   const [commentText, setCommentText] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement | null>(null)
   const lastFocusSignalRef = React.useRef<number | undefined>(focusSignal)
+  const shouldScrollComments = scrollable ?? true
 
   React.useEffect(() => {
     if (typeof focusSignal === "number" && focusSignal !== lastFocusSignalRef.current) {
@@ -57,9 +64,18 @@ export function CommentSection({
 
   return (
     <div className="border-t border-border">
-      <div className="px-4 pt-3 space-y-3">
+      <div
+        className={`px-4 pt-3 space-y-3 ${
+          shouldScrollComments ? "max-h-72 overflow-y-auto overscroll-contain pe-1" : ""
+        }`}
+      >
         {comments.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} />
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            onAddReply={onAddReply}
+            onLoadReplies={onLoadReplies}
+          />
         ))}
       </div>
       <CommentInput

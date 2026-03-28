@@ -45,7 +45,7 @@ export function CommentInput({
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3">
+    <div className="flex items-center gap-2 px-4 py-3" dir={isRTL ? "rtl" : "ltr"}>
       <Image
         src={avatarSrc}
         alt={user?.firstName ?? ""}
@@ -55,7 +55,7 @@ export function CommentInput({
       />
       <div className="flex-1 relative">
         {replyTo && (
-          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="mb-1.5 flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 rounded-full px-2 py-0.5">
               {replyTo}
             </span>
@@ -84,7 +84,7 @@ export function CommentInput({
           }}
           className={cn(
             "w-full h-9 rounded-full bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
-            isRTL ? "pr-4 pl-10" : "pl-4 pr-10"
+            isRTL ? "pr-4 pl-10 text-right" : "pl-4 pr-10"
           )}
         />
         <button

@@ -44,7 +44,8 @@ export function ProfileOverviewPage() {
         displayName={displayName}
         handle={handle}
         avatarUrl={avatarUrl}
-          userRole={user.role}
+        userRole={user.role}
+        userId={user.id}
       />
     </div>
   )

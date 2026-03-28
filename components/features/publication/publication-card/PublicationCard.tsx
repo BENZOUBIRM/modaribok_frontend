@@ -7,8 +7,28 @@ import { PublicationMedia } from "../publication-media"
 import { PublicationActions } from "../publication-actions"
 import { CommentSection } from "../comments/comment-section"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { useAuth } from "@/providers/auth-provider"
 import type { MockPost, ReactionType } from "@/types"
 import { NavLink } from "@/components/ui/nav-link"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { cn } from "@/lib/utils"
+import { Spinner } from "@/components/ui/spinner"
 
 const TEXT_LIMIT = 200
 
@@ -19,28 +39,67 @@ export function PublicationCard({
   post,
   onReact,
   onAddComment,
+  onAddReply,
+  onLoadReplies,
+  onDeletePost,
   isAddingComment,
+  isDeleting,
+  forceSquareSingleImage,
+  canDelete,
+  scrollableComments,
 }: {
   post: MockPost
   onReact?: (publicationId: number, reactionType: ReactionType) => void
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
+  onAddReply?: (publicationId: number, parentCommentId: number, content: string) => Promise<boolean> | boolean
+  onLoadReplies?: (publicationId: number, commentId: number) => Promise<void> | void
+  onDeletePost?: (publicationId: number) => Promise<boolean> | boolean
   isAddingComment?: boolean
+  isDeleting?: boolean
+  forceSquareSingleImage?: boolean
+  canDelete?: boolean
+  scrollableComments?: boolean
 }) {
   const { dictionary, lang } = useDictionary()
+  const { user } = useAuth()
   const t = dictionary.feed
+  const isRTL = lang === "ar"
   const [isExpanded, setIsExpanded] = useState(false)
   const [commentFocusSignal, setCommentFocusSignal] = useState(0)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const isLong = post.text && post.text.length > TEXT_LIMIT
+  const isOwner = user?.id === post.author.id
+  const canShowDelete = canDelete ?? isOwner
+  const visibilityMeta =
+    post.visibility === "PUBLIC"
+      ? { icon: "solar:global-linear", label: t.privacyPublic }
+      : post.visibility === "FRIENDS"
+        ? { icon: "solar:users-group-rounded-linear", label: t.privacyFriends }
+        : post.visibility === "PRIVATE"
+          ? { icon: "solar:lock-keyhole-linear", label: t.privacyPrivate }
+          : null
+
+  const handleDeleteConfirm = async () => {
+    if (!onDeletePost) {
+      setShowDeleteConfirm(false)
+      return
+    }
+
+    const deleted = await onDeletePost(post.id)
+    if (deleted) {
+      setShowDeleteConfirm(false)
+    }
+  }
 
   const handleCommentClick = () => {
     setCommentFocusSignal((current) => current + 1)
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="flex items-start justify-between p-4 pb-2">
-        <div className="flex items-center gap-3">
+        <div className={cn("flex items-center gap-3", isRTL && "text-right")}>
           <NavLink href={`/${lang}/profile`} className="shrink-0">
             <Image
               src={post.author.avatarUrl}
@@ -54,20 +113,52 @@ export function PublicationCard({
             <NavLink href={`/${lang}/profile`} className="text-sm font-semibold text-foreground leading-tight hover:underline">
               {post.author.name}
             </NavLink>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {post.createdAt}
+            <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
+              <span className="inline-flex items-center gap-1.5">
+                <span dir="ltr" className="tabular-nums">
+                  {post.createdAt}
+                </span>
+                {visibilityMeta && (
+                  <span
+                    className="inline-flex items-center"
+                    title={visibilityMeta.label}
+                    aria-label={visibilityMeta.label}
+                  >
+                    <Icon icon={visibilityMeta.icon} className="size-3.5 text-muted-foreground" />
+                  </span>
+                )}
+              </span>
             </p>
           </div>
         </div>
-        <button title="More options" className="cursor-pointer p-1 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground">
-          <Icon icon="solar:menu-dots-bold" className="size-5" />
-        </button>
+        {canShowDelete && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title="More options"
+                className="cursor-pointer rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted/70 dark:hover:bg-muted/40"
+              >
+                <Icon icon="solar:menu-dots-bold" className="size-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={lang === "ar" ? "start" : "end"} className="z-100 min-w-44">
+              <DropdownMenuItem
+                onSelect={() => setShowDeleteConfirm(true)}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Icon icon="solar:trash-bin-trash-linear" className="size-4" />
+                <span>{t.deletePost}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Body text */}
       {post.text && (
         <div className="px-4 pb-3">
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className={cn("text-sm text-foreground leading-relaxed", isRTL && "text-right")}>
             {isLong && !isExpanded ? `${post.text.slice(0, TEXT_LIMIT)}…` : post.text}
           </p>
           {isLong && (
@@ -82,7 +173,11 @@ export function PublicationCard({
       )}
 
       {/* Media grid */}
-      <PublicationMedia images={post.images} />
+      <PublicationMedia
+        images={post.images}
+        originalImages={post.originalImages}
+        forceSquareSingle={forceSquareSingleImage}
+      />
 
       {/* Actions: like, comment, share */}
       <PublicationActions
@@ -100,9 +195,38 @@ export function PublicationCard({
       <CommentSection
         comments={post.comments}
         onAddComment={(content) => onAddComment?.(post.id, content)}
+        onAddReply={(parentCommentId, content) => onAddReply?.(post.id, parentCommentId, content)}
+        onLoadReplies={(commentId) => onLoadReplies?.(post.id, commentId)}
         isAddingComment={isAddingComment}
         focusSignal={commentFocusSignal}
+        scrollable={scrollableComments}
       />
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-orange-500/10">
+              <Icon
+                icon="solar:danger-triangle-bold"
+                className="size-8 text-orange-500"
+              />
+            </AlertDialogMedia>
+            <AlertDialogTitle className={cn(lang === "ar" && "font-arabic")}>{t.deletePostConfirmTitle}</AlertDialogTitle>
+            <AlertDialogDescription className={cn(lang === "ar" && "font-arabic")}>{t.deletePostConfirmMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={cn(lang === "ar" && "font-arabic")}>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              className={cn("inline-flex items-center gap-2", lang === "ar" && "font-arabic")}
+            >
+              {isDeleting ? <Spinner className="size-4" /> : null}
+              {t.deletePost}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

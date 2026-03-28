@@ -9,7 +9,7 @@
  */
 
 import axios from "axios"
-import { getCodeConfig } from "@/lib/error-codes"
+import { ERROR_CODE_REGISTRY, getCodeConfig } from "@/lib/error-codes"
 import { showApiToast } from "@/lib/api-toast"
 
 /* ──────────────── Constants ──────────────── */
@@ -73,7 +73,7 @@ apiClient.interceptors.response.use(
     const skip = (response.config as any)?._skipToast === true
 
     if (code && !skip) {
-      const cfg = getCodeConfig(code)
+      const cfg = ERROR_CODE_REGISTRY[code]
       if (cfg.autoToast) {
         showApiToast(code)
       }

@@ -14,18 +14,59 @@ import type { MockComment } from "@/types"
 export function CommentItem({
   comment,
   isReply = false,
+  onAddReply,
+  onLoadReplies,
 }: {
   comment: MockComment
   isReply?: boolean
+  onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
+  onLoadReplies?: (commentId: number) => Promise<void> | void
 }) {
   const { dictionary, isRTL } = useDictionary()
   const t = dictionary.feed
   const [showReplies, setShowReplies] = useState(false)
   const [showReplyInput, setShowReplyInput] = useState(false)
-  const hasReplies = comment.replies && comment.replies.length > 0
+  const [replyText, setReplyText] = useState("")
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false)
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false)
+  const hasReplies = comment.repliesCount > 0
+
+  const handleReplySubmit = async () => {
+    const trimmedReply = replyText.trim()
+    if (!trimmedReply || !onAddReply || isSubmittingReply) {
+      return
+    }
+
+    setIsSubmittingReply(true)
+    const created = await onAddReply(comment.id, trimmedReply)
+    setIsSubmittingReply(false)
+
+    if (!created) {
+      return
+    }
+
+    setReplyText("")
+    setShowReplyInput(false)
+    setShowReplies(true)
+  }
+
+  const handleToggleReplies = async () => {
+    if (showReplies) {
+      setShowReplies(false)
+      return
+    }
+
+    if (hasReplies && comment.replies.length === 0 && onLoadReplies) {
+      setIsLoadingReplies(true)
+      await onLoadReplies(comment.id)
+      setIsLoadingReplies(false)
+    }
+
+    setShowReplies(true)
+  }
 
   return (
-    <div className={cn("flex gap-2", isReply && (isRTL ? "mr-10" : "ml-10"))}>
+    <div className={cn("flex gap-2", isReply && (isRTL ? "mr-10" : "ml-10"))} dir={isRTL ? "rtl" : "ltr"}>
       <Image
         src={comment.author.avatarUrl}
         alt={comment.author.name}
@@ -36,7 +77,7 @@ export function CommentItem({
           isReply ? "size-7" : "size-8"
         )}
       />
-      <div className="flex-1 min-w-0">
+      <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
         {/* Comment bubble */}
         <div className="bg-surface rounded-xl px-3 py-2">
           <p className="text-sm font-semibold text-foreground leading-tight cursor-pointer hover:underline">
@@ -48,23 +89,36 @@ export function CommentItem({
         </div>
 
         {/* Comment meta */}
-        <div className="flex items-center gap-3 mt-1 px-1">
-          <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
-          <button className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-            {t.like}
-          </button>
-          {comment.likesCount > 0 && (
-            <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-              <Icon icon="solar:like-bold" className="size-3 text-primary" />
-              {comment.likesCount}
-            </span>
-          )}
-          <button
-            onClick={() => setShowReplyInput(!showReplyInput)}
-            className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        <div className="mt-1 flex items-center gap-3 px-1">
+          <div className="flex items-center gap-3">
+            <button className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+              {t.like}
+            </button>
+            {comment.likesCount > 0 && (
+              <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                <Icon icon="solar:like-bold" className="size-3 text-primary" />
+                {comment.likesCount}
+              </span>
+            )}
+            {!comment.isDeleted && (
+              <button
+                onClick={() => setShowReplyInput(!showReplyInput)}
+                className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t.reply}
+              </button>
+            )}
+          </div>
+
+          <span
+            dir="ltr"
+            className={cn(
+              "text-xs text-muted-foreground tabular-nums",
+              isRTL ? "mr-auto" : "ml-auto",
+            )}
           >
-            {t.reply}
-          </button>
+            {comment.createdAt}
+          </span>
         </div>
 
         {/* Inline reply input */}
@@ -72,7 +126,14 @@ export function CommentItem({
           <div className={cn("mt-1.5", isRTL ? "mr-0" : "ml-0")}>
             <CommentInput
               replyTo={comment.author.handle}
-              onCancelReply={() => setShowReplyInput(false)}
+              value={replyText}
+              onChange={setReplyText}
+              onSubmit={handleReplySubmit}
+              isSubmitting={isSubmittingReply}
+              onCancelReply={() => {
+                setShowReplyInput(false)
+                setReplyText("")
+              }}
             />
           </div>
         )}
@@ -81,20 +142,30 @@ export function CommentItem({
         {hasReplies && (
           <div className="mt-1.5">
             <button
-              onClick={() => setShowReplies(!showReplies)}
+              onClick={handleToggleReplies}
               className="cursor-pointer text-xs font-medium text-primary hover:underline flex items-center gap-1"
             >
-              <Icon
-                icon={showReplies ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
-                className="size-3"
-              />
-              {showReplies ? t.hideReplies : `${t.viewReplies} (${comment.replies.length})`}
+              {isLoadingReplies ? (
+                <Icon icon="svg-spinners:3-dots-fade" className="size-3" />
+              ) : (
+                <Icon
+                  icon={showReplies ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                  className="size-3"
+                />
+              )}
+              {showReplies ? t.hideReplies : `${t.viewReplies} (${comment.repliesCount})`}
             </button>
 
             {showReplies && (
               <div className="mt-2 space-y-3">
                 {comment.replies.map((reply) => (
-                  <CommentItem key={reply.id} comment={reply} isReply />
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    isReply
+                    onAddReply={onAddReply}
+                    onLoadReplies={onLoadReplies}
+                  />
                 ))}
               </div>
             )}

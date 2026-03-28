@@ -26,6 +26,7 @@ function HomePage() {
   // Check if the user just signed up (query string flag from signup redirect)
   const justSignedUp = searchParams.get("signup") === "success"
   const [showSignupBanner, setShowSignupBanner] = React.useState(justSignedUp)
+  const [feedRefreshKey, setFeedRefreshKey] = React.useState(0)
 
   // Auto-dismiss the signup banner after 6 seconds
   React.useEffect(() => {
@@ -50,8 +51,8 @@ function HomePage() {
       <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto py-6 px-4 space-y-4">
         {/* Mobile search bar — visible only below sm (when navbar search is hidden) */}
         <MobileSearchBar />
-        <CreatePublication />
-        <PublicationFeed />
+        <CreatePublication onPublished={() => setFeedRefreshKey((current) => current + 1)} />
+        <PublicationFeed refreshKey={feedRefreshKey} />
       </div>
     )
   }

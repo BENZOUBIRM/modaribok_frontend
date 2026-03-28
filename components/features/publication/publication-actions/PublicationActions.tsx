@@ -468,7 +468,7 @@ export function PublicationActions({
   }
 
   return (
-    <div className="border-t border-border">
+    <div className="border-t border-border" dir={isRTL ? "rtl" : "ltr"}>
       {/* Stats row */}
       <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-2">
@@ -573,10 +573,11 @@ export function PublicationActions({
           onMouseEnter={openReactionPicker}
           onMouseLeave={closeReactionPicker}
           className={cn(
-            "pointer-events-none absolute bottom-full z-30 mb-2 inset-x-2 sm:inset-x-auto ltr:sm:left-2 rtl:sm:right-2",
+            "pointer-events-none absolute bottom-full z-30 mb-2 inset-x-2 sm:inset-x-auto",
             "rounded-2xl border border-border bg-card p-2 shadow-xl transition-all duration-200 ease-out",
             "w-[calc(100%-1rem)] sm:w-max max-w-[calc(100%-1rem)]",
             "origin-bottom",
+            isRTL ? "sm:right-2" : "sm:left-2",
             isReactionPickerOpen
               ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
               : "translate-y-2 scale-95 opacity-0",

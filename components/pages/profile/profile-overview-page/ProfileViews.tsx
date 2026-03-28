@@ -11,7 +11,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CreatePublication, PublicationFeed } from "@/components/features/publication"
+import { PublicationCard } from "@/components/features/publication"
+import { Spinner } from "@/components/ui/spinner"
+import { Callout } from "@/components/ui/callout"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/primitives/dialog"
+import { publicationService } from "@/services/api"
+import { useAuth } from "@/providers/auth-provider"
 import type { UserRole } from "@/types/auth"
+import type { CommentDto, FeedComment, FeedPost, PublicationDto, ReactionCountsByType, ReactionType } from "@/types"
 import { ProfilePatternOverlay } from "./ProfilePatternOverlay"
 
 type ProfileType = "user" | "store" | "coach"
@@ -23,6 +37,781 @@ interface ProfileViewsProps {
   handle: string
   avatarUrl: string
   userRole: UserRole
+  userId: number
+}
+
+type ImagePostItem = {
+  id: number
+  previewImage: string
+  imageCount: number
+  post: FeedPost
+}
+
+const REACTION_TYPES: ReactionType[] = [
+  "LIKE",
+  "LOVE",
+  "HAHA",
+  "STRONG",
+  "FIRE",
+  "CLAP",
+  "MUSCLE",
+  "HEALTHY",
+  "MOTIVATION",
+  "GOAL",
+  "PROGRESS",
+  "CHAMPION",
+]
+
+function mapPublicationToImagePost(publication: PublicationDto): ImagePostItem | null {
+  const imageMedia = (publication.media ?? []).filter((media) => media.mediaType === "image")
+  if (imageMedia.length === 0) {
+    return null
+  }
+
+  const authorFirstName = publication.user?.firstName ?? ""
+  const authorLastName = publication.user?.lastName ?? ""
+  const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
+  const handleRaw = `${authorFirstName}${authorLastName}`.replace(/\s+/g, "").toLowerCase()
+
+  const post: FeedPost = {
+    id: publication.id,
+    author: {
+      id: publication.user?.id ?? 0,
+      name: authorFullName,
+      handle: handleRaw ? `@${handleRaw}` : "@user",
+      avatarUrl: publication.user?.profileImageUrl || "/images/default-user.jpg",
+    },
+    text: publication.content ?? "",
+    images: imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean),
+    originalImages: imageMedia.map((media) => media.url).filter(Boolean),
+    visibility: publication.visibility,
+    createdAt: formatPostDate(publication.createdAt),
+    likesCount: publication.likesCount ?? 0,
+    commentsCount: publication.commentsCount ?? 0,
+    sharesCount: publication.sharesCount ?? 0,
+    comments: [],
+    reactionsCountByType: undefined,
+    currentUserReaction: null,
+  }
+
+  return {
+    id: publication.id,
+    previewImage: post.images[0] ?? post.originalImages?.[0] ?? "",
+    imageCount: post.images.length,
+    post,
+  }
+}
+
+function mapCommentToFeedComment(comment: CommentDto): FeedComment {
+  const firstName = comment.user?.firstName ?? ""
+  const lastName = comment.user?.lastName ?? ""
+  const fullName = `${firstName} ${lastName}`.trim() || "User"
+  const handleRaw = `${firstName}${lastName}`.replace(/\s+/g, "").toLowerCase()
+
+  return {
+    id: comment.id,
+    author: {
+      id: comment.user?.id ?? 0,
+      name: fullName,
+      handle: handleRaw ? `@${handleRaw}` : "@user",
+      avatarUrl: comment.user?.profileImageUrl || "/images/default-user.jpg",
+    },
+    text: comment.content,
+    isDeleted: comment.isDeleted,
+    createdAt: formatPostDate(comment.createdAt),
+    likesCount: 0,
+    parentCommentId: comment.parentCommentId,
+    repliesCount: comment.repliesCount ?? 0,
+    replies: (comment.replies ?? []).map((reply) => mapCommentToFeedComment(reply)),
+  }
+}
+
+function replaceRepliesForComment(
+  comments: FeedComment[],
+  parentCommentId: number,
+  replies: FeedComment[],
+): FeedComment[] {
+  const [updatedComments] = replaceRepliesForCommentRecursive(comments, parentCommentId, replies)
+  return updatedComments
+}
+
+function replaceRepliesForCommentRecursive(
+  comments: FeedComment[],
+  parentCommentId: number,
+  replies: FeedComment[],
+): [FeedComment[], boolean] {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === parentCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        replies,
+        repliesCount: replies.length,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const [updatedReplies, nestedUpdated] = replaceRepliesForCommentRecursive(
+      comment.replies,
+      parentCommentId,
+      replies,
+    )
+
+    if (!nestedUpdated) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: updatedReplies,
+    }
+  })
+
+  return [hasUpdated ? nextComments : comments, hasUpdated]
+}
+
+function appendReplyToComment(
+  comments: FeedComment[],
+  parentCommentId: number,
+  reply: FeedComment,
+): FeedComment[] {
+  const [updatedComments] = appendReplyToCommentRecursive(comments, parentCommentId, reply)
+  return updatedComments
+}
+
+function appendReplyToCommentRecursive(
+  comments: FeedComment[],
+  parentCommentId: number,
+  reply: FeedComment,
+): [FeedComment[], boolean] {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === parentCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        replies: [...comment.replies, reply],
+        repliesCount: comment.repliesCount + 1,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const [updatedReplies, nestedUpdated] = appendReplyToCommentRecursive(
+      comment.replies,
+      parentCommentId,
+      reply,
+    )
+
+    if (!nestedUpdated) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: updatedReplies,
+    }
+  })
+
+  return [hasUpdated ? nextComments : comments, hasUpdated]
+}
+
+function formatPostDate(isoDate: string): string {
+  const date = new Date(isoDate)
+  if (Number.isNaN(date.getTime())) return ""
+
+  const day = String(date.getDate()).padStart(2, "0")
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+
+  return `${day}-${month}-${year} • ${hours}:${minutes}`
+}
+
+function parseReactionType(value?: string | null): ReactionType | null {
+  if (!value) return null
+  const parsed = value.toUpperCase() as ReactionType
+  return REACTION_TYPES.includes(parsed) ? parsed : null
+}
+
+function normalizeReactionCounts(rawCounts: Record<string, number>): ReactionCountsByType {
+  const normalized: ReactionCountsByType = {}
+
+  Object.entries(rawCounts ?? {}).forEach(([key, value]) => {
+    const reactionType = key.toUpperCase() as ReactionType
+    if (!REACTION_TYPES.includes(reactionType)) {
+      return
+    }
+
+    normalized[reactionType] = value
+  })
+
+  const ordered: ReactionCountsByType = {}
+  REACTION_TYPES.forEach((type) => {
+    if (normalized[type]) {
+      ordered[type] = normalized[type]
+    }
+  })
+
+  return ordered
+}
+
+async function loadReactionState(
+  publicationId: number,
+  totalReactions: number,
+  currentUserId?: number,
+): Promise<{ reactionsCountByType: ReactionCountsByType; currentUserReaction: ReactionType | null }> {
+  if (!totalReactions) {
+    return {
+      reactionsCountByType: {},
+      currentUserReaction: null,
+    }
+  }
+
+  const size = 100
+  let page = 0
+  let hasNext = true
+  const counts: ReactionCountsByType = {}
+  let currentUserReaction: ReactionType | null = null
+
+  while (hasNext) {
+    const result = await publicationService.getReactionUsers(publicationId, {
+      page,
+      size,
+    })
+
+    if (!result.success || !result.data) {
+      return {
+        reactionsCountByType: counts,
+        currentUserReaction,
+      }
+    }
+
+    result.data.content.forEach((reaction) => {
+      const key = reaction.reactionType
+      counts[key] = (counts[key] ?? 0) + 1
+
+      if (currentUserId && reaction.user?.id === currentUserId) {
+        currentUserReaction = key
+      }
+    })
+
+    if (result.data.last || result.data.content.length < size || page >= result.data.totalPages - 1) {
+      hasNext = false
+    } else {
+      page += 1
+    }
+  }
+
+  if (!Object.keys(counts).length && totalReactions > 0) {
+    counts.LIKE = totalReactions
+  }
+
+  const orderedCounts: ReactionCountsByType = {}
+  REACTION_TYPES.forEach((type) => {
+    if (counts[type]) {
+      orderedCounts[type] = counts[type]
+    }
+  })
+
+  return {
+    reactionsCountByType: orderedCounts,
+    currentUserReaction,
+  }
+}
+
+function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onPublished }: {
+  lang: "ar" | "en"
+  userId?: number
+  emptyTitle: string
+  emptyDesc: string
+  refreshKey?: number
+  onPublished?: () => void
+}) {
+  const { user } = useAuth()
+  const [imagePosts, setImagePosts] = React.useState<ImagePostItem[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [errorCode, setErrorCode] = React.useState<string | null>(null)
+  const [activePostIndex, setActivePostIndex] = React.useState<number | null>(null)
+  const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
+  const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
+  const [showCreator, setShowCreator] = React.useState(false)
+
+  React.useEffect(() => {
+    let isMounted = true
+
+    const loadImagePosts = async () => {
+      if (!userId) {
+        setImagePosts([])
+        setErrorCode(null)
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+      setErrorCode(null)
+
+      const userPublicationsResult = await publicationService.getUserPublications(userId)
+
+      if (!isMounted) return
+
+      let publications: PublicationDto[] = []
+
+      if (userPublicationsResult.success && userPublicationsResult.data) {
+        publications = Array.isArray(userPublicationsResult.data) ? userPublicationsResult.data : []
+      } else {
+        const fallbackFeedResult = await publicationService.getFeed(0, 50)
+
+        if (!isMounted) return
+
+        if (!fallbackFeedResult.success || !fallbackFeedResult.data) {
+          setImagePosts([])
+          setErrorCode(userPublicationsResult.code ?? fallbackFeedResult.code ?? "NETWORK_ERROR")
+          setIsLoading(false)
+          return
+        }
+
+        const fallbackItems = Array.isArray(fallbackFeedResult.data)
+          ? fallbackFeedResult.data
+          : (fallbackFeedResult.data.content ?? [])
+
+        publications = fallbackItems.filter((publication) => publication.user?.id === userId)
+      }
+
+      const mapped = publications
+        .map((publication) => mapPublicationToImagePost(publication))
+        .filter((item): item is ImagePostItem => Boolean(item))
+
+      const commentsResults = await Promise.all(
+        mapped.map((item) => publicationService.getRootComments(item.post.id, 0, 10)),
+      )
+
+      const reactionsResults = await Promise.all(
+        mapped.map((item) =>
+          loadReactionState(item.post.id, item.post.likesCount ?? 0, user?.id),
+        ),
+      )
+
+      const withInteractions = mapped.map((item, index) => {
+        const comments = commentsResults[index]?.success
+          ? commentsResults[index]?.data?.content ?? []
+          : []
+        const reactionState = reactionsResults[index]
+
+        return {
+          ...item,
+          post: {
+            ...item.post,
+            comments: comments.map((comment) => mapCommentToFeedComment(comment)),
+            reactionsCountByType: reactionState.reactionsCountByType ?? {},
+            currentUserReaction: reactionState.currentUserReaction,
+          },
+        }
+      })
+
+      setImagePosts(withInteractions)
+      setIsLoading(false)
+    }
+
+    loadImagePosts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [lang, user?.id, userId, refreshKey])
+
+  const hasActivePost = activePostIndex !== null && imagePosts[activePostIndex]
+  const isRTL = lang === "ar"
+  const canGoPrevious = activePostIndex !== null && activePostIndex > 0
+  const canGoNext = activePostIndex !== null && activePostIndex < imagePosts.length - 1
+
+  const handleReact = async (publicationId: number, reactionType: ReactionType) => {
+    const result = await publicationService.toggleReaction(publicationId, reactionType)
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const mappedCounts = normalizeReactionCounts(result.data.reactionsCount ?? {})
+    const totalReactions = Object.values(mappedCounts).reduce((sum, count) => sum + (count ?? 0), 0)
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) =>
+        item.post.id === publicationId
+          ? {
+              ...item,
+              post: {
+                ...item.post,
+                reactionsCountByType: mappedCounts,
+                likesCount: totalReactions,
+                currentUserReaction: parseReactionType(result.data?.currentUserReaction),
+              },
+            }
+          : item,
+      ),
+    )
+  }
+
+  const handleAddComment = async (publicationId: number, content: string) => {
+    const trimmedContent = content.trim()
+    if (!trimmedContent || addingCommentByPostId[publicationId]) {
+      return
+    }
+
+    setAddingCommentByPostId((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.addComment(publicationId, trimmedContent)
+
+    setAddingCommentByPostId((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const createdComment = mapCommentToFeedComment(result.data)
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) =>
+        item.post.id === publicationId
+          ? {
+              ...item,
+              post: {
+                ...item.post,
+                comments: [createdComment, ...item.post.comments],
+                commentsCount: item.post.commentsCount + 1,
+              },
+            }
+          : item,
+      ),
+    )
+  }
+
+  const handleLoadReplies = async (publicationId: number, parentCommentId: number) => {
+    const result = await publicationService.getReplies(parentCommentId)
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const repliesData: CommentDto[] = result.data
+    const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) =>
+        item.post.id === publicationId
+          ? {
+              ...item,
+              post: {
+                ...item.post,
+                comments: replaceRepliesForComment(item.post.comments, parentCommentId, mappedReplies),
+              },
+            }
+          : item,
+      ),
+    )
+  }
+
+  const handleAddReply = async (
+    publicationId: number,
+    parentCommentId: number,
+    content: string,
+  ): Promise<boolean> => {
+    const trimmedContent = content.trim()
+    if (!trimmedContent) {
+      return false
+    }
+
+    const createResult = await publicationService.addComment(
+      publicationId,
+      trimmedContent,
+      parentCommentId,
+    )
+
+    if (!createResult.success || !createResult.data) {
+      return false
+    }
+
+    const createdReplyDto: CommentDto = createResult.data
+
+    const repliesResult = await publicationService.getReplies(parentCommentId)
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) => {
+        if (item.post.id !== publicationId) {
+          return item
+        }
+
+        if (repliesResult.success && repliesResult.data) {
+          const repliesData: CommentDto[] = repliesResult.data
+          const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+
+          return {
+            ...item,
+            post: {
+              ...item.post,
+              comments: replaceRepliesForComment(item.post.comments, parentCommentId, mappedReplies),
+              commentsCount: item.post.commentsCount + 1,
+            },
+          }
+        }
+
+        const createdReply = mapCommentToFeedComment(createdReplyDto)
+
+        return {
+          ...item,
+          post: {
+            ...item.post,
+            comments: appendReplyToComment(item.post.comments, parentCommentId, createdReply),
+            commentsCount: item.post.commentsCount + 1,
+          },
+        }
+      }),
+    )
+
+    return true
+  }
+
+  const handleDeletePost = async (publicationId: number) => {
+    if (deletingPostById[publicationId]) {
+      return false
+    }
+
+    setDeletingPostById((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.deletePublication(publicationId)
+
+    setDeletingPostById((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success) {
+      return false
+    }
+
+    setImagePosts((currentPosts) => {
+      const filtered = currentPosts.filter((item) => item.post.id !== publicationId)
+
+      setActivePostIndex((currentIndex) => {
+        if (currentIndex === null) return currentIndex
+        if (filtered.length === 0) return null
+
+        const removedIndex = currentPosts.findIndex((item) => item.post.id === publicationId)
+        if (removedIndex === -1) return currentIndex
+
+        if (currentIndex > removedIndex) {
+          return currentIndex - 1
+        }
+
+        if (currentIndex === removedIndex) {
+          return Math.min(currentIndex, filtered.length - 1)
+        }
+
+        return currentIndex
+      })
+
+      return filtered
+    })
+
+    onPublished?.()
+    return true
+  }
+
+  return (
+    <div className="mt-4">
+      <div className={`mb-3 flex ${isRTL ? "justify-start" : "justify-end"}`}>
+        <button
+          type="button"
+          onClick={() => setShowCreator(true)}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+        >
+          <Icon icon="solar:add-circle-linear" className="size-4" />
+          {lang === "ar" ? "إنشاء منشور" : "Create post"}
+        </button>
+      </div>
+
+      <Dialog open={showCreator} onOpenChange={setShowCreator}>
+        <DialogContent className="sm:max-w-3xl" showCloseButton={false}>
+          <button
+            type="button"
+            onClick={() => setShowCreator(false)}
+            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+            title={lang === "ar" ? "إغلاق" : "Close"}
+            aria-label={lang === "ar" ? "إغلاق" : "Close"}
+          >
+            <Icon icon="lucide:x" className="size-5" />
+          </button>
+          <DialogHeader>
+            <DialogTitle>{lang === "ar" ? "إنشاء منشور" : "Create post"}</DialogTitle>
+            <DialogDescription>
+              {lang === "ar" ? "شارك صورة أو فيديو جديداً من تبويب الصور." : "Share a new photo or video from the images tab."}
+            </DialogDescription>
+          </DialogHeader>
+          <CreatePublication
+            onPublished={() => {
+              setShowCreator(false)
+              onPublished?.()
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {isLoading && (
+        <div className="flex min-h-56 items-center justify-center rounded-lg border border-border bg-muted/20">
+          <Spinner className="size-12" />
+        </div>
+      )}
+
+      {!isLoading && errorCode && (
+        <Callout variant="error" title={lang === "ar" ? "حدث خطأ" : "An error occurred"}>
+          {errorCode}
+        </Callout>
+      )}
+
+      {!isLoading && !errorCode && imagePosts.length === 0 && (
+        <EmptyState title={emptyTitle} description={emptyDesc} />
+      )}
+
+      {!isLoading && !errorCode && imagePosts.length > 0 && (
+        <div dir={isRTL ? "rtl" : "ltr"} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {imagePosts.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActivePostIndex(index)}
+              className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/20 p-1"
+              title={lang === "ar" ? "فتح المنشور" : "Open post"}
+            >
+              <Image
+                src={item.previewImage}
+                alt={lang === "ar" ? "صورة منشور" : "Post image"}
+                width={800}
+                height={800}
+                className="h-full w-full rounded-lg object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+              />
+
+              {item.imageCount > 1 && (
+                <span className={`absolute top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[11px] font-semibold text-white ${isRTL ? "left-2" : "right-2"}`}>
+                  <Icon icon="solar:gallery-wide-linear" className="size-3.5" />
+                  {item.imageCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {hasActivePost && (
+        <div
+          className="fixed inset-0 z-70 overflow-y-auto bg-black/75 p-4"
+          onClick={() => setActivePostIndex(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            onClick={() => setActivePostIndex(null)}
+            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+            title={lang === "ar" ? "إغلاق" : "Close"}
+            aria-label={lang === "ar" ? "إغلاق" : "Close"}
+          >
+            <Icon icon="lucide:x" className="size-5" />
+          </button>
+
+          <div className="mx-auto flex min-h-full w-full max-w-4xl items-start justify-center pt-14 pb-4 md:items-center md:py-4">
+            <div
+              className="relative w-full"
+              onClick={(event) => event.stopPropagation()}
+            >
+            {canGoPrevious && (
+              <button
+                type="button"
+                onClick={() => setActivePostIndex((current) => (current !== null ? current - 1 : current))}
+                className={`absolute top-1/2 z-20 hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 md:inline-flex dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800 ${isRTL ? "-right-12" : "-left-12"}`}
+                title={lang === "ar" ? "المنشور السابق" : "Previous post"}
+              >
+                <Icon icon={isRTL ? "lucide:chevron-right" : "lucide:chevron-left"} className="size-5" />
+              </button>
+            )}
+
+            {canGoNext && (
+              <button
+                type="button"
+                onClick={() => setActivePostIndex((current) => (current !== null ? current + 1 : current))}
+                className={`absolute top-1/2 z-20 hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 md:inline-flex dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800 ${isRTL ? "-left-12" : "-right-12"}`}
+                title={lang === "ar" ? "المنشور التالي" : "Next post"}
+              >
+                <Icon icon={isRTL ? "lucide:chevron-left" : "lucide:chevron-right"} className="size-5" />
+              </button>
+            )}
+
+            <PublicationCard
+              post={imagePosts[activePostIndex].post}
+              onReact={handleReact}
+              onAddComment={handleAddComment}
+              onAddReply={handleAddReply}
+              onLoadReplies={handleLoadReplies}
+              onDeletePost={handleDeletePost}
+              isAddingComment={Boolean(addingCommentByPostId[imagePosts[activePostIndex].post.id])}
+              isDeleting={Boolean(deletingPostById[imagePosts[activePostIndex].post.id])}
+              forceSquareSingleImage
+              canDelete={Boolean(userId && user?.id === userId)}
+              scrollableComments
+            />
+
+            <div className={`mt-3 flex items-center justify-between md:hidden ${isRTL ? "flex-row-reverse" : ""}`}>
+              <div className="w-10">
+                {canGoPrevious && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePostIndex((current) => (current !== null ? current - 1 : current))}
+                    className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+                    title={lang === "ar" ? "المنشور السابق" : "Previous post"}
+                    aria-label={lang === "ar" ? "المنشور السابق" : "Previous post"}
+                  >
+                    <Icon icon={isRTL ? "lucide:chevron-right" : "lucide:chevron-left"} className="size-5" />
+                  </button>
+                )}
+              </div>
+
+              <div className={`w-10 ${isRTL ? "text-left" : "text-right"}`}>
+                {canGoNext && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePostIndex((current) => (current !== null ? current + 1 : current))}
+                    className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+                    title={lang === "ar" ? "المنشور التالي" : "Next post"}
+                    aria-label={lang === "ar" ? "المنشور التالي" : "Next post"}
+                  >
+                    <Icon icon={isRTL ? "lucide:chevron-left" : "lucide:chevron-right"} className="size-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function labels(lang: "ar" | "en") {
@@ -487,33 +1276,39 @@ function ProfileHeader({
   )
 }
 
-function EmptyProfileTabs({ lang }: { lang: "ar" | "en" }) {
+function EmptyProfileTabs({ lang, userId }: { lang: "ar" | "en"; userId?: number }) {
   const t = labels(lang)
+  const isRTL = lang === "ar"
+  const [refreshKey, setRefreshKey] = React.useState(0)
+
+  const handlePublished = () => {
+    setRefreshKey((current) => current + 1)
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <Tabs defaultValue="posts" className="w-full">
-        <TabsList variant="line" className="w-full justify-between border-b border-border pb-2">
-          <TabsTrigger value="posts">
-            <span className="inline-flex items-center gap-1.5">
+        <TabsList variant="line" className={`w-full justify-between border-b border-border pb-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+          <TabsTrigger value="posts" className="cursor-pointer">
+            <span className={`inline-flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
               <Icon icon="solar:document-text-linear" className="size-4" />
               {t.tabPosts}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="images">
-            <span className="inline-flex items-center gap-1.5">
+          <TabsTrigger value="images" className="cursor-pointer">
+            <span className={`inline-flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
               <Icon icon="solar:gallery-linear" className="size-4" />
               {t.tabImages}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="videos">
-            <span className="inline-flex items-center gap-1.5">
+          <TabsTrigger value="videos" className="cursor-pointer">
+            <span className={`inline-flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
               <Icon icon="solar:videocamera-record-linear" className="size-4" />
               {t.tabVideos}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="events">
-            <span className="inline-flex items-center gap-1.5">
+          <TabsTrigger value="events" className="cursor-pointer">
+            <span className={`inline-flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
               <Icon icon="solar:calendar-linear" className="size-4" />
               {t.tabEvents}
             </span>
@@ -521,10 +1316,30 @@ function EmptyProfileTabs({ lang }: { lang: "ar" | "en" }) {
         </TabsList>
 
         <TabsContent value="posts">
-          <EmptyState title={t.emptyTitle} description={t.emptyDesc} />
+          {userId ? (
+            <div className="mt-4" dir={isRTL ? "rtl" : "ltr"}>
+              <CreatePublication onPublished={handlePublished} className="mb-4" />
+              <PublicationFeed
+                userId={userId}
+                showHeader={false}
+                showSuggestions={false}
+                refreshKey={refreshKey}
+                emptyState={<EmptyState title={t.emptyTitle} description={t.emptyDesc} />}
+              />
+            </div>
+          ) : (
+            <EmptyState title={t.emptyTitle} description={t.emptyDesc} />
+          )}
         </TabsContent>
         <TabsContent value="images">
-          <EmptyState title={t.emptyTitle} description={t.emptyDesc} />
+          <ProfileImagesTab
+            lang={lang}
+            userId={userId}
+            emptyTitle={t.emptyTitle}
+            emptyDesc={t.emptyDesc}
+            refreshKey={refreshKey}
+            onPublished={handlePublished}
+          />
         </TabsContent>
         <TabsContent value="videos">
           <EmptyState title={t.emptyTitle} description={t.emptyDesc} />
@@ -570,7 +1385,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
   )
 }
 
-function UserProfileView({ lang, displayName, handle, avatarUrl, userRole }: Omit<ProfileViewsProps, "profileType">) {
+function UserProfileView({ lang, displayName, handle, avatarUrl, userRole, userId }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
   return (
@@ -584,12 +1399,12 @@ function UserProfileView({ lang, displayName, handle, avatarUrl, userRole }: Omi
         userRole={userRole}
         about={t.aboutUser}
       />
-      <EmptyProfileTabs lang={lang} />
+      <EmptyProfileTabs lang={lang} userId={userId} />
     </div>
   )
 }
 
-function StoreProfileView({ lang, displayName, handle, avatarUrl, userRole }: Omit<ProfileViewsProps, "profileType">) {
+function StoreProfileView({ lang, displayName, handle, avatarUrl, userRole, userId }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
   return (
@@ -626,12 +1441,12 @@ function StoreProfileView({ lang, displayName, handle, avatarUrl, userRole }: Om
         </div>
       </SectionCard>
 
-      <EmptyProfileTabs lang={lang} />
+      <EmptyProfileTabs lang={lang} userId={userId} />
     </div>
   )
 }
 
-function CoachProfileView({ lang, displayName, handle, avatarUrl, userRole }: Omit<ProfileViewsProps, "profileType">) {
+function CoachProfileView({ lang, displayName, handle, avatarUrl, userRole, userId }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
   return (
@@ -679,19 +1494,19 @@ function CoachProfileView({ lang, displayName, handle, avatarUrl, userRole }: Om
         </div>
       </SectionCard>
 
-      <EmptyProfileTabs lang={lang} />
+      <EmptyProfileTabs lang={lang} userId={userId} />
     </div>
   )
 }
 
-export function ProfileViews({ lang, profileType, displayName, handle, avatarUrl, userRole }: ProfileViewsProps) {
+export function ProfileViews({ lang, profileType, displayName, handle, avatarUrl, userRole, userId }: ProfileViewsProps) {
   if (profileType === "store") {
-    return <StoreProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} />
+    return <StoreProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} userId={userId} />
   }
 
   if (profileType === "coach") {
-    return <CoachProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} />
+    return <CoachProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} userId={userId} />
   }
 
-  return <UserProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} />
+  return <UserProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} userId={userId} />
 }
