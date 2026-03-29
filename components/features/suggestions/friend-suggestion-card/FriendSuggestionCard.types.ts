@@ -1,5 +1,5 @@
-import type { MockSuggestion } from "@/types/suggestions"
+import type { SuggestionUser } from "@/types/suggestions"
 
 export interface FriendSuggestionCardProps {
-  suggestion: MockSuggestion
+  suggestion: SuggestionUser
 }

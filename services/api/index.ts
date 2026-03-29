@@ -11,3 +11,4 @@ export { setToken, getToken, removeToken, setStoredUser, getStoredUser } from ".
 export * as authService from "./auth.service"
 export * as profileService from "./profile.service"
 export * as publicationService from "./publication.service"
+export * as suggestionService from "./suggestion.service"

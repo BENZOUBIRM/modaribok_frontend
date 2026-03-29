@@ -5,8 +5,15 @@ import Image from "next/image"
 import { Icon } from "@iconify/react"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { useAuth } from "@/providers/auth-provider"
 import { CommentInput } from "../comment-input"
 import type { MockComment } from "@/types"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 /**
  * Single comment with recursive replies.
@@ -16,20 +23,61 @@ export function CommentItem({
   isReply = false,
   onAddReply,
   onLoadReplies,
+  onDeleteComment,
+  onReportComment,
 }: {
   comment: MockComment
   isReply?: boolean
   onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (commentId: number) => Promise<void> | void
+  onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
+  onReportComment?: (commentId: number) => Promise<boolean> | boolean
 }) {
   const { dictionary, isRTL } = useDictionary()
+  const { user } = useAuth()
   const t = dictionary.feed
   const [showReplies, setShowReplies] = useState(false)
   const [showReplyInput, setShowReplyInput] = useState(false)
   const [replyText, setReplyText] = useState("")
   const [isSubmittingReply, setIsSubmittingReply] = useState(false)
   const [isLoadingReplies, setIsLoadingReplies] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isReporting, setIsReporting] = useState(false)
   const hasReplies = comment.repliesCount > 0
+  const isOwner = user?.id === comment.author.id
+
+  const handleCopyComment = async () => {
+    const textToCopy = comment.text?.trim()
+    if (!textToCopy) {
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(textToCopy)
+    } catch {
+      // Clipboard access may be blocked by browser permissions.
+    }
+  }
+
+  const handleReportComment = async () => {
+    if (!onReportComment || isReporting) {
+      return
+    }
+
+    setIsReporting(true)
+    await onReportComment(comment.id)
+    setIsReporting(false)
+  }
+
+  const handleDeleteComment = async () => {
+    if (!onDeleteComment || !isOwner || isDeleting || comment.isDeleted) {
+      return
+    }
+
+    setIsDeleting(true)
+    await onDeleteComment(comment.id)
+    setIsDeleting(false)
+  }
 
   const handleReplySubmit = async () => {
     const trimmedReply = replyText.trim()
@@ -80,9 +128,49 @@ export function CommentItem({
       <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
         {/* Comment bubble */}
         <div className="bg-surface rounded-xl px-3 py-2">
-          <p className="text-sm font-semibold text-foreground leading-tight cursor-pointer hover:underline">
-            {comment.author.name}
-          </p>
+          <div className="mb-0.5 flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground leading-tight cursor-pointer hover:underline">
+              {comment.author.name}
+            </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  title="Comment options"
+                  className="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                >
+                  <Icon icon="solar:menu-dots-bold" className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isRTL ? "start" : "end"} className="z-100 min-w-40">
+                <DropdownMenuItem onSelect={handleCopyComment} className="cursor-pointer">
+                  <Icon icon="solar:copy-linear" className="size-4" />
+                  <span>{t.copyComment}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleReportComment} className="cursor-pointer">
+                  {isReporting ? (
+                    <Icon icon="svg-spinners:3-dots-fade" className="size-4" />
+                  ) : (
+                    <Icon icon="solar:flag-2-linear" className="size-4" />
+                  )}
+                  <span>{t.reportComment}</span>
+                </DropdownMenuItem>
+                {isOwner && !comment.isDeleted && (
+                  <DropdownMenuItem
+                    onSelect={handleDeleteComment}
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                  >
+                    {isDeleting ? (
+                      <Icon icon="svg-spinners:3-dots-fade" className="size-4" />
+                    ) : (
+                      <Icon icon="solar:trash-bin-trash-linear" className="size-4" />
+                    )}
+                    <span>{t.deleteComment}</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <p className="text-sm text-foreground mt-0.5 leading-relaxed">
             {comment.text}
           </p>
@@ -165,6 +253,8 @@ export function CommentItem({
                     isReply
                     onAddReply={onAddReply}
                     onLoadReplies={onLoadReplies}
+                    onDeleteComment={onDeleteComment}
+                    onReportComment={onReportComment}
                   />
                 ))}
               </div>

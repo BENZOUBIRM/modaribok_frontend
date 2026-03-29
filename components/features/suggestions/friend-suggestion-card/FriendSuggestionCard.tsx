@@ -2,12 +2,12 @@
 
 import Image from "next/image"
 import { useDictionary } from "@/providers/dictionary-provider"
-import type { MockSuggestion } from "@/data/mock-data"
+import type { FriendSuggestionCardProps } from "./FriendSuggestionCard.types"
 
 /**
  * Single friend suggestion card — avatar, name, handle, follow button.
  */
-export function FriendSuggestionCard({ suggestion }: { suggestion: MockSuggestion }) {
+export function FriendSuggestionCard({ suggestion }: FriendSuggestionCardProps) {
   const { dictionary } = useDictionary()
 
   return (

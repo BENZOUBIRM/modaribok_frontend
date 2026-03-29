@@ -13,6 +13,8 @@ export function CommentSection({
   onAddComment,
   onAddReply,
   onLoadReplies,
+  onDeleteComment,
+  onReportComment,
   isAddingComment,
   focusSignal,
   scrollable,
@@ -21,6 +23,8 @@ export function CommentSection({
   onAddComment?: (content: string) => Promise<void> | void
   onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (commentId: number) => Promise<void> | void
+  onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
+  onReportComment?: (commentId: number) => Promise<boolean> | boolean
   isAddingComment?: boolean
   focusSignal?: number
   scrollable?: boolean
@@ -75,6 +79,8 @@ export function CommentSection({
             comment={comment}
             onAddReply={onAddReply}
             onLoadReplies={onLoadReplies}
+            onDeleteComment={onDeleteComment}
+            onReportComment={onReportComment}
           />
         ))}
       </div>

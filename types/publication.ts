@@ -137,6 +137,8 @@ export interface FeedPost {
   text: string
   images: string[]
   originalImages?: string[]
+  videos?: string[]
+  videoThumbnails?: Array<string | null>
   visibility?: VisibilityPublication
   createdAt: string
   likesCount: number

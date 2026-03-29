@@ -286,6 +286,42 @@ export function PublicationFeed({
     return true
   }
 
+  const handleDeleteComment = async (publicationId: number, commentId: number): Promise<boolean> => {
+    const result = await publicationService.deleteComment(commentId)
+
+    if (!result.success) {
+      return false
+    }
+
+    setPosts((currentPosts) =>
+      currentPosts.map((post) => {
+        if (post.id !== publicationId) {
+          return post
+        }
+
+        const deletionResult = markCommentAsDeleted(post.comments, commentId, t.commentDeleted)
+        if (!deletionResult.didUpdate) {
+          return post
+        }
+
+        return {
+          ...post,
+          comments: deletionResult.comments,
+          commentsCount: Math.max(0, post.commentsCount - 1),
+        }
+      }),
+    )
+
+    return true
+  }
+
+  const handleReportComment = async (publicationId: number, commentId: number): Promise<boolean> => {
+    void publicationId
+    void commentId
+    // Static placeholder for now until backend comment-report endpoint is available.
+    return true
+  }
+
   const handleDeletePost = async (publicationId: number) => {
     if (deletingPostById[publicationId]) {
       return false
@@ -339,14 +375,20 @@ export function PublicationFeed({
     }
 
     const updatedPublication = result.data
-    const updatedImages = (updatedPublication.media ?? [])
-      .filter((media) => media.mediaType === "image")
+    const mediaItems = updatedPublication.media ?? []
+    const imageMedia = mediaItems.filter((media) => media.mediaType === "image")
+    const videoMedia = mediaItems.filter((media) => media.mediaType === "video")
+
+    const updatedImages = imageMedia
       .map((media) => media.thumbnailUrl || media.url)
       .filter(Boolean)
-    const updatedOriginalImages = (updatedPublication.media ?? [])
-      .filter((media) => media.mediaType === "image")
+    const updatedOriginalImages = imageMedia
       .map((media) => media.url)
       .filter(Boolean)
+    const updatedVideos = videoMedia
+      .map((media) => media.url)
+      .filter(Boolean)
+    const updatedVideoThumbnails = videoMedia.map((media) => media.thumbnailUrl ?? null)
 
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
@@ -357,6 +399,8 @@ export function PublicationFeed({
               visibility: updatedPublication.visibility,
               images: updatedImages,
               originalImages: updatedOriginalImages,
+              videos: updatedVideos,
+              videoThumbnails: updatedVideoThumbnails,
               likesCount: updatedPublication.likesCount ?? post.likesCount,
               commentsCount: updatedPublication.commentsCount ?? post.commentsCount,
               sharesCount: updatedPublication.sharesCount ?? post.sharesCount,
@@ -406,6 +450,8 @@ export function PublicationFeed({
             onAddComment={handleAddComment}
             onAddReply={handleAddReply}
             onLoadReplies={handleLoadReplies}
+            onDeleteComment={handleDeleteComment}
+            onReportComment={handleReportComment}
             onUpdatePost={handleUpdatePost}
             onDeletePost={handleDeletePost}
             isAddingComment={Boolean(addingCommentByPostId[post.id])}
@@ -429,6 +475,9 @@ function mapPublicationToFeedPost(
   const authorFirstName = publication.user?.firstName ?? ""
   const authorLastName = publication.user?.lastName ?? ""
   const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
+  const mediaItems = publication.media ?? []
+  const imageMedia = mediaItems.filter((media) => media.mediaType === "image")
+  const videoMedia = mediaItems.filter((media) => media.mediaType === "video")
 
   return {
     id: publication.id,
@@ -439,14 +488,16 @@ function mapPublicationToFeedPost(
       avatarUrl: publication.user?.profileImageUrl || "/images/default-user.jpg",
     },
     text: publication.content ?? "",
-    images: (publication.media ?? [])
-      .filter((media) => media.mediaType === "image")
+    images: imageMedia
       .map((media) => media.thumbnailUrl || media.url)
       .filter(Boolean),
-    originalImages: (publication.media ?? [])
-      .filter((media) => media.mediaType === "image")
+    originalImages: imageMedia
       .map((media) => media.url)
       .filter(Boolean),
+    videos: videoMedia
+      .map((media) => media.url)
+      .filter(Boolean),
+    videoThumbnails: videoMedia.map((media) => media.thumbnailUrl ?? null),
     visibility: publication.visibility,
     createdAt: formatDateTime(publication.createdAt),
     likesCount: publication.likesCount ?? 0,
@@ -579,6 +630,45 @@ function appendReplyToCommentRecursive(
   })
 
   return [hasUpdated ? nextComments : comments, hasUpdated]
+}
+
+function markCommentAsDeleted(
+  comments: FeedComment[],
+  targetCommentId: number,
+  deletedText: string,
+): { comments: FeedComment[]; didUpdate: boolean } {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === targetCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        text: deletedText,
+        isDeleted: true,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const nestedResult = markCommentAsDeleted(comment.replies, targetCommentId, deletedText)
+    if (!nestedResult.didUpdate) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: nestedResult.comments,
+    }
+  })
+
+  return {
+    comments: hasUpdated ? nextComments : comments,
+    didUpdate: hasUpdated,
+  }
 }
 
 function buildHandle(firstName?: string, lastName?: string): string {

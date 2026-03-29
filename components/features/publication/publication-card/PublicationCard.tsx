@@ -49,6 +49,8 @@ export function PublicationCard({
   onAddComment,
   onAddReply,
   onLoadReplies,
+  onDeleteComment,
+  onReportComment,
   onUpdatePost,
   onDeletePost,
   isAddingComment,
@@ -63,6 +65,8 @@ export function PublicationCard({
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
   onAddReply?: (publicationId: number, parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (publicationId: number, commentId: number) => Promise<void> | void
+  onDeleteComment?: (publicationId: number, commentId: number) => Promise<boolean> | boolean
+  onReportComment?: (publicationId: number, commentId: number) => Promise<boolean> | boolean
   onUpdatePost?: (
     publicationId: number,
     payload: { content: string; visibility: VisibilityPublication },
@@ -87,8 +91,10 @@ export function PublicationCard({
   const isOwner = user?.id === post.author.id
   const canShowDelete = canDelete ?? isOwner
   const canShowEdit = Boolean(onUpdatePost) && isOwner
-  const hasMenuActions = canShowDelete || canShowEdit
+  const canShowReport = true
+  const hasMenuActions = canShowDelete || canShowEdit || canShowReport
   const editPostLabel = t.editPost
+  const reportPostLabel = t.reportPost
   const updatePostLabel = t.updatePost
   const visibilityMeta =
     post.visibility === "PUBLIC"
@@ -206,6 +212,17 @@ export function PublicationCard({
                   <span>{t.deletePost}</span>
                 </DropdownMenuItem>
               )}
+              {canShowReport && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    // Static for now; backend flow will be connected later.
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Icon icon="solar:flag-2-linear" className="size-4" />
+                  <span>{reportPostLabel}</span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -232,6 +249,8 @@ export function PublicationCard({
       <PublicationMedia
         images={post.images}
         originalImages={post.originalImages}
+        videos={post.videos}
+        videoThumbnails={post.videoThumbnails}
         forceSquareSingle={forceSquareSingleImage}
       />
 
@@ -253,6 +272,8 @@ export function PublicationCard({
         onAddComment={(content) => onAddComment?.(post.id, content)}
         onAddReply={(parentCommentId, content) => onAddReply?.(post.id, parentCommentId, content)}
         onLoadReplies={(commentId) => onLoadReplies?.(post.id, commentId)}
+        onDeleteComment={(commentId) => onDeleteComment?.(post.id, commentId)}
+        onReportComment={(commentId) => onReportComment?.(post.id, commentId)}
         isAddingComment={isAddingComment}
         focusSignal={commentFocusSignal}
         scrollable={scrollableComments}

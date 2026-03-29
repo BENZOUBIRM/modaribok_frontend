@@ -226,6 +226,45 @@ function appendReplyToCommentRecursive(
   return [hasUpdated ? nextComments : comments, hasUpdated]
 }
 
+function markCommentAsDeleted(
+  comments: FeedComment[],
+  targetCommentId: number,
+  deletedText: string,
+): { comments: FeedComment[]; didUpdate: boolean } {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === targetCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        text: deletedText,
+        isDeleted: true,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const nestedResult = markCommentAsDeleted(comment.replies, targetCommentId, deletedText)
+    if (!nestedResult.didUpdate) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: nestedResult.comments,
+    }
+  })
+
+  return {
+    comments: hasUpdated ? nextComments : comments,
+    didUpdate: hasUpdated,
+  }
+}
+
 function formatPostDate(isoDate: string): string {
   const date = new Date(isoDate)
   if (Number.isNaN(date.getTime())) return ""
@@ -434,6 +473,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
 
   const hasActivePost = activePostIndex !== null && imagePosts[activePostIndex]
   const isRTL = lang === "ar"
+  const deletedCommentText = lang === "ar" ? "تم حذف التعليق" : "Comment deleted"
   const canGoPrevious = activePostIndex !== null && activePostIndex > 0
   const canGoNext = activePostIndex !== null && activePostIndex < imagePosts.length - 1
 
@@ -584,6 +624,45 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
       }),
     )
 
+    return true
+  }
+
+  const handleDeleteComment = async (publicationId: number, commentId: number): Promise<boolean> => {
+    const result = await publicationService.deleteComment(commentId)
+
+    if (!result.success) {
+      return false
+    }
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) => {
+        if (item.post.id !== publicationId) {
+          return item
+        }
+
+        const deletionResult = markCommentAsDeleted(item.post.comments, commentId, deletedCommentText)
+        if (!deletionResult.didUpdate) {
+          return item
+        }
+
+        return {
+          ...item,
+          post: {
+            ...item.post,
+            comments: deletionResult.comments,
+            commentsCount: Math.max(0, item.post.commentsCount - 1),
+          },
+        }
+      }),
+    )
+
+    return true
+  }
+
+  const handleReportComment = async (publicationId: number, commentId: number): Promise<boolean> => {
+    void publicationId
+    void commentId
+    // Static placeholder for now until backend comment-report endpoint is available.
     return true
   }
 
@@ -836,6 +915,8 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
               onAddComment={handleAddComment}
               onAddReply={handleAddReply}
               onLoadReplies={handleLoadReplies}
+              onDeleteComment={handleDeleteComment}
+              onReportComment={handleReportComment}
               onUpdatePost={handleUpdatePost}
               onDeletePost={handleDeletePost}
               isAddingComment={Boolean(addingCommentByPostId[imagePosts[activePostIndex].post.id])}
