@@ -126,6 +126,8 @@ export interface FeedComment {
   isDeleted?: boolean
   createdAt: string
   likesCount: number
+  reactionsCountByType?: ReactionCountsByType
+  currentUserReaction?: ReactionType | null
   parentCommentId: number | null
   repliesCount: number
   replies: FeedComment[]

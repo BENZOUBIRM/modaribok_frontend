@@ -46,6 +46,7 @@ const TEXT_LIMIT = 200
 export function PublicationCard({
   post,
   onReact,
+  onReactComment,
   onAddComment,
   onAddReply,
   onLoadReplies,
@@ -62,6 +63,7 @@ export function PublicationCard({
 }: {
   post: MockPost
   onReact?: (publicationId: number, reactionType: ReactionType) => void
+  onReactComment?: (publicationId: number, commentId: number, reactionType: ReactionType) => void
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
   onAddReply?: (publicationId: number, parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (publicationId: number, commentId: number) => Promise<void> | void
@@ -270,6 +272,7 @@ export function PublicationCard({
       <CommentSection
         comments={post.comments}
         onAddComment={(content) => onAddComment?.(post.id, content)}
+        onReactComment={(commentId, reactionType) => onReactComment?.(post.id, commentId, reactionType)}
         onAddReply={(parentCommentId, content) => onAddReply?.(post.id, parentCommentId, content)}
         onLoadReplies={(commentId) => onLoadReplies?.(post.id, commentId)}
         onDeleteComment={(commentId) => onDeleteComment?.(post.id, commentId)}

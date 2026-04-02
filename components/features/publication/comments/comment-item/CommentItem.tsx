@@ -6,8 +6,9 @@ import { Icon } from "@iconify/react"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
+import { SharedReactionControl } from "../../shared-reaction-control"
 import { CommentInput } from "../comment-input"
-import type { MockComment } from "@/types"
+import type { MockComment, ReactionType } from "@/types"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ export function CommentItem({
   onLoadReplies,
   onDeleteComment,
   onReportComment,
+  onReactComment,
 }: {
   comment: MockComment
   isReply?: boolean
@@ -32,6 +34,7 @@ export function CommentItem({
   onLoadReplies?: (commentId: number) => Promise<void> | void
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
+  onReactComment?: (commentId: number, reactionType: ReactionType) => void
 }) {
   const { dictionary, isRTL } = useDictionary()
   const { user } = useAuth()
@@ -178,16 +181,15 @@ export function CommentItem({
 
         {/* Comment meta */}
         <div className="mt-1 flex items-center gap-3 px-1">
-          <div className="flex items-center gap-3">
-            <button className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              {t.like}
-            </button>
-            {comment.likesCount > 0 && (
-              <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                <Icon icon="solar:like-bold" className="size-3 text-primary" />
-                {comment.likesCount}
-              </span>
-            )}
+          <div className="relative flex items-center gap-3">
+            <SharedReactionControl
+              entityId={comment.id}
+              likesCount={comment.likesCount}
+              reactionsCountByType={comment.reactionsCountByType}
+              currentUserReaction={comment.currentUserReaction}
+              onReact={onReactComment}
+              variant="comment"
+            />
             {!comment.isDeleted && (
               <button
                 onClick={() => setShowReplyInput(!showReplyInput)}
@@ -255,6 +257,7 @@ export function CommentItem({
                     onLoadReplies={onLoadReplies}
                     onDeleteComment={onDeleteComment}
                     onReportComment={onReportComment}
+                    onReactComment={onReactComment}
                   />
                 ))}
               </div>

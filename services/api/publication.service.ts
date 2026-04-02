@@ -279,6 +279,26 @@ export async function toggleReaction(
   }
 }
 
+export async function toggleCommentReaction(
+  commentId: number,
+  type: ReactionType,
+): Promise<ApiResult<ReactionToggleResponseDto>> {
+  try {
+    const response = await apiClient.post<ApiResponse<ReactionToggleResponseDto>>(
+      `/comments/${commentId}/reactions`,
+      { type },
+    )
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
 export async function deletePublication(
   publicationId: number,
 ): Promise<ApiResult<null>> {

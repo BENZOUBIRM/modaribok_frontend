@@ -3,7 +3,7 @@
 import * as React from "react"
 import { CommentItem } from "../comment-item"
 import { CommentInput } from "../comment-input"
-import type { MockComment } from "@/types"
+import type { MockComment, ReactionType } from "@/types"
 
 /**
  * Comment section: list of comments + "write a comment" input.
@@ -15,6 +15,7 @@ export function CommentSection({
   onLoadReplies,
   onDeleteComment,
   onReportComment,
+  onReactComment,
   isAddingComment,
   focusSignal,
   scrollable,
@@ -25,6 +26,7 @@ export function CommentSection({
   onLoadReplies?: (commentId: number) => Promise<void> | void
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
+  onReactComment?: (commentId: number, reactionType: ReactionType) => void
   isAddingComment?: boolean
   focusSignal?: number
   scrollable?: boolean
@@ -54,7 +56,7 @@ export function CommentSection({
 
   if (!comments.length) {
     return (
-      <div className="border-t border-border">
+      <div className="border-t border-border [&_button:not(:disabled)]:cursor-pointer">
         <CommentInput
           value={commentText}
           onChange={setCommentText}
@@ -67,10 +69,11 @@ export function CommentSection({
   }
 
   return (
-    <div className="border-t border-border">
+    <div className="border-t border-border [&_button:not(:disabled)]:cursor-pointer">
       <div
+        data-comment-reaction-boundary
         className={`px-4 pt-3 space-y-3 ${
-          shouldScrollComments ? "max-h-72 overflow-y-auto overscroll-contain pe-1" : ""
+          shouldScrollComments ? "max-h-72 overflow-y-auto overflow-x-hidden overscroll-contain pe-1" : ""
         }`}
       >
         {comments.map((comment) => (
@@ -81,6 +84,7 @@ export function CommentSection({
             onLoadReplies={onLoadReplies}
             onDeleteComment={onDeleteComment}
             onReportComment={onReportComment}
+            onReactComment={onReactComment}
           />
         ))}
       </div>

@@ -120,10 +120,76 @@ function mapCommentToFeedComment(comment: CommentDto): FeedComment {
     isDeleted: comment.isDeleted,
     createdAt: formatPostDate(comment.createdAt),
     likesCount: 0,
+    reactionsCountByType: undefined,
+    currentUserReaction: null,
     parentCommentId: comment.parentCommentId,
     repliesCount: comment.repliesCount ?? 0,
     replies: (comment.replies ?? []).map((reply) => mapCommentToFeedComment(reply)),
   }
+}
+
+function updateCommentReactionState(
+  comments: FeedComment[],
+  targetCommentId: number,
+  reactionsCountByType: ReactionCountsByType,
+  currentUserReaction: ReactionType | null,
+  likesCount: number,
+): FeedComment[] {
+  const [updatedComments] = updateCommentReactionStateRecursive(
+    comments,
+    targetCommentId,
+    reactionsCountByType,
+    currentUserReaction,
+    likesCount,
+  )
+
+  return updatedComments
+}
+
+function updateCommentReactionStateRecursive(
+  comments: FeedComment[],
+  targetCommentId: number,
+  reactionsCountByType: ReactionCountsByType,
+  currentUserReaction: ReactionType | null,
+  likesCount: number,
+): [FeedComment[], boolean] {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === targetCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        likesCount,
+        reactionsCountByType,
+        currentUserReaction,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const [updatedReplies, nestedUpdated] = updateCommentReactionStateRecursive(
+      comment.replies,
+      targetCommentId,
+      reactionsCountByType,
+      currentUserReaction,
+      likesCount,
+    )
+
+    if (!nestedUpdated) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: updatedReplies,
+    }
+  })
+
+  return [hasUpdated ? nextComments : comments, hasUpdated]
 }
 
 function replaceRepliesForComment(
@@ -226,42 +292,53 @@ function appendReplyToCommentRecursive(
   return [hasUpdated ? nextComments : comments, hasUpdated]
 }
 
-function markCommentAsDeleted(
+function removeCommentFromTree(
   comments: FeedComment[],
   targetCommentId: number,
-  deletedText: string,
-): { comments: FeedComment[]; didUpdate: boolean } {
-  let hasUpdated = false
+): { comments: FeedComment[]; removedTotal: number; removedDirect: number } {
+  let removedTotal = 0
+  let removedDirect = 0
 
-  const nextComments = comments.map((comment) => {
+  const nextComments: FeedComment[] = []
+
+  comments.forEach((comment) => {
     if (comment.id === targetCommentId) {
-      hasUpdated = true
-      return {
-        ...comment,
-        text: deletedText,
-        isDeleted: true,
-      }
+      removedTotal += 1
+      removedDirect += 1
+      return
     }
 
     if (!comment.replies.length) {
-      return comment
+      nextComments.push(comment)
+      return
     }
 
-    const nestedResult = markCommentAsDeleted(comment.replies, targetCommentId, deletedText)
-    if (!nestedResult.didUpdate) {
-      return comment
+    const nestedResult = removeCommentFromTree(comment.replies, targetCommentId)
+    if (nestedResult.removedTotal === 0) {
+      nextComments.push(comment)
+      return
     }
 
-    hasUpdated = true
-    return {
+    removedTotal += nestedResult.removedTotal
+    nextComments.push({
       ...comment,
       replies: nestedResult.comments,
-    }
+      repliesCount: Math.max(0, comment.repliesCount - nestedResult.removedDirect),
+    })
   })
 
+  if (removedTotal === 0) {
+    return {
+      comments,
+      removedTotal: 0,
+      removedDirect: 0,
+    }
+  }
+
   return {
-    comments: hasUpdated ? nextComments : comments,
-    didUpdate: hasUpdated,
+    comments: nextComments,
+    removedTotal,
+    removedDirect,
   }
 }
 
@@ -473,7 +550,6 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
 
   const hasActivePost = activePostIndex !== null && imagePosts[activePostIndex]
   const isRTL = lang === "ar"
-  const deletedCommentText = lang === "ar" ? "تم حذف التعليق" : "Comment deleted"
   const canGoPrevious = activePostIndex !== null && activePostIndex > 0
   const canGoNext = activePostIndex !== null && activePostIndex < imagePosts.length - 1
 
@@ -496,6 +572,40 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
                 reactionsCountByType: mappedCounts,
                 likesCount: totalReactions,
                 currentUserReaction: parseReactionType(result.data?.currentUserReaction),
+              },
+            }
+          : item,
+      ),
+    )
+  }
+
+  const handleReactComment = async (
+    publicationId: number,
+    commentId: number,
+    reactionType: ReactionType,
+  ) => {
+    const result = await publicationService.toggleCommentReaction(commentId, reactionType)
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const mappedCounts = normalizeReactionCounts(result.data.reactionsCount ?? {})
+    const totalReactions = Object.values(mappedCounts).reduce((sum, count) => sum + (count ?? 0), 0)
+
+    setImagePosts((currentPosts) =>
+      currentPosts.map((item) =>
+        item.post.id === publicationId
+          ? {
+              ...item,
+              post: {
+                ...item.post,
+                comments: updateCommentReactionState(
+                  item.post.comments,
+                  commentId,
+                  mappedCounts,
+                  parseReactionType(result.data?.currentUserReaction),
+                  totalReactions,
+                ),
               },
             }
           : item,
@@ -640,8 +750,8 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
           return item
         }
 
-        const deletionResult = markCommentAsDeleted(item.post.comments, commentId, deletedCommentText)
-        if (!deletionResult.didUpdate) {
+        const deletionResult = removeCommentFromTree(item.post.comments, commentId)
+        if (deletionResult.removedTotal === 0) {
           return item
         }
 
@@ -650,7 +760,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
           post: {
             ...item.post,
             comments: deletionResult.comments,
-            commentsCount: Math.max(0, item.post.commentsCount - 1),
+            commentsCount: Math.max(0, item.post.commentsCount - deletionResult.removedTotal),
           },
         }
       }),
@@ -912,6 +1022,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
             <PublicationCard
               post={imagePosts[activePostIndex].post}
               onReact={handleReact}
+              onReactComment={handleReactComment}
               onAddComment={handleAddComment}
               onAddReply={handleAddReply}
               onLoadReplies={handleLoadReplies}
