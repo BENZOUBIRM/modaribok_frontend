@@ -24,11 +24,21 @@ import {
 } from "@/components/ui/primitives/dialog"
 import { publicationService } from "@/services/api"
 import { useAuth } from "@/providers/auth-provider"
+import {
+  cacheCommentReactionState,
+  hydrateCommentsWithReactionCache,
+} from "@/lib/comment-reaction-cache"
 import type { UserRole } from "@/types/auth"
 import type { CommentDto, FeedComment, FeedPost, PublicationDto, ReactionCountsByType, ReactionType } from "@/types"
 import { ProfilePatternOverlay } from "./ProfilePatternOverlay"
 
 type ProfileType = "user" | "store" | "coach"
+
+type ProfileStats = {
+  posts: number
+  followers: number
+  following: number
+}
 
 interface ProfileViewsProps {
   lang: "ar" | "en"
@@ -38,6 +48,9 @@ interface ProfileViewsProps {
   avatarUrl: string
   userRole: UserRole
   userId: number
+  isOwnProfile?: boolean
+  aboutText?: string
+  stats?: ProfileStats
 }
 
 type ImagePostItem = {
@@ -62,9 +75,49 @@ const REACTION_TYPES: ReactionType[] = [
   "CHAMPION",
 ]
 
+function mapSharedPublicationToFeedData(
+  sharedPublication: PublicationDto["sharedPublication"],
+): FeedPost["sharedPublication"] {
+  if (!sharedPublication) {
+    return null
+  }
+
+  const authorFirstName = sharedPublication.user?.firstName ?? ""
+  const authorLastName = sharedPublication.user?.lastName ?? ""
+  const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
+  const handleRaw = `${authorFirstName}${authorLastName}`.replace(/\s+/g, "").toLowerCase()
+  const mediaItems = sharedPublication.media ?? []
+  const imageMedia = mediaItems.filter((media) => media.mediaType === "image")
+  const videoMedia = mediaItems.filter((media) => media.mediaType === "video")
+
+  return {
+    id: sharedPublication.id,
+    author: {
+      id: sharedPublication.user?.id ?? 0,
+      name: authorFullName,
+      handle: handleRaw ? `@${handleRaw}` : "@user",
+      avatarUrl: sharedPublication.user?.profileImageUrl || "/images/default-user.jpg",
+    },
+    text: sharedPublication.content ?? "",
+    images: imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean),
+    originalImages: imageMedia.map((media) => media.url).filter(Boolean),
+    videos: videoMedia.map((media) => media.url).filter(Boolean),
+    videoThumbnails: videoMedia.map((media) => media.thumbnailUrl ?? null),
+    visibility: sharedPublication.visibility,
+    createdAt: formatPostDate(sharedPublication.createdAt),
+  }
+}
+
 function mapPublicationToImagePost(publication: PublicationDto): ImagePostItem | null {
   const imageMedia = (publication.media ?? []).filter((media) => media.mediaType === "image")
-  if (imageMedia.length === 0) {
+  const videoMedia = (publication.media ?? []).filter((media) => media.mediaType === "video")
+  const sharedPublication = mapSharedPublicationToFeedData(publication.sharedPublication)
+
+  const previewCandidates = imageMedia.length > 0
+    ? imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean)
+    : (sharedPublication?.images ?? [])
+
+  if (previewCandidates.length === 0) {
     return null
   }
 
@@ -84,6 +137,9 @@ function mapPublicationToImagePost(publication: PublicationDto): ImagePostItem |
     text: publication.content ?? "",
     images: imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean),
     originalImages: imageMedia.map((media) => media.url).filter(Boolean),
+    videos: videoMedia.map((media) => media.url).filter(Boolean),
+    videoThumbnails: videoMedia.map((media) => media.thumbnailUrl ?? null),
+    sharedPublication,
     visibility: publication.visibility,
     createdAt: formatPostDate(publication.createdAt),
     likesCount: publication.likesCount ?? 0,
@@ -96,8 +152,8 @@ function mapPublicationToImagePost(publication: PublicationDto): ImagePostItem |
 
   return {
     id: publication.id,
-    previewImage: post.images[0] ?? post.originalImages?.[0] ?? "",
-    imageCount: post.images.length,
+    previewImage: previewCandidates[0] ?? "",
+    imageCount: previewCandidates.length,
     post,
   }
 }
@@ -447,13 +503,14 @@ async function loadReactionState(
   }
 }
 
-function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onPublished }: {
+function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onPublished, canCreatePost }: {
   lang: "ar" | "en"
   userId?: number
   emptyTitle: string
   emptyDesc: string
   refreshKey?: number
   onPublished?: () => void
+  canCreatePost?: boolean
 }) {
   const { user } = useAuth()
   const [imagePosts, setImagePosts] = React.useState<ImagePostItem[]>([])
@@ -463,6 +520,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
   const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
   const [updatingPostById, setUpdatingPostById] = React.useState<Record<number, boolean>>({})
   const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
+  const [sharingPostById, setSharingPostById] = React.useState<Record<number, boolean>>({})
   const [showCreator, setShowCreator] = React.useState(false)
 
   React.useEffect(() => {
@@ -524,13 +582,19 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
         const comments = commentsResults[index]?.success
           ? commentsResults[index]?.data?.content ?? []
           : []
+
+        const mappedComments = hydrateCommentsWithReactionCache(
+          comments.map((comment) => mapCommentToFeedComment(comment)),
+          user?.id,
+        )
+
         const reactionState = reactionsResults[index]
 
         return {
           ...item,
           post: {
             ...item.post,
-            comments: comments.map((comment) => mapCommentToFeedComment(comment)),
+            comments: mappedComments,
             reactionsCountByType: reactionState.reactionsCountByType ?? {},
             currentUserReaction: reactionState.currentUserReaction,
           },
@@ -550,6 +614,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
 
   const hasActivePost = activePostIndex !== null && imagePosts[activePostIndex]
   const isRTL = lang === "ar"
+  const canCreate = canCreatePost ?? true
   const canGoPrevious = activePostIndex !== null && activePostIndex > 0
   const canGoNext = activePostIndex !== null && activePostIndex < imagePosts.length - 1
 
@@ -591,6 +656,13 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
 
     const mappedCounts = normalizeReactionCounts(result.data.reactionsCount ?? {})
     const totalReactions = Object.values(mappedCounts).reduce((sum, count) => sum + (count ?? 0), 0)
+    const parsedCurrentUserReaction = parseReactionType(result.data?.currentUserReaction)
+
+    cacheCommentReactionState(user?.id, commentId, {
+      reactionsCountByType: mappedCounts,
+      currentUserReaction: parsedCurrentUserReaction,
+      likesCount: totalReactions,
+    })
 
     setImagePosts((currentPosts) =>
       currentPosts.map((item) =>
@@ -603,7 +675,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
                   item.post.comments,
                   commentId,
                   mappedCounts,
-                  parseReactionType(result.data?.currentUserReaction),
+                  parsedCurrentUserReaction,
                   totalReactions,
                 ),
               },
@@ -660,7 +732,10 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
     }
 
     const repliesData: CommentDto[] = result.data
-    const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+    const mappedReplies = hydrateCommentsWithReactionCache(
+      repliesData.map((reply) => mapCommentToFeedComment(reply)),
+      user?.id,
+    )
 
     setImagePosts((currentPosts) =>
       currentPosts.map((item) =>
@@ -709,7 +784,10 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
 
         if (repliesResult.success && repliesResult.data) {
           const repliesData: CommentDto[] = repliesResult.data
-          const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+          const mappedReplies = hydrateCommentsWithReactionCache(
+            repliesData.map((reply) => mapCommentToFeedComment(reply)),
+            user?.id,
+          )
 
           return {
             ...item,
@@ -825,6 +903,62 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
     return true
   }
 
+  const handleSharePublication = async (publicationId: number) => {
+    if (sharingPostById[publicationId]) {
+      return
+    }
+
+    const sourcePost = imagePosts.find((item) => item.post.id === publicationId)?.post
+
+    setSharingPostById((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.createPublication({
+      visibility: sourcePost?.visibility ?? "PUBLIC",
+      sharedPublicationId: publicationId,
+    })
+
+    setSharingPostById((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const createdImagePost = mapPublicationToImagePost(result.data)
+    const shouldPrependToCurrentList = (!userId || user?.id === userId) && activePostIndex === null
+
+    setImagePosts((currentPosts) => {
+      const withUpdatedShareCount = currentPosts.map((item) =>
+        item.post.id === publicationId
+          ? {
+              ...item,
+              post: {
+                ...item.post,
+                sharesCount: item.post.sharesCount + 1,
+              },
+            }
+          : item,
+      )
+
+      if (!shouldPrependToCurrentList || !createdImagePost) {
+        return withUpdatedShareCount
+      }
+
+      if (withUpdatedShareCount.some((item) => item.post.id === createdImagePost.post.id)) {
+        return withUpdatedShareCount
+      }
+
+      return [createdImagePost, ...withUpdatedShareCount]
+    })
+
+    onPublished?.()
+  }
+
   const handleUpdatePost = async (
     publicationId: number,
     payload: { content: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
@@ -862,24 +996,30 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
       .map((media) => media.url)
       .filter(Boolean)
 
+    const updatedSharedPublication = mapSharedPublicationToFeedData(updatedPublication.sharedPublication)
+    const previewCandidates = updatedImages.length > 0
+      ? updatedImages
+      : (updatedSharedPublication?.images ?? [])
+
     setImagePosts((currentPosts) =>
       currentPosts.map((item) => {
         if (item.post.id !== publicationId) {
           return item
         }
 
-        const previewImage = updatedImages[0] ?? updatedOriginalImages[0] ?? item.previewImage
+        const previewImage = previewCandidates[0] ?? item.previewImage
 
         return {
           ...item,
           previewImage,
-          imageCount: updatedImages.length || item.imageCount,
+          imageCount: previewCandidates.length || item.imageCount,
           post: {
             ...item.post,
             text: updatedPublication.content ?? "",
             visibility: updatedPublication.visibility,
             images: updatedImages,
             originalImages: updatedOriginalImages,
+            sharedPublication: updatedSharedPublication,
             likesCount: updatedPublication.likesCount ?? item.post.likesCount,
             commentsCount: updatedPublication.commentsCount ?? item.post.commentsCount,
             sharesCount: updatedPublication.sharesCount ?? item.post.sharesCount,
@@ -893,42 +1033,46 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
 
   return (
     <div className="mt-4">
-      <div className={`mb-3 flex ${isRTL ? "justify-start" : "justify-end"}`}>
-        <button
-          type="button"
-          onClick={() => setShowCreator(true)}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
-        >
-          <Icon icon="solar:add-circle-linear" className="size-4" />
-          {lang === "ar" ? "إنشاء منشور" : "Create post"}
-        </button>
-      </div>
+      {canCreate && (
+        <>
+          <div className={`mb-3 flex ${isRTL ? "justify-start" : "justify-end"}`}>
+            <button
+              type="button"
+              onClick={() => setShowCreator(true)}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+            >
+              <Icon icon="solar:add-circle-linear" className="size-4" />
+              {lang === "ar" ? "إنشاء منشور" : "Create post"}
+            </button>
+          </div>
 
-      <Dialog open={showCreator} onOpenChange={setShowCreator}>
-        <DialogContent className="sm:max-w-3xl" showCloseButton={false}>
-          <button
-            type="button"
-            onClick={() => setShowCreator(false)}
-            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
-            title={lang === "ar" ? "إغلاق" : "Close"}
-            aria-label={lang === "ar" ? "إغلاق" : "Close"}
-          >
-            <Icon icon="lucide:x" className="size-5" />
-          </button>
-          <DialogHeader>
-            <DialogTitle>{lang === "ar" ? "إنشاء منشور" : "Create post"}</DialogTitle>
-            <DialogDescription>
-              {lang === "ar" ? "شارك صورة أو فيديو جديداً من تبويب الصور." : "Share a new photo or video from the images tab."}
-            </DialogDescription>
-          </DialogHeader>
-          <CreatePublication
-            onPublished={() => {
-              setShowCreator(false)
-              onPublished?.()
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+          <Dialog open={showCreator} onOpenChange={setShowCreator}>
+            <DialogContent className="sm:max-w-3xl" showCloseButton={false}>
+              <button
+                type="button"
+                onClick={() => setShowCreator(false)}
+                className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+                title={lang === "ar" ? "إغلاق" : "Close"}
+                aria-label={lang === "ar" ? "إغلاق" : "Close"}
+              >
+                <Icon icon="lucide:x" className="size-5" />
+              </button>
+              <DialogHeader>
+                <DialogTitle>{lang === "ar" ? "إنشاء منشور" : "Create post"}</DialogTitle>
+                <DialogDescription>
+                  {lang === "ar" ? "شارك صورة أو فيديو جديداً من تبويب الصور." : "Share a new photo or video from the images tab."}
+                </DialogDescription>
+              </DialogHeader>
+              <CreatePublication
+                onPublished={() => {
+                  setShowCreator(false)
+                  onPublished?.()
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
 
       {isLoading && (
         <div className="flex min-h-56 items-center justify-center rounded-lg border border-border bg-muted/20">
@@ -1030,9 +1174,11 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
               onReportComment={handleReportComment}
               onUpdatePost={handleUpdatePost}
               onDeletePost={handleDeletePost}
+              onSharePublication={handleSharePublication}
               isAddingComment={Boolean(addingCommentByPostId[imagePosts[activePostIndex].post.id])}
               isUpdating={Boolean(updatingPostById[imagePosts[activePostIndex].post.id])}
               isDeleting={Boolean(deletingPostById[imagePosts[activePostIndex].post.id])}
+              isSharing={Boolean(sharingPostById[imagePosts[activePostIndex].post.id])}
               forceSquareSingleImage
               canDelete={Boolean(userId && user?.id === userId)}
               scrollableComments
@@ -1103,6 +1249,10 @@ function labels(lang: "ar" | "en") {
         prices: "الأسعار",
         links: "روابط التواصل",
         products: "منتجات المتجر",
+        follow: "متابعة",
+        message: "مراسلة",
+        more: "المزيد",
+        comingSoon: "قريبا",
       }
     : {
         posts: "Posts",
@@ -1130,7 +1280,25 @@ function labels(lang: "ar" | "en") {
         prices: "Pricing",
         links: "Social links",
         products: "Store products",
+        follow: "Follow",
+        message: "Message",
+        more: "More",
+        comingSoon: "Coming soon",
       }
+}
+
+function formatCompactCount(value: number, lang: "ar" | "en"): string {
+  const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0
+
+  try {
+    return new Intl.NumberFormat(lang === "ar" ? "ar-MA" : "en-US", {
+      notation: "compact",
+      compactDisplay: "short",
+      maximumFractionDigits: 1,
+    }).format(safeValue)
+  } catch {
+    return String(safeValue)
+  }
 }
 
 function ProfileHeader({
@@ -1141,6 +1309,8 @@ function ProfileHeader({
   avatarUrl,
   about,
   userRole,
+  isOwnProfile = true,
+  stats,
 }: {
   lang: "ar" | "en"
   profileType: ProfileType
@@ -1149,6 +1319,8 @@ function ProfileHeader({
   avatarUrl: string
   about: string
   userRole: UserRole
+  isOwnProfile?: boolean
+  stats?: ProfileStats
 }) {
   const t = labels(lang)
   const isRTL = lang === "ar"
@@ -1221,6 +1393,16 @@ function ProfileHeader({
 
   const roleBadge = roleBadgeConfig[badgeType]
 
+  const resolvedStats = {
+    posts: stats?.posts ?? 548,
+    followers: stats?.followers ?? 12700,
+    following: stats?.following ?? 221,
+  }
+
+  const postsCountText = formatCompactCount(resolvedStats.posts, lang)
+  const followersCountText = formatCompactCount(resolvedStats.followers, lang)
+  const followingCountText = formatCompactCount(resolvedStats.following, lang)
+
   React.useEffect(() => {
     if (!isPreviewOpen) return
 
@@ -1240,51 +1422,85 @@ function ProfileHeader({
         <>
           <div className="space-y-5">
               <div dir="ltr" className="flex items-center justify-between gap-3">
-              <button
-                type="button"
-                title="إضافة"
-                aria-label="إضافة"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
-              >
-                <Icon icon="solar:add-circle-linear" className="size-5" />
-              </button>
+              {isOwnProfile ? (
+                <>
+                  <button
+                    type="button"
+                    title="إضافة"
+                    aria-label="إضافة"
+                    className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                  >
+                    <Icon icon="solar:add-circle-linear" className="size-5" />
+                  </button>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <button className="hidden sm:inline-flex rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground">
-                  عرض الأرشيف
-                </button>
-                <button className="hidden sm:inline-flex rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
-                  تعديل الملف الشخصي
-                </button>
-                <button className="hidden sm:inline-flex items-center gap-1 rounded-md bg-warning px-4 py-1.5 text-sm font-semibold text-warning-foreground">
-                  <Icon icon="solar:crown-bold" className="size-4" />
-                  ترقية إلى حساب مدرب
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      title="خيارات"
-                      aria-label="خيارات"
-                      className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
-                    >
-                      <Icon icon="solar:menu-dots-linear" className="size-5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="sm:hidden min-w-56 space-y-1 p-2">
-                    <DropdownMenuItem className="justify-center rounded-md border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <button className="hidden sm:inline-flex rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground">
                       عرض الأرشيف
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 dark:hover:bg-primary/90 dark:focus:bg-primary/90 data-highlighted:bg-primary/90 dark:data-highlighted:bg-primary/90">
+                    </button>
+                    <button className="hidden sm:inline-flex rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
                       تعديل الملف الشخصي
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="justify-center rounded-md bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:bg-warning/90 focus:bg-warning/90 dark:hover:bg-warning/90 dark:focus:bg-warning/90 data-highlighted:bg-warning/90 dark:data-highlighted:bg-warning/90">
+                    </button>
+                    <button className="hidden sm:inline-flex items-center gap-1 rounded-md bg-warning px-4 py-1.5 text-sm font-semibold text-warning-foreground">
                       <Icon icon="solar:crown-bold" className="size-4" />
                       ترقية إلى حساب مدرب
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          title="خيارات"
+                          aria-label="خيارات"
+                          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                        >
+                          <Icon icon="solar:menu-dots-linear" className="size-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="sm:hidden min-w-56 space-y-1 p-2">
+                        <DropdownMenuItem className="justify-center rounded-md border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
+                          عرض الأرشيف
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 dark:hover:bg-primary/90 dark:focus:bg-primary/90 data-highlighted:bg-primary/90 dark:data-highlighted:bg-primary/90">
+                          تعديل الملف الشخصي
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="justify-center rounded-md bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:bg-warning/90 focus:bg-warning/90 dark:hover:bg-warning/90 dark:focus:bg-warning/90 data-highlighted:bg-warning/90 dark:data-highlighted:bg-warning/90">
+                          <Icon icon="solar:crown-bold" className="size-4" />
+                          ترقية إلى حساب مدرب
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </>
+              ) : (
+                <div className="flex w-full flex-wrap items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex cursor-pointer rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
+                  >
+                    {t.follow}
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex cursor-pointer rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground"
+                  >
+                    {t.message}
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        title={t.more}
+                        aria-label={t.more}
+                        className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                      >
+                        <Icon icon="solar:menu-dots-linear" className="size-5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-44">
+                      <DropdownMenuItem className="cursor-pointer">{t.comingSoon}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
               </div>
 
               <div className="relative overflow-hidden rounded-lg">
@@ -1293,15 +1509,15 @@ function ProfileHeader({
                 <div className="order-2 w-full md:order-1 md:flex-1">
                   <div className="flex items-center justify-center gap-8 sm:gap-12">
                     <div className="text-center">
-                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">548</span>
+                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">{postsCountText}</span>
                       <span className="mt-1 block text-lg sm:text-xl text-muted-foreground">منشور</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">12.7K</span>
+                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">{followersCountText}</span>
                       <span className="mt-1 block text-lg sm:text-xl text-muted-foreground">متابعين</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">221</span>
+                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">{followingCountText}</span>
                       <span className="mt-1 block text-lg sm:text-xl text-muted-foreground">أتابع</span>
                     </div>
                   </div>
@@ -1350,46 +1566,75 @@ function ProfileHeader({
         <>
           <div className="space-y-5">
               <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center justify-start gap-2">
-                <button className="hidden sm:inline-flex rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground">
-                  {t.report}
-                </button>
-                <button className="hidden sm:inline-flex rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
-                  {t.profileButton}
-                </button>
-                <button className="hidden sm:inline-flex items-center gap-1 rounded-md bg-warning px-4 py-1.5 text-sm font-semibold text-warning-foreground">
-                  <Icon icon="solar:crown-bold" className="size-4" />
-                  Upgrade to coach account
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground" type="button" title="Options" aria-label="Options">
-                      <Icon icon="solar:menu-dots-linear" className="size-5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="sm:hidden min-w-56 space-y-1 p-2">
-                    <DropdownMenuItem className="justify-center rounded-md border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
+              {isOwnProfile ? (
+                <>
+                  <div className="flex flex-wrap items-center justify-start gap-2">
+                    <button className="hidden sm:inline-flex rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground">
                       {t.report}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 dark:hover:bg-primary/90 dark:focus:bg-primary/90 data-highlighted:bg-primary/90 dark:data-highlighted:bg-primary/90">
+                    </button>
+                    <button className="hidden sm:inline-flex rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
                       {t.profileButton}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="justify-center rounded-md bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:bg-warning/90 focus:bg-warning/90 dark:hover:bg-warning/90 dark:focus:bg-warning/90 data-highlighted:bg-warning/90 dark:data-highlighted:bg-warning/90">
+                    </button>
+                    <button className="hidden sm:inline-flex items-center gap-1 rounded-md bg-warning px-4 py-1.5 text-sm font-semibold text-warning-foreground">
                       <Icon icon="solar:crown-bold" className="size-4" />
                       Upgrade to coach account
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground" type="button" title="Options" aria-label="Options">
+                          <Icon icon="solar:menu-dots-linear" className="size-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="sm:hidden min-w-56 space-y-1 p-2">
+                        <DropdownMenuItem className="justify-center rounded-md border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
+                          {t.report}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 dark:hover:bg-primary/90 dark:focus:bg-primary/90 data-highlighted:bg-primary/90 dark:data-highlighted:bg-primary/90">
+                          {t.profileButton}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="justify-center rounded-md bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:bg-warning/90 focus:bg-warning/90 dark:hover:bg-warning/90 dark:focus:bg-warning/90 data-highlighted:bg-warning/90 dark:data-highlighted:bg-warning/90">
+                          <Icon icon="solar:crown-bold" className="size-4" />
+                          Upgrade to coach account
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-              <button
-                type="button"
-                title="Add"
-                aria-label="Add"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
-              >
-                <Icon icon="solar:add-circle-linear" className="size-5" />
-              </button>
+                  <button
+                    type="button"
+                    title="Add"
+                    aria-label="Add"
+                    className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                  >
+                    <Icon icon="solar:add-circle-linear" className="size-5" />
+                  </button>
+                </>
+              ) : (
+                <div className="flex w-full flex-wrap items-center justify-start gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex cursor-pointer rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
+                  >
+                    {t.follow}
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex cursor-pointer rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground"
+                  >
+                    {t.message}
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground" type="button" title={t.more} aria-label={t.more}>
+                        <Icon icon="solar:menu-dots-linear" className="size-5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-44">
+                      <DropdownMenuItem className="cursor-pointer">{t.comingSoon}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
               </div>
 
               <div className="relative overflow-hidden rounded-lg">
@@ -1429,15 +1674,15 @@ function ProfileHeader({
                 <div className="order-2 w-full md:flex-1">
                   <div className="flex items-center justify-center gap-10 sm:gap-14">
                     <div className="text-center">
-                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">221</span>
+                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">{followingCountText}</span>
                       <span className="mt-1 block text-lg sm:text-xl text-muted-foreground">{t.following}</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">12.7K</span>
+                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">{followersCountText}</span>
                       <span className="mt-1 block text-lg sm:text-xl text-muted-foreground">{t.followers}</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">548</span>
+                      <span className="block text-3xl sm:text-4xl font-bold text-foreground leading-none">{postsCountText}</span>
                       <span className="mt-1 block text-lg sm:text-xl text-muted-foreground">{t.posts}</span>
                     </div>
                   </div>
@@ -1537,7 +1782,15 @@ function ProfileHeader({
   )
 }
 
-function EmptyProfileTabs({ lang, userId }: { lang: "ar" | "en"; userId?: number }) {
+function EmptyProfileTabs({
+  lang,
+  userId,
+  canCreatePost = true,
+}: {
+  lang: "ar" | "en"
+  userId?: number
+  canCreatePost?: boolean
+}) {
   const t = labels(lang)
   const isRTL = lang === "ar"
   const [refreshKey, setRefreshKey] = React.useState(0)
@@ -1579,7 +1832,7 @@ function EmptyProfileTabs({ lang, userId }: { lang: "ar" | "en"; userId?: number
         <TabsContent value="posts">
           {userId ? (
             <div className="mt-4" dir={isRTL ? "rtl" : "ltr"}>
-              <CreatePublication onPublished={handlePublished} className="mb-4" />
+              {canCreatePost && <CreatePublication onPublished={handlePublished} className="mb-4" />}
               <PublicationFeed
                 userId={userId}
                 showHeader={false}
@@ -1600,6 +1853,7 @@ function EmptyProfileTabs({ lang, userId }: { lang: "ar" | "en"; userId?: number
             emptyDesc={t.emptyDesc}
             refreshKey={refreshKey}
             onPublished={handlePublished}
+            canCreatePost={canCreatePost}
           />
         </TabsContent>
         <TabsContent value="videos">
@@ -1646,7 +1900,17 @@ function SectionCard({ title, children }: { title: string; children: React.React
   )
 }
 
-function UserProfileView({ lang, displayName, handle, avatarUrl, userRole, userId }: Omit<ProfileViewsProps, "profileType">) {
+function UserProfileView({
+  lang,
+  displayName,
+  handle,
+  avatarUrl,
+  userRole,
+  userId,
+  isOwnProfile = true,
+  aboutText,
+  stats,
+}: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
   return (
@@ -1658,14 +1922,25 @@ function UserProfileView({ lang, displayName, handle, avatarUrl, userRole, userI
         handle={handle}
         avatarUrl={avatarUrl}
         userRole={userRole}
-        about={t.aboutUser}
+        about={aboutText ?? t.aboutUser}
+        isOwnProfile={isOwnProfile}
+        stats={stats}
       />
-      <EmptyProfileTabs lang={lang} userId={userId} />
+      <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
     </div>
   )
 }
 
-function StoreProfileView({ lang, displayName, handle, avatarUrl, userRole, userId }: Omit<ProfileViewsProps, "profileType">) {
+function StoreProfileView({
+  lang,
+  displayName,
+  handle,
+  avatarUrl,
+  userRole,
+  userId,
+  isOwnProfile = true,
+  stats,
+}: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
   return (
@@ -1678,6 +1953,8 @@ function StoreProfileView({ lang, displayName, handle, avatarUrl, userRole, user
         avatarUrl={avatarUrl}
         userRole={userRole}
         about={t.aboutStore}
+        isOwnProfile={isOwnProfile}
+        stats={stats}
       />
 
       <SectionCard title={t.links}>
@@ -1702,12 +1979,21 @@ function StoreProfileView({ lang, displayName, handle, avatarUrl, userRole, user
         </div>
       </SectionCard>
 
-      <EmptyProfileTabs lang={lang} userId={userId} />
+      <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
     </div>
   )
 }
 
-function CoachProfileView({ lang, displayName, handle, avatarUrl, userRole, userId }: Omit<ProfileViewsProps, "profileType">) {
+function CoachProfileView({
+  lang,
+  displayName,
+  handle,
+  avatarUrl,
+  userRole,
+  userId,
+  isOwnProfile = true,
+  stats,
+}: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
   return (
@@ -1720,6 +2006,8 @@ function CoachProfileView({ lang, displayName, handle, avatarUrl, userRole, user
         avatarUrl={avatarUrl}
         userRole={userRole}
         about={t.aboutCoach}
+        isOwnProfile={isOwnProfile}
+        stats={stats}
       />
 
       <SectionCard title={t.certificates}>
@@ -1755,19 +2043,64 @@ function CoachProfileView({ lang, displayName, handle, avatarUrl, userRole, user
         </div>
       </SectionCard>
 
-      <EmptyProfileTabs lang={lang} userId={userId} />
+      <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
     </div>
   )
 }
 
-export function ProfileViews({ lang, profileType, displayName, handle, avatarUrl, userRole, userId }: ProfileViewsProps) {
+export function ProfileViews({
+  lang,
+  profileType,
+  displayName,
+  handle,
+  avatarUrl,
+  userRole,
+  userId,
+  isOwnProfile = true,
+  aboutText,
+  stats,
+}: ProfileViewsProps) {
   if (profileType === "store") {
-    return <StoreProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} userId={userId} />
+    return (
+      <StoreProfileView
+        lang={lang}
+        displayName={displayName}
+        handle={handle}
+        avatarUrl={avatarUrl}
+        userRole={userRole}
+        userId={userId}
+        isOwnProfile={isOwnProfile}
+        stats={stats}
+      />
+    )
   }
 
   if (profileType === "coach") {
-    return <CoachProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} userId={userId} />
+    return (
+      <CoachProfileView
+        lang={lang}
+        displayName={displayName}
+        handle={handle}
+        avatarUrl={avatarUrl}
+        userRole={userRole}
+        userId={userId}
+        isOwnProfile={isOwnProfile}
+        stats={stats}
+      />
+    )
   }
 
-  return <UserProfileView lang={lang} displayName={displayName} handle={handle} avatarUrl={avatarUrl} userRole={userRole} userId={userId} />
+  return (
+    <UserProfileView
+      lang={lang}
+      displayName={displayName}
+      handle={handle}
+      avatarUrl={avatarUrl}
+      userRole={userRole}
+      userId={userId}
+      isOwnProfile={isOwnProfile}
+      aboutText={aboutText}
+      stats={stats}
+    />
+  )
 }

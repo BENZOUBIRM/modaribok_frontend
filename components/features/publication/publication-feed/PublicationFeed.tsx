@@ -5,6 +5,10 @@ import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { publicationService } from "@/services/api"
+import {
+  cacheCommentReactionState,
+  hydrateCommentsWithReactionCache,
+} from "@/lib/comment-reaction-cache"
 import type {
   CommentDto,
   FeedComment,
@@ -56,6 +60,7 @@ export function PublicationFeed({
   const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
   const [updatingPostById, setUpdatingPostById] = React.useState<Record<number, boolean>>({})
   const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
+  const [sharingPostById, setSharingPostById] = React.useState<Record<number, boolean>>({})
 
   React.useEffect(() => {
     let isMounted = true
@@ -129,12 +134,17 @@ export function PublicationFeed({
           ? commentsResults[index]?.data?.content ?? []
           : []
 
+        const mappedComments = hydrateCommentsWithReactionCache(
+          comments.map((comment) => mapCommentToFeedComment(comment)),
+          user?.id,
+        )
+
         const reactionState = reactionsResults[index]
         const reactionsCountByType = reactionState.reactionsCountByType ?? {}
 
         return mapPublicationToFeedPost(
           publication,
-          comments,
+          mappedComments,
           reactionsCountByType,
           reactionState.currentUserReaction,
         )
@@ -186,6 +196,13 @@ export function PublicationFeed({
 
     const mappedCounts = normalizeReactionCounts(result.data.reactionsCount ?? {})
     const totalReactions = Object.values(mappedCounts).reduce((sum, count) => sum + (count ?? 0), 0)
+    const parsedCurrentUserReaction = parseReactionType(result.data?.currentUserReaction)
+
+    cacheCommentReactionState(user?.id, commentId, {
+      reactionsCountByType: mappedCounts,
+      currentUserReaction: parsedCurrentUserReaction,
+      likesCount: totalReactions,
+    })
 
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
@@ -196,7 +213,7 @@ export function PublicationFeed({
                 post.comments,
                 commentId,
                 mappedCounts,
-                parseReactionType(result.data?.currentUserReaction),
+                parsedCurrentUserReaction,
                 totalReactions,
               ),
             }
@@ -249,7 +266,10 @@ export function PublicationFeed({
     }
 
     const repliesData: CommentDto[] = result.data
-    const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+    const mappedReplies = hydrateCommentsWithReactionCache(
+      repliesData.map((reply) => mapCommentToFeedComment(reply)),
+      user?.id,
+    )
 
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
@@ -295,7 +315,10 @@ export function PublicationFeed({
 
         if (repliesResult.success && repliesResult.data) {
           const repliesData: CommentDto[] = repliesResult.data
-          const mappedReplies = repliesData.map((reply) => mapCommentToFeedComment(reply))
+          const mappedReplies = hydrateCommentsWithReactionCache(
+            repliesData.map((reply) => mapCommentToFeedComment(reply)),
+            user?.id,
+          )
 
           return {
             ...post,
@@ -378,6 +401,57 @@ export function PublicationFeed({
     return true
   }
 
+  const handleSharePublication = async (publicationId: number) => {
+    if (sharingPostById[publicationId]) {
+      return
+    }
+
+    const sourcePost = posts.find((post) => post.id === publicationId)
+
+    setSharingPostById((current) => ({
+      ...current,
+      [publicationId]: true,
+    }))
+
+    const result = await publicationService.createPublication({
+      visibility: sourcePost?.visibility ?? "PUBLIC",
+      sharedPublicationId: publicationId,
+    })
+
+    setSharingPostById((current) => ({
+      ...current,
+      [publicationId]: false,
+    }))
+
+    if (!result.success || !result.data) {
+      return
+    }
+
+    const createdSharedPost = mapPublicationToFeedPost(result.data, [], {}, null)
+    const shouldPrependToCurrentFeed = !userId || user?.id === userId
+
+    setPosts((currentPosts) => {
+      const withUpdatedShareCount = currentPosts.map((post) =>
+        post.id === publicationId
+          ? {
+              ...post,
+              sharesCount: post.sharesCount + 1,
+            }
+          : post,
+      )
+
+      if (!shouldPrependToCurrentFeed) {
+        return withUpdatedShareCount
+      }
+
+      if (withUpdatedShareCount.some((post) => post.id === createdSharedPost.id)) {
+        return withUpdatedShareCount
+      }
+
+      return [createdSharedPost, ...withUpdatedShareCount]
+    })
+  }
+
   const handleUpdatePost = async (
     publicationId: number,
     payload: { content: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
@@ -432,6 +506,7 @@ export function PublicationFeed({
               originalImages: updatedOriginalImages,
               videos: updatedVideos,
               videoThumbnails: updatedVideoThumbnails,
+              sharedPublication: mapSharedPublicationToFeedData(updatedPublication.sharedPublication),
               likesCount: updatedPublication.likesCount ?? post.likesCount,
               commentsCount: updatedPublication.commentsCount ?? post.commentsCount,
               sharesCount: updatedPublication.sharesCount ?? post.sharesCount,
@@ -486,9 +561,11 @@ export function PublicationFeed({
             onReportComment={handleReportComment}
             onUpdatePost={handleUpdatePost}
             onDeletePost={handleDeletePost}
+            onSharePublication={handleSharePublication}
             isAddingComment={Boolean(addingCommentByPostId[post.id])}
             isUpdating={Boolean(updatingPostById[post.id])}
             isDeleting={Boolean(deletingPostById[post.id])}
+            isSharing={Boolean(sharingPostById[post.id])}
           />
           {/* Insert friend suggestions after the 1st post */}
           {showSuggestions && index === 0 && <FriendSuggestions />}
@@ -500,7 +577,7 @@ export function PublicationFeed({
 
 function mapPublicationToFeedPost(
   publication: PublicationDto,
-  comments: CommentDto[],
+  comments: FeedComment[],
   reactionsCountByType: ReactionCountsByType,
   currentUserReaction: ReactionType | null,
 ): FeedPost {
@@ -530,14 +607,53 @@ function mapPublicationToFeedPost(
       .map((media) => media.url)
       .filter(Boolean),
     videoThumbnails: videoMedia.map((media) => media.thumbnailUrl ?? null),
+    sharedPublication: mapSharedPublicationToFeedData(publication.sharedPublication),
     visibility: publication.visibility,
     createdAt: formatDateTime(publication.createdAt),
     likesCount: publication.likesCount ?? 0,
     commentsCount: publication.commentsCount ?? 0,
     sharesCount: publication.sharesCount ?? 0,
-    comments: comments.map((comment) => mapCommentToFeedComment(comment)),
+    comments,
     reactionsCountByType,
     currentUserReaction,
+  }
+}
+
+function mapSharedPublicationToFeedData(
+  sharedPublication: PublicationDto["sharedPublication"],
+): FeedPost["sharedPublication"] {
+  if (!sharedPublication) {
+    return null
+  }
+
+  const authorFirstName = sharedPublication.user?.firstName ?? ""
+  const authorLastName = sharedPublication.user?.lastName ?? ""
+  const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
+  const mediaItems = sharedPublication.media ?? []
+  const imageMedia = mediaItems.filter((media) => media.mediaType === "image")
+  const videoMedia = mediaItems.filter((media) => media.mediaType === "video")
+
+  return {
+    id: sharedPublication.id,
+    author: {
+      id: sharedPublication.user?.id ?? 0,
+      name: authorFullName,
+      handle: buildHandle(authorFirstName, authorLastName),
+      avatarUrl: sharedPublication.user?.profileImageUrl || "/images/default-user.jpg",
+    },
+    text: sharedPublication.content ?? "",
+    images: imageMedia
+      .map((media) => media.thumbnailUrl || media.url)
+      .filter(Boolean),
+    originalImages: imageMedia
+      .map((media) => media.url)
+      .filter(Boolean),
+    videos: videoMedia
+      .map((media) => media.url)
+      .filter(Boolean),
+    videoThumbnails: videoMedia.map((media) => media.thumbnailUrl ?? null),
+    visibility: sharedPublication.visibility,
+    createdAt: formatDateTime(sharedPublication.createdAt),
   }
 }
 

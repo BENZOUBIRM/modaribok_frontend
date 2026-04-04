@@ -509,7 +509,7 @@ export function SharedReactionControl({
 
     if (isSmallViewport) {
       return {
-        top: commentPickerAnchorRect.bottom + 8,
+        top: commentPickerAnchorRect.top - 8,
         left: boundaryLeft,
         width: boundaryWidth,
         maxWidth: boundaryWidth,
@@ -518,14 +518,14 @@ export function SharedReactionControl({
 
     if (isRTL) {
       return {
-        top: commentPickerAnchorRect.bottom + 8,
+        top: commentPickerAnchorRect.top - 8,
         right: Math.max(horizontalMargin, viewportWidth - boundaryRight),
         maxWidth: boundaryWidth,
       }
     }
 
     return {
-      top: commentPickerAnchorRect.bottom + 8,
+      top: commentPickerAnchorRect.top - 8,
       left: boundaryLeft,
       maxWidth: boundaryWidth,
     }

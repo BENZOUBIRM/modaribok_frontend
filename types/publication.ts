@@ -119,6 +119,18 @@ export interface FeedUser {
   avatarUrl: string
 }
 
+export interface FeedSharedPublication {
+  id: number
+  author: FeedUser
+  text: string
+  images: string[]
+  originalImages?: string[]
+  videos?: string[]
+  videoThumbnails?: Array<string | null>
+  visibility?: VisibilityPublication
+  createdAt: string
+}
+
 export interface FeedComment {
   id: number
   author: FeedUser
@@ -141,6 +153,7 @@ export interface FeedPost {
   originalImages?: string[]
   videos?: string[]
   videoThumbnails?: Array<string | null>
+  sharedPublication?: FeedSharedPublication | null
   visibility?: VisibilityPublication
   createdAt: string
   likesCount: number

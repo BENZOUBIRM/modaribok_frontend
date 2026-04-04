@@ -1,1 +1,50 @@
 /* CommentItem — component-scoped styles */
+
+.replyTree {
+	position: relative;
+}
+
+.replyTree::before {
+	content: "";
+	position: absolute;
+	top: -1.9rem;
+	bottom: 0.95rem;
+	width: 2px;
+	border-radius: 999px;
+	background: hsl(var(--foreground) / 0.62);
+	pointer-events: none;
+}
+
+.replyTreeLtr::before {
+	left: -1.45rem;
+}
+
+.replyTreeRtl::before {
+	right: -1.45rem;
+}
+
+.replyNodeWrapper {
+	position: relative;
+}
+
+.replyNodeWrapper::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	width: 1.4rem;
+	height: 0.95rem;
+	border-bottom: 2px solid hsl(var(--foreground) / 0.62);
+	pointer-events: none;
+}
+
+.replyNodeWrapperLtr::before {
+	left: -1.45rem;
+	border-left: 2px solid hsl(var(--foreground) / 0.62);
+	border-bottom-left-radius: 0.85rem;
+}
+
+.replyNodeWrapperRtl::before {
+	right: -1.45rem;
+	border-right: 2px solid hsl(var(--foreground) / 0.62);
+	border-bottom-right-radius: 0.85rem;
+}

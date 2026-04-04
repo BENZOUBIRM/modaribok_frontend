@@ -41,6 +41,35 @@ export interface UserProfile {
   sports: Sport[]
 }
 
+export interface OtherUserPublication {
+  id: number
+  content?: string | null
+  createdAt?: string
+  likesCount?: number
+  commentsCount?: number
+  sharesCount?: number
+}
+
+export interface OtherUserProfile {
+  id: number
+  firstName?: string | null
+  lastName?: string | null
+  city?: string | null
+  country?: string | null
+  gender?: string | null
+  birthday?: string | null
+  createdAt?: string | null
+  profileImageUrl?: string | null
+  profilePicture?: string | null
+  profilePictureUrl?: string | null
+  followersCount?: number | null
+  followingCount?: number | null
+  postsCount?: number | null
+  publicationsCount?: number | null
+  sports?: Sport[]
+  publications?: OtherUserPublication[]
+}
+
 export interface CompleteProfileFormData {
   firstName: string
   lastName: string

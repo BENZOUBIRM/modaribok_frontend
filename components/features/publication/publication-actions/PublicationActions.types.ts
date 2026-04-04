@@ -9,4 +9,6 @@ export interface PublicationActionsProps {
   currentUserReaction?: ReactionType | null
   onReact?: (publicationId: number, reactionType: ReactionType) => void
   onCommentClick?: () => void
+  onShare?: (publicationId: number) => void
+  isSharing?: boolean
 }

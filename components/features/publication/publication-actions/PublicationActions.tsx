@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { cn } from "@/lib/utils"
 import type { ReactionType } from "@/types"
+import { Spinner } from "@/components/ui/spinner"
 import { SharedReactionControl } from "../shared-reaction-control"
 import {
   REACTION_COLOR_BY_TYPE,
@@ -23,6 +24,8 @@ export function PublicationActions({
   currentUserReaction,
   onReact,
   onCommentClick,
+  onShare,
+  isSharing,
 }: PublicationActionsProps) {
   const { dictionary, isRTL } = useDictionary()
   const t = dictionary.feed
@@ -100,8 +103,13 @@ export function PublicationActions({
           <Icon icon="solar:chat-round-linear" className="size-5" />
           <span>{t.comment}</span>
         </button>
-        <button className="cursor-pointer flex-1 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10">
-          <Icon icon="solar:share-linear" className="size-5" />
+        <button
+          type="button"
+          onClick={() => onShare?.(publicationId)}
+          disabled={Boolean(isSharing)}
+          className="cursor-pointer flex-1 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-70 dark:hover:bg-white/10"
+        >
+          {isSharing ? <Spinner className="size-4" /> : <Icon icon="solar:share-linear" className="size-5" />}
           <span>{t.share}</span>
         </button>
       </div>

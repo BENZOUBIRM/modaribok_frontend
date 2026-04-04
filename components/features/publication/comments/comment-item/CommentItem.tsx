@@ -27,6 +27,7 @@ export function CommentItem({
   onDeleteComment,
   onReportComment,
   onReactComment,
+  onOpenUserProfile,
 }: {
   comment: MockComment
   isReply?: boolean
@@ -35,6 +36,7 @@ export function CommentItem({
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
   onReactComment?: (commentId: number, reactionType: ReactionType) => void
+  onOpenUserProfile?: (params: { userId: number; avatarUrl?: string; displayName?: string }) => void
 }) {
   const { dictionary, isRTL } = useDictionary()
   const { user } = useAuth()
@@ -116,25 +118,43 @@ export function CommentItem({
     setShowReplies(true)
   }
 
+  const handleOpenAuthorProfile = () => {
+    onOpenUserProfile?.({
+      userId: comment.author.id,
+      avatarUrl: comment.author.avatarUrl,
+      displayName: comment.author.name,
+    })
+  }
+
   return (
-    <div className={cn("flex gap-2", isReply && (isRTL ? "mr-10" : "ml-10"))} dir={isRTL ? "rtl" : "ltr"}>
-      <Image
-        src={comment.author.avatarUrl}
-        alt={comment.author.name}
-        width={isReply ? 28 : 32}
-        height={isReply ? 28 : 32}
-        className={cn(
-          "rounded-full object-cover shrink-0",
-          isReply ? "size-7" : "size-8"
-        )}
-      />
+    <div className={cn("flex items-start gap-2", isReply && (isRTL ? "mr-6" : "ml-6"))} dir={isRTL ? "rtl" : "ltr"}>
+      <button
+        type="button"
+        onClick={handleOpenAuthorProfile}
+        className="cursor-pointer shrink-0 self-start rounded-full"
+      >
+        <Image
+          src={comment.author.avatarUrl}
+          alt={comment.author.name}
+          width={isReply ? 28 : 32}
+          height={isReply ? 28 : 32}
+          className={cn(
+            "rounded-full object-cover",
+            isReply ? "size-7" : "size-8"
+          )}
+        />
+      </button>
       <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
         {/* Comment bubble */}
-        <div className="bg-surface rounded-xl px-3 py-2">
+        <div className="rounded-xl border border-border/70 bg-muted/75 px-3 py-2 dark:bg-surface">
           <div className="mb-0.5 flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-foreground leading-tight cursor-pointer hover:underline">
+            <button
+              type="button"
+              onClick={handleOpenAuthorProfile}
+              className="cursor-pointer text-left text-sm font-semibold leading-tight text-foreground hover:underline"
+            >
               {comment.author.name}
-            </p>
+            </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -258,6 +278,7 @@ export function CommentItem({
                     onDeleteComment={onDeleteComment}
                     onReportComment={onReportComment}
                     onReactComment={onReactComment}
+                    onOpenUserProfile={onOpenUserProfile}
                   />
                 ))}
               </div>

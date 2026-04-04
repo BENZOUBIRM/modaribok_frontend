@@ -9,4 +9,5 @@ export interface CommentItemProps {
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
   onReactComment?: (commentId: number, reactionType: ReactionType) => void
+  onOpenUserProfile?: (params: { userId: number; avatarUrl?: string; displayName?: string }) => void
 }

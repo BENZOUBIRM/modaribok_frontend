@@ -177,6 +177,15 @@ Comment picker width behavior:
 
 ## 10) Backend Wiring for Comment and Reply Reactions
 
+Important backend constraint (verified by code audit in CommentController/CommentService/CommentMapper):
+- backend exposes only toggle endpoint for comment reactions
+- root comments and replies read payloads do not include reaction counts or current user reaction
+- there is no dedicated read endpoint for comment reaction hydration
+
+Practical impact:
+- after full refresh, backend alone cannot restore comment/reply reaction UI state
+- frontend must preserve known state locally when backend read contract is incomplete
+
 ### 10.1 API endpoint
 
 From [Publication API service](../services/api/publication.service.ts):
@@ -189,12 +198,30 @@ From [PublicationFeed](../components/features/publication/publication-feed/Publi
 - `handleReactComment(publicationId, commentId, reactionType)` calls API
 - maps counts and current user reaction
 - updates nested comment tree via recursive helper
+- persists latest known comment reaction state per user in local cache
+- rehydrates root comments and loaded replies from cache during load/fetch
 
 ### 10.3 Profile modal path
 
 From [ProfileViews](../components/pages/profile/profile-overview-page/ProfileViews.tsx):
 - same behavior as feed path
 - same recursive nested update strategy
+- same local-cache persistence and hydration strategy
+
+### 10.5 Frontend persistence fallback
+
+From [Comment reaction cache util](../lib/comment-reaction-cache.ts):
+- stores comment/reply reaction snapshots in localStorage per user key
+- snapshot contains:
+  - `reactionsCountByType`
+  - `currentUserReaction`
+  - `likesCount`
+  - `updatedAt`
+- hydration is recursive and applies to both root comments and nested replies
+
+Why this fallback exists:
+- backend currently does not send comment reaction read state in comment/reply payloads
+- backend currently does not expose comment reaction read endpoint
 
 ### 10.4 Reply support
 
@@ -274,6 +301,7 @@ All must behave the same for arrow direction semantics.
 
 - comment reaction toggle calls backend endpoint
 - updates reflect in both root comment and reply nodes
+- refresh keeps known comment/reply reaction state for current user session history via local cache hydration
 
 ## 13) Maintenance Rules
 
@@ -312,3 +340,5 @@ The reaction system is now unified and production-safe across:
 - desktop and mobile viewports
 
 The most critical hardening was the Arabic mobile arrow-direction fix, which now uses runtime physical calibration to enforce consistent user-facing behavior.
+
+For comment/reply reaction persistence specifically, frontend now applies a cache-based hydration fallback until backend ships a dedicated read contract (either fields on CommentResponse or dedicated read endpoint).

@@ -16,6 +16,7 @@ export function CommentSection({
   onDeleteComment,
   onReportComment,
   onReactComment,
+  onOpenUserProfile,
   isAddingComment,
   focusSignal,
   scrollable,
@@ -27,6 +28,7 @@ export function CommentSection({
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
   onReactComment?: (commentId: number, reactionType: ReactionType) => void
+  onOpenUserProfile?: (params: { userId: number; avatarUrl?: string; displayName?: string }) => void
   isAddingComment?: boolean
   focusSignal?: number
   scrollable?: boolean
@@ -56,7 +58,7 @@ export function CommentSection({
 
   if (!comments.length) {
     return (
-      <div className="border-t border-border [&_button:not(:disabled)]:cursor-pointer">
+      <div className="border-t border-border bg-muted/30 [&_button:not(:disabled)]:cursor-pointer">
         <CommentInput
           value={commentText}
           onChange={setCommentText}
@@ -69,7 +71,7 @@ export function CommentSection({
   }
 
   return (
-    <div className="border-t border-border [&_button:not(:disabled)]:cursor-pointer">
+    <div className="border-t border-border bg-muted/30 [&_button:not(:disabled)]:cursor-pointer">
       <div
         data-comment-reaction-boundary
         className={`px-4 pt-3 space-y-3 ${
@@ -85,6 +87,7 @@ export function CommentSection({
             onDeleteComment={onDeleteComment}
             onReportComment={onReportComment}
             onReactComment={onReactComment}
+            onOpenUserProfile={onOpenUserProfile}
           />
         ))}
       </div>
