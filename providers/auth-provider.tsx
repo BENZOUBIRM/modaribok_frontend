@@ -18,7 +18,14 @@
 
 import * as React from "react"
 import { authService } from "@/services/api"
-import { getToken, getStoredUser, setStoredUser, setToken } from "@/services/api/client"
+import {
+  AUTH_FORCE_LOGOUT_EVENT,
+  getToken,
+  getStoredUser,
+  removeToken,
+  setStoredUser,
+  setToken,
+} from "@/services/api/client"
 import type {
   AuthContextValue,
   LoginRequest,
@@ -27,6 +34,15 @@ import type {
   SignupResult,
   User,
 } from "@/types/auth"
+
+function resolveLoginPath(pathname: string): string {
+  const firstSegment = pathname.split("/").filter(Boolean)[0]
+  const locale = firstSegment === "ar" || firstSegment === "en"
+    ? firstSegment
+    : "en"
+
+  return `/${locale}/login`
+}
 
 /* ──────────────── Context ──────────────── */
 
@@ -56,6 +72,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
     setIsLoading(false)
+  }, [])
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const handleForcedLogout = () => {
+      removeToken()
+      setUser(null)
+
+      const loginPath = resolveLoginPath(window.location.pathname)
+      const normalizedPath =
+        window.location.pathname.length > 1 && window.location.pathname.endsWith("/")
+          ? window.location.pathname.slice(0, -1)
+          : window.location.pathname
+
+      if (normalizedPath !== loginPath) {
+        window.location.replace(loginPath)
+      }
+    }
+
+    window.addEventListener(AUTH_FORCE_LOGOUT_EVENT, handleForcedLogout)
+    return () => {
+      window.removeEventListener(AUTH_FORCE_LOGOUT_EVENT, handleForcedLogout)
+    }
   }, [])
 
   /* ── Login ── */

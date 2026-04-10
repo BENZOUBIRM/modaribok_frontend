@@ -16,7 +16,6 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const pathname = usePathname()
   const [isNavigating, setIsNavigating] = React.useState(false)
   const [pendingPath, setPendingPath] = React.useState<string | null>(null)
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const normalizePath = React.useCallback((path: string) => {
     const stripped = path.split(/[?#]/)[0]
@@ -40,25 +39,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const completeNavigation = React.useCallback(() => {
     setIsNavigating(false)
     setPendingPath(null)
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
   }, [])
-
-  // Safety timeout — prevent stuck spinner
-  React.useEffect(() => {
-    if (!isNavigating) return
-    timerRef.current = setTimeout(() => {
-      completeNavigation()
-    }, 5000)
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-        timerRef.current = null
-      }
-    }
-  }, [completeNavigation, isNavigating])
 
   const value = React.useMemo(
     () => ({ isNavigating, pendingPath, startNavigation, completeNavigation }),

@@ -33,6 +33,9 @@ import type { CommentDto, FeedComment, FeedPost, PublicationDto, ReactionCountsB
 import { ProfilePatternOverlay } from "./ProfilePatternOverlay"
 
 type ProfileType = "user" | "store" | "coach"
+type ProfileMediaMode = "images" | "videos"
+
+const VIDEO_PREVIEW_FALLBACK = "/images/man-running.png"
 
 type ProfileStats = {
   posts: number
@@ -53,10 +56,11 @@ interface ProfileViewsProps {
   stats?: ProfileStats
 }
 
-type ImagePostItem = {
+type MediaPostItem = {
   id: number
   previewImage: string
-  imageCount: number
+  mediaCount: number
+  previewKind: ProfileMediaMode
   post: FeedPost
 }
 
@@ -108,16 +112,34 @@ function mapSharedPublicationToFeedData(
   }
 }
 
-function mapPublicationToImagePost(publication: PublicationDto): ImagePostItem | null {
+function mapPublicationToMediaPost(
+  publication: PublicationDto,
+  mode: ProfileMediaMode,
+): MediaPostItem | null {
   const imageMedia = (publication.media ?? []).filter((media) => media.mediaType === "image")
   const videoMedia = (publication.media ?? []).filter((media) => media.mediaType === "video")
   const sharedPublication = mapSharedPublicationToFeedData(publication.sharedPublication)
 
-  const previewCandidates = imageMedia.length > 0
+  const imagePreviewCandidates = imageMedia.length > 0
     ? imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean)
     : (sharedPublication?.images ?? [])
 
-  if (previewCandidates.length === 0) {
+  const directVideoPreviewCandidates = videoMedia
+    .map((media) => media.thumbnailUrl)
+    .filter((value): value is string => Boolean(value))
+  const sharedVideoPreviewCandidates = (sharedPublication?.videoThumbnails ?? [])
+    .filter((value): value is string => Boolean(value))
+  const directVideoCount = videoMedia.length
+  const sharedVideoCount = sharedPublication?.videos?.length ?? 0
+  const videoCount = directVideoCount > 0 ? directVideoCount : sharedVideoCount
+  const videoPreview = directVideoPreviewCandidates[0]
+    ?? sharedVideoPreviewCandidates[0]
+    ?? VIDEO_PREVIEW_FALLBACK
+
+  const hasImages = imagePreviewCandidates.length > 0
+  const hasVideos = videoCount > 0
+
+  if ((mode === "images" && !hasImages) || (mode === "videos" && !hasVideos)) {
     return null
   }
 
@@ -152,8 +174,11 @@ function mapPublicationToImagePost(publication: PublicationDto): ImagePostItem |
 
   return {
     id: publication.id,
-    previewImage: previewCandidates[0] ?? "",
-    imageCount: previewCandidates.length,
+    previewImage: mode === "images"
+      ? imagePreviewCandidates[0] ?? ""
+      : videoPreview,
+    mediaCount: mode === "images" ? imagePreviewCandidates.length : videoCount,
+    previewKind: mode,
     post,
   }
 }
@@ -503,7 +528,8 @@ async function loadReactionState(
   }
 }
 
-function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onPublished, canCreatePost }: {
+function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey, onPublished, canCreatePost }: {
+  mode: ProfileMediaMode
   lang: "ar" | "en"
   userId?: number
   emptyTitle: string
@@ -513,7 +539,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
   canCreatePost?: boolean
 }) {
   const { user } = useAuth()
-  const [imagePosts, setImagePosts] = React.useState<ImagePostItem[]>([])
+  const [imagePosts, setImagePosts] = React.useState<MediaPostItem[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [errorCode, setErrorCode] = React.useState<string | null>(null)
   const [activePostIndex, setActivePostIndex] = React.useState<number | null>(null)
@@ -565,8 +591,8 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
       }
 
       const mapped = publications
-        .map((publication) => mapPublicationToImagePost(publication))
-        .filter((item): item is ImagePostItem => Boolean(item))
+        .map((publication) => mapPublicationToMediaPost(publication, mode))
+        .filter((item): item is MediaPostItem => Boolean(item))
 
       const commentsResults = await Promise.all(
         mapped.map((item) => publicationService.getRootComments(item.post.id, 0, 10)),
@@ -610,11 +636,11 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
     return () => {
       isMounted = false
     }
-  }, [lang, user?.id, userId, refreshKey])
+  }, [lang, mode, user?.id, userId, refreshKey])
 
   const hasActivePost = activePostIndex !== null && imagePosts[activePostIndex]
   const isRTL = lang === "ar"
-  const canCreate = canCreatePost ?? true
+  const canCreate = (canCreatePost ?? true) && mode === "images"
   const canGoPrevious = activePostIndex !== null && activePostIndex > 0
   const canGoNext = activePostIndex !== null && activePostIndex < imagePosts.length - 1
 
@@ -929,7 +955,7 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
       return
     }
 
-    const createdImagePost = mapPublicationToImagePost(result.data)
+    const createdImagePost = mapPublicationToMediaPost(result.data, mode)
     const shouldPrependToCurrentList = (!userId || user?.id === userId) && activePostIndex === null
 
     setImagePosts((currentPosts) => {
@@ -996,10 +1022,16 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
       .map((media) => media.url)
       .filter(Boolean)
 
+    const updatedVideos = (updatedPublication.media ?? [])
+      .filter((media) => media.mediaType === "video")
+      .map((media) => media.url)
+      .filter(Boolean)
+    const updatedVideoThumbnails = (updatedPublication.media ?? [])
+      .filter((media) => media.mediaType === "video")
+      .map((media) => media.thumbnailUrl ?? null)
+
     const updatedSharedPublication = mapSharedPublicationToFeedData(updatedPublication.sharedPublication)
-    const previewCandidates = updatedImages.length > 0
-      ? updatedImages
-      : (updatedSharedPublication?.images ?? [])
+    const remappedPostItem = mapPublicationToMediaPost(updatedPublication, mode)
 
     setImagePosts((currentPosts) =>
       currentPosts.map((item) => {
@@ -1007,18 +1039,21 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
           return item
         }
 
-        const previewImage = previewCandidates[0] ?? item.previewImage
+        const previewImage = remappedPostItem?.previewImage ?? item.previewImage
 
         return {
           ...item,
           previewImage,
-          imageCount: previewCandidates.length || item.imageCount,
+          mediaCount: remappedPostItem?.mediaCount ?? item.mediaCount,
+          previewKind: remappedPostItem?.previewKind ?? item.previewKind,
           post: {
             ...item.post,
             text: updatedPublication.content ?? "",
             visibility: updatedPublication.visibility,
             images: updatedImages,
             originalImages: updatedOriginalImages,
+            videos: updatedVideos,
+            videoThumbnails: updatedVideoThumbnails,
             sharedPublication: updatedSharedPublication,
             likesCount: updatedPublication.likesCount ?? item.post.likesCount,
             commentsCount: updatedPublication.commentsCount ?? item.post.commentsCount,
@@ -1098,20 +1133,28 @@ function ProfileImagesTab({ lang, userId, emptyTitle, emptyDesc, refreshKey, onP
               type="button"
               onClick={() => setActivePostIndex(index)}
               className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/20 p-1"
-              title={lang === "ar" ? "فتح المنشور" : "Open post"}
+              title={mode === "videos" ? (lang === "ar" ? "فتح فيديو" : "Open video") : (lang === "ar" ? "فتح المنشور" : "Open post")}
             >
               <Image
                 src={item.previewImage}
-                alt={lang === "ar" ? "صورة منشور" : "Post image"}
+                alt={mode === "videos" ? (lang === "ar" ? "معاينة فيديو" : "Video preview") : (lang === "ar" ? "صورة منشور" : "Post image")}
                 width={800}
                 height={800}
                 className="h-full w-full rounded-lg object-cover transition-transform duration-200 group-hover:scale-[1.02]"
               />
 
-              {item.imageCount > 1 && (
+              {item.previewKind === "videos" && (
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-white">
+                  <span className="inline-flex size-12 items-center justify-center rounded-full bg-black/55">
+                    <Icon icon="solar:play-bold" className="size-6" />
+                  </span>
+                </span>
+              )}
+
+              {item.mediaCount > 1 && (
                 <span className={`absolute top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[11px] font-semibold text-white ${isRTL ? "left-2" : "right-2"}`}>
-                  <Icon icon="solar:gallery-wide-linear" className="size-3.5" />
-                  {item.imageCount}
+                  <Icon icon={item.previewKind === "videos" ? "solar:videocamera-record-linear" : "solar:gallery-wide-linear"} className="size-3.5" />
+                  {item.mediaCount}
                 </span>
               )}
             </button>
@@ -1236,6 +1279,8 @@ function labels(lang: "ar" | "en") {
         tabEvents: "أحداث",
         emptyTitle: "لا يوجد محتوى بعد",
         emptyDesc: "سيظهر المحتوى هنا بعد ربط المنطق.",
+        emptyVideosTitle: "لا توجد فيديوهات بعد",
+        emptyVideosDesc: "ستظهر الفيديوهات هنا بعد ربط المنطق.",
         privateAccounts: "حساباتي الخاصة",
         aboutUser:
           "نؤمن دائمًا بصناعة فرق من البداية بطريقة منهجية، وهدفنا تقديم تجربة متكاملة وقابلة للتطوير مع تقدم مستواك الرياضي.",
@@ -1267,6 +1312,8 @@ function labels(lang: "ar" | "en") {
         tabEvents: "Events",
         emptyTitle: "No content yet",
         emptyDesc: "Content will appear here once logic is connected.",
+        emptyVideosTitle: "No videos yet",
+        emptyVideosDesc: "Videos will appear here once logic is connected.",
         privateAccounts: "Private accounts",
         aboutUser:
           "We provide a progressive training experience with a practical methodology designed to grow with your goals.",
@@ -1846,7 +1893,8 @@ function EmptyProfileTabs({
           )}
         </TabsContent>
         <TabsContent value="images">
-          <ProfileImagesTab
+          <ProfileMediaTab
+            mode="images"
             lang={lang}
             userId={userId}
             emptyTitle={t.emptyTitle}
@@ -1857,7 +1905,16 @@ function EmptyProfileTabs({
           />
         </TabsContent>
         <TabsContent value="videos">
-          <EmptyState title={t.emptyTitle} description={t.emptyDesc} />
+          <ProfileMediaTab
+            mode="videos"
+            lang={lang}
+            userId={userId}
+            emptyTitle={t.emptyVideosTitle}
+            emptyDesc={t.emptyVideosDesc}
+            refreshKey={refreshKey}
+            onPublished={handlePublished}
+            canCreatePost={false}
+          />
         </TabsContent>
         <TabsContent value="events">
           <EmptyState title={t.emptyTitle} description={t.emptyDesc} />

@@ -23,6 +23,18 @@ const TOKEN_KEY = "modaribok_token"
 /** Key used in localStorage to persist the user data */
 const USER_KEY = "modaribok_user"
 
+/** Browser event dispatched when the session must be forcefully cleared */
+export const AUTH_FORCE_LOGOUT_EVENT = "modaribok:auth:force-logout"
+
+const FORCE_LOGOUT_CODES = new Set([
+  "AUTH_TOKEN_INVALID_009",
+  "AUTH_TOKEN_EXPIRED_010",
+  "AUTH_TOKEN_ERROR_011",
+  "AUTH_TOKEN_REQUIRED_018",
+])
+
+let forceLogoutTriggered = false
+
 /* ──────────────── Axios Instance ──────────────── */
 
 const apiClient = axios.create({
@@ -84,9 +96,9 @@ apiClient.interceptors.response.use(
     if (axios.isAxiosError(error)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const skip = (error.config as any)?._skipToast === true
+      const code = error.response?.data?.code as string | undefined
 
       if (!skip) {
-        const code = error.response?.data?.code as string | undefined
         if (code) {
           const cfg = getCodeConfig(code)
           if (cfg.autoToast) {
@@ -97,16 +109,40 @@ apiClient.interceptors.response.use(
           showApiToast("NETWORK_ERROR")
         }
       }
+
+      if (shouldForceLogout(code)) {
+        triggerForcedLogout(code)
+      }
     }
     return Promise.reject(error)
   },
 )
+
+function shouldForceLogout(code: string | undefined): boolean {
+  return Boolean(code && FORCE_LOGOUT_CODES.has(code))
+}
+
+function triggerForcedLogout(code: string | undefined): void {
+  if (typeof window === "undefined" || forceLogoutTriggered) {
+    return
+  }
+
+  forceLogoutTriggered = true
+  removeToken()
+
+  window.dispatchEvent(
+    new CustomEvent(AUTH_FORCE_LOGOUT_EVENT, {
+      detail: { code: code ?? "AUTH_TOKEN_INVALID_009" },
+    }),
+  )
+}
 
 /* ──────────────── Token Helpers ──────────────── */
 
 /** Persist token to localStorage */
 export function setToken(token: string): void {
   if (typeof window !== "undefined") {
+    forceLogoutTriggered = false
     localStorage.setItem(TOKEN_KEY, token)
   }
 }

@@ -13,7 +13,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       style={{ fontFamily: "inherit" }}
       closeButton
-      duration={5000}
+      duration={4000}
       gap={8}
       visibleToasts={4}
       icons={{

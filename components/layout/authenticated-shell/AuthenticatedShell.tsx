@@ -56,7 +56,7 @@ export default function AuthenticatedShell({
   const router = useRouter()
   const pathname = usePathname()
 
-  const { isNavigating, pendingPath, completeNavigation } = useNavigation()
+  const { isNavigating, completeNavigation } = useNavigation()
   const sidebar = useSidebar()
   const activityPanel = useActivityPanel()
 
@@ -65,7 +65,6 @@ export default function AuthenticatedShell({
   const [guestSidebarOpen, setGuestSidebarOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const navStartChildrenRef = useRef<React.ReactNode | null>(null)
   const navStartPathRef = useRef<string | null>(null)
 
   const normalizePath = (path: string) => {
@@ -87,31 +86,27 @@ export default function AuthenticatedShell({
     }
   }, [isLoggingOut, pathname])
 
-  // Track the content/path snapshot at navigation start.
+  // Track the current path at navigation start.
   useEffect(() => {
-    if (isNavigating && navStartChildrenRef.current === null) {
-      navStartChildrenRef.current = children
+    if (isNavigating && navStartPathRef.current === null) {
       navStartPathRef.current = normalizePath(pathname)
       return
     }
 
     if (!isNavigating) {
-      navStartChildrenRef.current = null
       navStartPathRef.current = null
     }
-  }, [children, isNavigating, pathname])
+  }, [isNavigating, pathname])
 
-  // Finish loading only when destination path is active and route content changed.
+  // Finish loading only when the route path actually changes.
   useEffect(() => {
-    if (!isNavigating || !pendingPath || !navStartChildrenRef.current) return
+    if (!isNavigating || navStartPathRef.current === null) return
 
     const currentPath = normalizePath(pathname)
     const startedFromPath = navStartPathRef.current
-    const reachedDestination = currentPath === pendingPath
     const pathChanged = startedFromPath !== null && currentPath !== startedFromPath
-    const contentChanged = children !== navStartChildrenRef.current
 
-    if (!reachedDestination || !pathChanged || !contentChanged) return
+    if (!pathChanged) return
 
     let frame1 = 0
     let frame2 = 0
@@ -125,7 +120,7 @@ export default function AuthenticatedShell({
       if (frame1) cancelAnimationFrame(frame1)
       if (frame2) cancelAnimationFrame(frame2)
     }
-  }, [children, completeNavigation, isNavigating, pathname, pendingPath])
+  }, [completeNavigation, isNavigating, pathname])
 
   // Safety: clear isLoggingOut after 5s to prevent stuck state
   useEffect(() => {
