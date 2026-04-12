@@ -71,13 +71,20 @@ export function PublicationCard({
   onReact,
   onReactComment,
   onAddComment,
+  onCommentIntent,
   onAddReply,
   onLoadReplies,
+  onUpdateComment,
+  onLoadMoreComments,
   onDeleteComment,
   onReportComment,
   onUpdatePost,
   onDeletePost,
   onSharePublication,
+  totalCommentsCount,
+  areCommentsInitialized,
+  hasMoreComments,
+  isLoadingMoreComments,
   isAddingComment,
   isUpdating,
   isDeleting,
@@ -90,8 +97,11 @@ export function PublicationCard({
   onReact?: (publicationId: number, reactionType: ReactionType) => void
   onReactComment?: (publicationId: number, commentId: number, reactionType: ReactionType) => void
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
+  onCommentIntent?: (publicationId: number) => Promise<void> | void
   onAddReply?: (publicationId: number, parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (publicationId: number, commentId: number) => Promise<void> | void
+  onUpdateComment?: (publicationId: number, commentId: number, content: string) => Promise<boolean> | boolean
+  onLoadMoreComments?: (publicationId: number) => Promise<void> | void
   onDeleteComment?: (publicationId: number, commentId: number) => Promise<boolean> | boolean
   onReportComment?: (publicationId: number, commentId: number) => Promise<boolean> | boolean
   onUpdatePost?: (
@@ -100,6 +110,10 @@ export function PublicationCard({
   ) => Promise<boolean> | boolean
   onDeletePost?: (publicationId: number) => Promise<boolean> | boolean
   onSharePublication?: (publicationId: number) => Promise<void> | void
+  totalCommentsCount?: number
+  areCommentsInitialized?: boolean
+  hasMoreComments?: boolean
+  isLoadingMoreComments?: boolean
   isAddingComment?: boolean
   isUpdating?: boolean
   isDeleting?: boolean
@@ -151,6 +165,7 @@ export function PublicationCard({
   }
 
   const handleCommentClick = () => {
+    void onCommentIntent?.(post.id)
     setCommentFocusSignal((current) => current + 1)
   }
 
@@ -419,11 +434,17 @@ export function PublicationCard({
       {/* Comments section */}
       <CommentSection
         comments={post.comments}
+        totalCommentsCount={totalCommentsCount ?? post.commentsCount}
+        areCommentsInitialized={areCommentsInitialized}
+        hasMoreComments={hasMoreComments}
+        isLoadingMoreComments={isLoadingMoreComments}
+        onLoadMoreComments={() => onLoadMoreComments?.(post.id)}
         onAddComment={(content) => onAddComment?.(post.id, content)}
         onReactComment={(commentId, reactionType) => onReactComment?.(post.id, commentId, reactionType)}
         onOpenUserProfile={handleOpenUserProfile}
         onAddReply={(parentCommentId, content) => onAddReply?.(post.id, parentCommentId, content)}
         onLoadReplies={(commentId) => onLoadReplies?.(post.id, commentId)}
+        onUpdateComment={(commentId, content) => onUpdateComment?.(post.id, commentId, content)}
         onDeleteComment={(commentId) => onDeleteComment?.(post.id, commentId)}
         onReportComment={(commentId) => onReportComment?.(post.id, commentId)}
         isAddingComment={isAddingComment}

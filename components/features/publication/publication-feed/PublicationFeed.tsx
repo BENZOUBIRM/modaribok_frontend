@@ -9,6 +9,13 @@ import {
   cacheCommentReactionState,
   hydrateCommentsWithReactionCache,
 } from "@/lib/comment-reaction-cache"
+import {
+  buildPublicationFeedCacheKey,
+  getPublicationFeedCache,
+  isPublicationFeedCacheFresh,
+  setPublicationFeedCache,
+} from "@/lib/publication-feed-cache"
+import { showApiToast } from "@/lib/api-toast"
 import type {
   CommentDto,
   FeedComment,
@@ -38,6 +45,99 @@ const REACTION_TYPES: ReactionType[] = [
   "CHAMPION",
 ]
 
+// Tuning knobs: adjust these values (after alignment with the project owner) to control
+// how many posts/comments appear first and how many are loaded on each "show more" action.
+const FEED_PAGE_SIZE = 5
+const ROOT_COMMENTS_PAGE_SIZE = 2
+
+type FeedPageLoadResult = {
+  success: boolean
+  posts: FeedPost[]
+  page: number
+  hasMore: boolean
+  code?: string
+}
+
+type CommentPaginationState = {
+  initialized: boolean
+  nextPage: number
+  hasMore: boolean
+  isLoading: boolean
+}
+
+function mergePostsById(currentPosts: FeedPost[], incomingPosts: FeedPost[]): FeedPost[] {
+  if (!incomingPosts.length) {
+    return currentPosts
+  }
+
+  const existingIds = new Set(currentPosts.map((post) => post.id))
+  const uniqueIncoming = incomingPosts.filter((post) => !existingIds.has(post.id))
+
+  if (!uniqueIncoming.length) {
+    return currentPosts
+  }
+
+  return [...currentPosts, ...uniqueIncoming]
+}
+
+function mergeCommentsById(currentComments: FeedComment[], incomingComments: FeedComment[]): FeedComment[] {
+  if (!incomingComments.length) {
+    return currentComments
+  }
+
+  const existingIds = new Set(currentComments.map((comment) => comment.id))
+  const uniqueIncoming = incomingComments.filter((comment) => !existingIds.has(comment.id))
+
+  if (!uniqueIncoming.length) {
+    return currentComments
+  }
+
+  return [...currentComments, ...uniqueIncoming]
+}
+
+function resolveHasMoreFromPageMeta(
+  currentPage: number,
+  pageSize: number,
+  pageContentLength: number,
+  meta?: {
+    last?: boolean
+    totalPages?: number
+    totalElements?: number
+  },
+): boolean {
+  if (typeof meta?.totalPages === "number") {
+    return currentPage < meta.totalPages - 1
+  }
+
+  if (typeof meta?.last === "boolean") {
+    return !meta.last
+  }
+
+  if (typeof meta?.totalElements === "number") {
+    return (currentPage + 1) * pageSize < meta.totalElements
+  }
+
+  return pageContentLength >= pageSize
+}
+
+function buildCommentPaginationSnapshot(posts: FeedPost[]): Record<number, CommentPaginationState> {
+  return posts.reduce<Record<number, CommentPaginationState>>((acc, post) => {
+    const loadedCommentsCount = post.comments.length
+    const initialized = post.commentsCount === 0 || loadedCommentsCount > 0
+
+    acc[post.id] = {
+      initialized,
+      nextPage: initialized
+        ? Math.max(1, Math.floor(loadedCommentsCount / ROOT_COMMENTS_PAGE_SIZE))
+        : 0,
+      hasMore: loadedCommentsCount < post.commentsCount,
+      isLoading: false,
+    }
+
+    return acc
+  }, {})
+}
+
 /**
  * Main feed container — "Latest Posts" tab + list of publications.
  * Inserts friend suggestions between posts.
@@ -57,109 +157,454 @@ export function PublicationFeed({
   const [posts, setPosts] = React.useState<FeedPost[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [errorCode, setErrorCode] = React.useState<string | null>(null)
+  const [currentPage, setCurrentPage] = React.useState(0)
+  const [hasMorePosts, setHasMorePosts] = React.useState(false)
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = React.useState(false)
+  const [commentPaginationByPostId, setCommentPaginationByPostId] = React.useState<Record<number, CommentPaginationState>>({})
   const [addingCommentByPostId, setAddingCommentByPostId] = React.useState<Record<number, boolean>>({})
   const [updatingPostById, setUpdatingPostById] = React.useState<Record<number, boolean>>({})
   const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
   const [sharingPostById, setSharingPostById] = React.useState<Record<number, boolean>>({})
 
-  React.useEffect(() => {
-    let isMounted = true
+  const cacheKey = React.useMemo(
+    () => buildPublicationFeedCacheKey({
+      scopeUserId: userId,
+      viewerUserId: user?.id,
+      lang,
+    }),
+    [lang, user?.id, userId],
+  )
 
-    const loadFeed = async () => {
-      setIsLoading(true)
-      setErrorCode(null)
+  const fetchFeedPage = React.useCallback(async (pageToLoad: number): Promise<FeedPageLoadResult> => {
+    if (userId) {
+      if (pageToLoad > 0) {
+        return {
+          success: true,
+          posts: [],
+          page: 0,
+          hasMore: false,
+        }
+      }
 
       let publicationItems: PublicationDto[] = []
 
-      if (userId) {
-        const userPublicationsResult = await publicationService.getUserPublications(userId)
-
-        if (!isMounted) return
-
-        if (userPublicationsResult.success && userPublicationsResult.data) {
-          publicationItems = Array.isArray(userPublicationsResult.data)
-            ? userPublicationsResult.data
-            : []
-        } else {
-          const fallbackFeedResult = await publicationService.getFeed(0, 50)
-
-          if (!isMounted) return
-
-          if (!fallbackFeedResult.success || !fallbackFeedResult.data) {
-            setPosts([])
-            setErrorCode(userPublicationsResult.code ?? fallbackFeedResult.code ?? "NETWORK_ERROR")
-            setIsLoading(false)
-            return
-          }
-
-          const fallbackItems = Array.isArray(fallbackFeedResult.data)
-            ? fallbackFeedResult.data
-            : (fallbackFeedResult.data.content ?? [])
-
-          publicationItems = fallbackItems.filter((publication) => publication.user?.id === userId)
-        }
+      const userPublicationsResult = await publicationService.getUserPublications(userId)
+      if (userPublicationsResult.success && userPublicationsResult.data) {
+        publicationItems = Array.isArray(userPublicationsResult.data)
+          ? userPublicationsResult.data
+          : []
       } else {
-        const feedResult = await publicationService.getFeed(0, 10)
+        const fallbackFeedResult = await publicationService.getFeed(0, 50)
 
-        if (!isMounted) return
-
-        if (!feedResult.success || !feedResult.data) {
-          setPosts([])
-          setErrorCode(feedResult.code ?? "NETWORK_ERROR")
-          setIsLoading(false)
-          return
+        if (!fallbackFeedResult.success || !fallbackFeedResult.data) {
+          return {
+            success: false,
+            posts: [],
+            page: 0,
+            hasMore: false,
+            code: userPublicationsResult.code ?? fallbackFeedResult.code ?? "NETWORK_ERROR",
+          }
         }
 
-        publicationItems = Array.isArray(feedResult.data)
-          ? feedResult.data
-          : (feedResult.data.content ?? [])
+        const fallbackItems = Array.isArray(fallbackFeedResult.data)
+          ? fallbackFeedResult.data
+          : (fallbackFeedResult.data.content ?? [])
+
+        publicationItems = fallbackItems.filter((publication) => publication.user?.id === userId)
       }
 
-      const commentsResults = await Promise.all(
-        publicationItems.map((publication) =>
-          publicationService.getRootComments(publication.id, 0, 10),
-        ),
+      return {
+        success: true,
+        posts: publicationItems.map((publication) => mapPublicationToFeedPost(publication, [], {}, null)),
+        page: 0,
+        hasMore: false,
+      }
+    }
+
+    const feedResult = await publicationService.getFeed(pageToLoad, FEED_PAGE_SIZE)
+
+    if (!feedResult.success || !feedResult.data) {
+      return {
+        success: false,
+        posts: [],
+        page: pageToLoad,
+        hasMore: false,
+        code: feedResult.code ?? "NETWORK_ERROR",
+      }
+    }
+
+    const feedPage = feedResult.data
+    const publicationItems = Array.isArray(feedPage)
+      ? feedPage
+      : (feedPage.content ?? [])
+
+    const resolvedPageNumber = Array.isArray(feedPage)
+      ? pageToLoad
+      : (typeof feedPage.number === "number" ? feedPage.number : pageToLoad)
+
+    const resolvedHasMore = Array.isArray(feedPage)
+      ? publicationItems.length >= FEED_PAGE_SIZE
+      : resolveHasMoreFromPageMeta(
+        resolvedPageNumber,
+        FEED_PAGE_SIZE,
+        publicationItems.length,
+        {
+          last: feedPage.last,
+          totalPages: feedPage.totalPages,
+          totalElements: feedPage.totalElements,
+        },
       )
 
-      const reactionsResults = await Promise.all(
-        publicationItems.map((publication) =>
-          loadReactionState(publication.id, publication.likesCount ?? 0, user?.id),
-        ),
-      )
+    return {
+      success: true,
+      posts: publicationItems.map((publication) => mapPublicationToFeedPost(publication, [], {}, null)),
+      page: resolvedPageNumber,
+      hasMore: resolvedHasMore,
+    }
+  }, [userId])
 
-      if (!isMounted) return
+  const bootstrapInitialComments = React.useCallback(async (
+    incomingPosts: FeedPost[],
+  ): Promise<{
+    posts: FeedPost[]
+    paginationByPostId: Record<number, CommentPaginationState>
+  }> => {
+    if (!incomingPosts.length) {
+      return {
+        posts: incomingPosts,
+        paginationByPostId: {},
+      }
+    }
 
-      const mappedPosts = publicationItems.map((publication, index) => {
-        const comments = commentsResults[index]?.success
-          ? commentsResults[index]?.data?.content ?? []
-          : []
+    const bootstrapResults = await Promise.all(
+      incomingPosts.map(async (post) => {
+        const rootCommentsResult = await publicationService.getRootComments(
+          post.id,
+          0,
+          ROOT_COMMENTS_PAGE_SIZE,
+        )
 
+        if (!rootCommentsResult.success || !rootCommentsResult.data) {
+          const loadedCommentsCount = post.comments.length
+          const initialized = loadedCommentsCount > 0
+
+          return {
+            postId: post.id,
+            comments: post.comments,
+            pagination: {
+              initialized,
+              nextPage: initialized
+                ? Math.max(1, Math.floor(loadedCommentsCount / ROOT_COMMENTS_PAGE_SIZE))
+                : 0,
+              hasMore: loadedCommentsCount < post.commentsCount,
+              isLoading: false,
+            },
+          }
+        }
+
+        const pageData = rootCommentsResult.data
         const mappedComments = hydrateCommentsWithReactionCache(
-          comments.map((comment) => mapCommentToFeedComment(comment)),
+          (pageData.content ?? []).map((comment) => mapCommentToFeedComment(comment)),
           user?.id,
         )
 
-        const reactionState = reactionsResults[index]
-        const reactionsCountByType = reactionState.reactionsCountByType ?? {}
-
-        return mapPublicationToFeedPost(
-          publication,
-          mappedComments,
-          reactionsCountByType,
-          reactionState.currentUserReaction,
+        const pageNumber = typeof pageData.number === "number" ? pageData.number : 0
+        const hasMoreFromMeta = resolveHasMoreFromPageMeta(
+          pageNumber,
+          ROOT_COMMENTS_PAGE_SIZE,
+          mappedComments.length,
+          {
+            last: pageData.last,
+            totalPages: pageData.totalPages,
+            totalElements: pageData.totalElements,
+          },
         )
-      })
+        const fallbackTotalComments =
+          typeof pageData.totalElements === "number"
+            ? pageData.totalElements
+            : (post.commentsCount > 0 ? post.commentsCount : undefined)
+        const hasMore = typeof fallbackTotalComments === "number"
+          ? mappedComments.length < fallbackTotalComments
+          : hasMoreFromMeta
 
-      setPosts(mappedPosts)
+        return {
+          postId: post.id,
+          comments: mappedComments,
+          pagination: {
+            initialized: true,
+            nextPage: pageNumber + 1,
+            hasMore,
+            isLoading: false,
+          },
+        }
+      }),
+    )
+
+    const commentsByPostId = new Map<number, FeedComment[]>()
+    const paginationByPostId: Record<number, CommentPaginationState> = {}
+
+    bootstrapResults.forEach((result) => {
+      commentsByPostId.set(result.postId, result.comments)
+      paginationByPostId[result.postId] = result.pagination
+    })
+
+    return {
+      posts: incomingPosts.map((post) => ({
+        ...post,
+        comments: commentsByPostId.get(post.id) ?? post.comments,
+      })),
+      paginationByPostId,
+    }
+  }, [user?.id])
+
+  React.useEffect(() => {
+    let isCancelled = false
+
+    const cachedFeed = getPublicationFeedCache(cacheKey)
+
+    if (cachedFeed) {
+      setPosts(cachedFeed.posts)
+      setErrorCode(cachedFeed.errorCode)
+      setCurrentPage(cachedFeed.currentPage)
+      setHasMorePosts(cachedFeed.hasMorePosts)
+      setCommentPaginationByPostId(buildCommentPaginationSnapshot(cachedFeed.posts))
       setIsLoading(false)
     }
 
-    loadFeed()
+    const hasFreshCachedFeed = cachedFeed
+      ? isPublicationFeedCacheFresh(cachedFeed)
+      : false
+
+    const shouldSkipNetworkLoad =
+      refreshKey === 0
+      && Boolean(cachedFeed)
+      && !cachedFeed?.errorCode
+      && hasFreshCachedFeed
+
+    if (shouldSkipNetworkLoad) {
+      return () => {
+        isCancelled = true
+      }
+    }
+
+    const loadInitialPage = async () => {
+      if (!cachedFeed) {
+        setIsLoading(true)
+      } else {
+        setErrorCode(null)
+      }
+
+      const firstPageResult = await fetchFeedPage(0)
+      if (isCancelled) return
+
+      if (!firstPageResult.success) {
+        if (!cachedFeed) {
+          setPosts([])
+          setErrorCode(firstPageResult.code ?? "NETWORK_ERROR")
+          setCurrentPage(0)
+          setHasMorePosts(false)
+        }
+        setIsLoading(false)
+        return
+      }
+
+      const firstPageWithComments = await bootstrapInitialComments(firstPageResult.posts)
+      if (isCancelled) return
+
+      setPosts(firstPageWithComments.posts)
+      setCurrentPage(firstPageResult.page)
+      setHasMorePosts(firstPageResult.hasMore)
+      setCommentPaginationByPostId(firstPageWithComments.paginationByPostId)
+      setErrorCode(null)
+      setIsLoading(false)
+    }
+
+    void loadInitialPage()
 
     return () => {
-      isMounted = false
+      isCancelled = true
     }
-  }, [lang, user?.id, refreshKey, userId])
+  }, [bootstrapInitialComments, cacheKey, fetchFeedPage, refreshKey])
+
+  const handleLoadMorePosts = React.useCallback(async () => {
+    if (isLoading || isLoadingMorePosts || !hasMorePosts || Boolean(userId)) {
+      return
+    }
+
+    setIsLoadingMorePosts(true)
+
+    const nextPage = currentPage + 1
+    const nextPageResult = await fetchFeedPage(nextPage)
+
+    if (!nextPageResult.success) {
+      setIsLoadingMorePosts(false)
+      return
+    }
+
+    const nextPageWithComments = await bootstrapInitialComments(nextPageResult.posts)
+
+    setPosts((currentPosts) => mergePostsById(currentPosts, nextPageWithComments.posts))
+    setCommentPaginationByPostId((current) => ({
+      ...current,
+      ...nextPageWithComments.paginationByPostId,
+    }))
+    setCurrentPage(nextPageResult.page)
+    setHasMorePosts(nextPageResult.hasMore)
+    setIsLoadingMorePosts(false)
+  }, [bootstrapInitialComments, currentPage, fetchFeedPage, hasMorePosts, isLoading, isLoadingMorePosts, userId])
+
+  React.useEffect(() => {
+    if (isLoading) {
+      return
+    }
+
+    setPublicationFeedCache(cacheKey, {
+      posts,
+      errorCode,
+      currentPage,
+      hasMorePosts,
+    })
+  }, [cacheKey, currentPage, errorCode, hasMorePosts, isLoading, posts])
+
+  const loadRootCommentsPage = React.useCallback(async (
+    publicationId: number,
+    pageToLoad: number,
+    append: boolean,
+  ): Promise<boolean> => {
+    setCommentPaginationByPostId((current) => {
+      const previous = current[publicationId]
+
+      return {
+        ...current,
+        [publicationId]: {
+          initialized: previous?.initialized ?? pageToLoad > 0,
+          nextPage: previous?.nextPage ?? 0,
+          hasMore: previous?.hasMore ?? true,
+          isLoading: true,
+        },
+      }
+    })
+
+    const result = await publicationService.getRootComments(publicationId, pageToLoad, ROOT_COMMENTS_PAGE_SIZE)
+
+    if (!result.success || !result.data) {
+      setCommentPaginationByPostId((current) => {
+        const previous = current[publicationId]
+        if (!previous) {
+          return current
+        }
+
+        return {
+          ...current,
+          [publicationId]: {
+            ...previous,
+            isLoading: false,
+          },
+        }
+      })
+
+      return false
+    }
+
+    const pageData = result.data
+    const rawComments = pageData.content ?? []
+    const mappedComments = hydrateCommentsWithReactionCache(
+      rawComments.map((comment) => mapCommentToFeedComment(comment)),
+      user?.id,
+    )
+
+    const currentCommentPage = typeof pageData.number === "number" ? pageData.number : pageToLoad
+    let hasMore = resolveHasMoreFromPageMeta(
+      currentCommentPage,
+      ROOT_COMMENTS_PAGE_SIZE,
+      mappedComments.length,
+      {
+        last: pageData.last,
+        totalPages: pageData.totalPages,
+        totalElements: pageData.totalElements,
+      },
+    )
+    const nextPage = currentCommentPage + 1
+
+    setPosts((currentPosts) =>
+      currentPosts.map((post) => {
+        if (post.id !== publicationId) {
+          return post
+        }
+
+        const previousCount = post.comments.length
+        const nextComments = append
+          ? mergeCommentsById(post.comments, mappedComments)
+          : mappedComments
+
+        const fallbackTotalComments =
+          typeof pageData.totalElements === "number"
+            ? pageData.totalElements
+            : (post.commentsCount > 0 ? post.commentsCount : undefined)
+
+        if (append && nextComments.length === previousCount) {
+          hasMore = false
+        } else if (typeof fallbackTotalComments === "number") {
+          hasMore = nextComments.length < fallbackTotalComments
+        }
+
+        return {
+          ...post,
+          comments: nextComments,
+        }
+      }),
+    )
+
+    setCommentPaginationByPostId((current) => ({
+      ...current,
+      [publicationId]: {
+        initialized: true,
+        nextPage,
+        hasMore,
+        isLoading: false,
+      },
+    }))
+
+    return true
+  }, [user?.id])
+
+  const handleCommentIntent = React.useCallback(async (publicationId: number) => {
+    const commentState = commentPaginationByPostId[publicationId]
+    if (commentState?.isLoading || commentState?.initialized) {
+      return
+    }
+
+    const targetPost = posts.find((post) => post.id === publicationId)
+    if (!targetPost || targetPost.commentsCount <= 0) {
+      setCommentPaginationByPostId((current) => ({
+        ...current,
+        [publicationId]: {
+          initialized: true,
+          nextPage: 1,
+          hasMore: false,
+          isLoading: false,
+        },
+      }))
+      return
+    }
+
+    await loadRootCommentsPage(publicationId, 0, false)
+  }, [commentPaginationByPostId, loadRootCommentsPage, posts])
+
+  const handleLoadMoreComments = React.useCallback(async (publicationId: number) => {
+    const commentState = commentPaginationByPostId[publicationId]
+
+    if (!commentState) {
+      await handleCommentIntent(publicationId)
+      return
+    }
+
+    if (commentState.isLoading || !commentState.hasMore) {
+      return
+    }
+
+    await loadRootCommentsPage(publicationId, commentState.nextPage, true)
+  }, [commentPaginationByPostId, handleCommentIntent, loadRootCommentsPage])
 
   const handleReact = async (publicationId: number, reactionType: ReactionType) => {
     const result = await publicationService.toggleReaction(publicationId, reactionType)
@@ -336,6 +781,47 @@ export function PublicationFeed({
         }
       }),
     )
+
+    return true
+  }
+
+  const handleUpdateComment = async (
+    publicationId: number,
+    commentId: number,
+    content: string,
+  ): Promise<boolean> => {
+    const trimmedContent = content.trim()
+    if (!trimmedContent) {
+      return false
+    }
+
+    const targetPost = posts.find((post) => post.id === publicationId)
+    if (!targetPost || !containsCommentById(targetPost.comments, commentId)) {
+      showApiToast("NETWORK_ERROR", {
+        override: t.commentUpdateFailed,
+      })
+      return false
+    }
+
+    const updateResult = await publicationService.updateComment(commentId, trimmedContent)
+    const resolvedContent = updateResult.success && updateResult.data?.content
+      ? updateResult.data.content
+      : trimmedContent
+
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === publicationId
+          ? {
+              ...post,
+              comments: updateCommentContent(post.comments, commentId, resolvedContent),
+            }
+          : post,
+      ),
+    )
+
+    showApiToast("SUCCESS", {
+      override: t.commentUpdatedSuccess,
+    })
 
     return true
   }
@@ -548,29 +1034,55 @@ export function PublicationFeed({
       {!isLoading && !errorCode && posts.length === 0 && emptyState}
 
       {/* Posts with suggestions injected */}
-      {!isLoading && !errorCode && posts.map((post, index) => (
-        <div key={post.id} className="space-y-4">
-          <PublicationCard
-            post={post}
-            onReact={handleReact}
-            onReactComment={handleReactComment}
-            onAddComment={handleAddComment}
-            onAddReply={handleAddReply}
-            onLoadReplies={handleLoadReplies}
-            onDeleteComment={handleDeleteComment}
-            onReportComment={handleReportComment}
-            onUpdatePost={handleUpdatePost}
-            onDeletePost={handleDeletePost}
-            onSharePublication={handleSharePublication}
-            isAddingComment={Boolean(addingCommentByPostId[post.id])}
-            isUpdating={Boolean(updatingPostById[post.id])}
-            isDeleting={Boolean(deletingPostById[post.id])}
-            isSharing={Boolean(sharingPostById[post.id])}
-          />
-          {/* Insert friend suggestions after the 1st post */}
-          {showSuggestions && index === 0 && <FriendSuggestions />}
+      {!isLoading && !errorCode && posts.map((post, index) => {
+        const commentState = commentPaginationByPostId[post.id]
+
+        return (
+          <div key={post.id} className="space-y-4">
+            <PublicationCard
+              post={post}
+              onReact={handleReact}
+              onReactComment={handleReactComment}
+              onAddComment={handleAddComment}
+              onCommentIntent={handleCommentIntent}
+              onAddReply={handleAddReply}
+              onLoadReplies={handleLoadReplies}
+              onUpdateComment={handleUpdateComment}
+              onLoadMoreComments={handleLoadMoreComments}
+              onDeleteComment={handleDeleteComment}
+              onReportComment={handleReportComment}
+              onUpdatePost={handleUpdatePost}
+              onDeletePost={handleDeletePost}
+              onSharePublication={handleSharePublication}
+              totalCommentsCount={post.commentsCount}
+              areCommentsInitialized={commentState?.initialized ?? false}
+              hasMoreComments={commentState?.hasMore ?? false}
+              isLoadingMoreComments={commentState?.isLoading ?? false}
+              isAddingComment={Boolean(addingCommentByPostId[post.id])}
+              isUpdating={Boolean(updatingPostById[post.id])}
+              isDeleting={Boolean(deletingPostById[post.id])}
+              isSharing={Boolean(sharingPostById[post.id])}
+            />
+            {/* Insert friend suggestions after the 1st post */}
+            {showSuggestions && index === 0 && <FriendSuggestions />}
+          </div>
+        )
+      })}
+
+      {!isLoading && !errorCode && hasMorePosts && (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={() => void handleLoadMorePosts()}
+            disabled={isLoadingMorePosts}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoadingMorePosts ? <Spinner className="size-4" /> : null}
+            {isLoadingMorePosts ? t.loading : t.showMore}
+          </button>
         </div>
-      ))}
+      )}
+
     </div>
   )
 }
@@ -700,6 +1212,55 @@ function updateCommentReactionState(
   return updatedComments
 }
 
+function updateCommentContent(
+  comments: FeedComment[],
+  targetCommentId: number,
+  content: string,
+): FeedComment[] {
+  const [updatedComments] = updateCommentContentRecursive(comments, targetCommentId, content)
+  return updatedComments
+}
+
+function updateCommentContentRecursive(
+  comments: FeedComment[],
+  targetCommentId: number,
+  content: string,
+): [FeedComment[], boolean] {
+  let hasUpdated = false
+
+  const nextComments = comments.map((comment) => {
+    if (comment.id === targetCommentId) {
+      hasUpdated = true
+      return {
+        ...comment,
+        text: content,
+      }
+    }
+
+    if (!comment.replies.length) {
+      return comment
+    }
+
+    const [updatedReplies, nestedUpdated] = updateCommentContentRecursive(
+      comment.replies,
+      targetCommentId,
+      content,
+    )
+
+    if (!nestedUpdated) {
+      return comment
+    }
+
+    hasUpdated = true
+    return {
+      ...comment,
+      replies: updatedReplies,
+    }
+  })
+
+  return [hasUpdated ? nextComments : comments, hasUpdated]
+}
+
 function updateCommentReactionStateRecursive(
   comments: FeedComment[],
   targetCommentId: number,
@@ -744,6 +1305,16 @@ function updateCommentReactionStateRecursive(
   })
 
   return [hasUpdated ? nextComments : comments, hasUpdated]
+}
+
+function containsCommentById(comments: FeedComment[], targetCommentId: number): boolean {
+  return comments.some((comment) => {
+    if (comment.id === targetCommentId) {
+      return true
+    }
+
+    return containsCommentById(comment.replies, targetCommentId)
+  })
 }
 
 function replaceRepliesForComment(
@@ -912,70 +1483,6 @@ function formatDateTime(isoDate: string): string {
   const minutes = String(date.getMinutes()).padStart(2, "0")
 
   return `${day}-${month}-${year} • ${hours}:${minutes}`
-}
-
-async function loadReactionState(
-  publicationId: number,
-  totalReactions: number,
-  currentUserId?: number,
-): Promise<{ reactionsCountByType: ReactionCountsByType; currentUserReaction: ReactionType | null }> {
-  if (!totalReactions) {
-    return {
-      reactionsCountByType: {},
-      currentUserReaction: null,
-    }
-  }
-
-  const size = 100
-  let page = 0
-  let hasNext = true
-  const counts: ReactionCountsByType = {}
-  let currentUserReaction: ReactionType | null = null
-
-  while (hasNext) {
-    const result = await publicationService.getReactionUsers(publicationId, {
-      page,
-      size,
-    })
-
-    if (!result.success || !result.data) {
-      return {
-        reactionsCountByType: counts,
-        currentUserReaction,
-      }
-    }
-
-    result.data.content.forEach((reaction) => {
-      const key = reaction.reactionType
-      counts[key] = (counts[key] ?? 0) + 1
-
-      if (currentUserId && reaction.user?.id === currentUserId) {
-        currentUserReaction = key
-      }
-    })
-
-    if (result.data.last || result.data.content.length < size || page >= result.data.totalPages - 1) {
-      hasNext = false
-    } else {
-      page += 1
-    }
-  }
-
-  if (!Object.keys(counts).length && totalReactions > 0) {
-    counts.LIKE = totalReactions
-  }
-
-  const orderedCounts: ReactionCountsByType = {}
-  REACTION_TYPES.forEach((type) => {
-    if (counts[type]) {
-      orderedCounts[type] = counts[type]
-    }
-  })
-
-  return {
-    reactionsCountByType: orderedCounts,
-    currentUserReaction,
-  }
 }
 
 function parseReactionType(value?: string | null): ReactionType | null {

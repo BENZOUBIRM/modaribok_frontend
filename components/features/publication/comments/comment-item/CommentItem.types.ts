@@ -6,6 +6,7 @@ export interface CommentItemProps {
   isReply?: boolean
   onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (commentId: number) => Promise<void> | void
+  onEditComment?: (commentId: number, content: string) => void
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
   onReactComment?: (commentId: number, reactionType: ReactionType) => void

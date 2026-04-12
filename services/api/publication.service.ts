@@ -198,6 +198,31 @@ export async function addComment(
   }
 }
 
+export async function updateComment(
+  commentId: number,
+  content: string,
+): Promise<ApiResult<CommentDto>> {
+  try {
+    const response = await apiClient.put<ApiResponse<CommentDto>>(
+      `/comments/${commentId}`,
+      { content },
+      {
+        // Keep edit flow silent when endpoint is unavailable or returns non-critical errors.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        _skipToast: true as any,
+      },
+    )
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
 export async function getReplies(commentId: number): Promise<ApiResult<CommentDto[]>> {
   try {
     const response = await apiClient.get<ApiResponse<CommentDto[]>>(`/comments/${commentId}/replies`)

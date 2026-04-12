@@ -24,6 +24,7 @@ export function CommentItem({
   isReply = false,
   onAddReply,
   onLoadReplies,
+  onEditComment,
   onDeleteComment,
   onReportComment,
   onReactComment,
@@ -33,6 +34,7 @@ export function CommentItem({
   isReply?: boolean
   onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (commentId: number) => Promise<void> | void
+  onEditComment?: (commentId: number, content: string) => void
   onDeleteComment?: (commentId: number) => Promise<boolean> | boolean
   onReportComment?: (commentId: number) => Promise<boolean> | boolean
   onReactComment?: (commentId: number, reactionType: ReactionType) => void
@@ -50,6 +52,7 @@ export function CommentItem({
   const [isReporting, setIsReporting] = useState(false)
   const hasReplies = comment.repliesCount > 0
   const isOwner = user?.id === comment.author.id
+  const canEdit = Boolean(onEditComment) && isOwner && !comment.isDeleted
 
   const handleCopyComment = async () => {
     const textToCopy = comment.text?.trim()
@@ -82,6 +85,14 @@ export function CommentItem({
     setIsDeleting(true)
     await onDeleteComment(comment.id)
     setIsDeleting(false)
+  }
+
+  const handleEditComment = () => {
+    if (!canEdit) {
+      return
+    }
+
+    onEditComment?.(comment.id, comment.text)
   }
 
   const handleReplySubmit = async () => {
@@ -178,6 +189,12 @@ export function CommentItem({
                   )}
                   <span>{t.reportComment}</span>
                 </DropdownMenuItem>
+                {canEdit && (
+                  <DropdownMenuItem onSelect={handleEditComment} className="cursor-pointer">
+                    <Icon icon="solar:pen-linear" className="size-4" />
+                    <span>{t.updateComment}</span>
+                  </DropdownMenuItem>
+                )}
                 {isOwner && !comment.isDeleted && (
                   <DropdownMenuItem
                     onSelect={handleDeleteComment}
@@ -275,6 +292,7 @@ export function CommentItem({
                     isReply
                     onAddReply={onAddReply}
                     onLoadReplies={onLoadReplies}
+                    onEditComment={onEditComment}
                     onDeleteComment={onDeleteComment}
                     onReportComment={onReportComment}
                     onReactComment={onReactComment}
