@@ -11,7 +11,7 @@ export interface CommentSectionProps {
   onAddReply?: (parentCommentId: number, content: string) => Promise<boolean> | boolean
   onLoadReplies?: (commentId: number) => Promise<void> | void
   onUpdateComment?: (commentId: number, content: string) => Promise<boolean> | boolean
-  onOpenUserProfile?: (params: { userId: number; avatarUrl?: string; displayName?: string }) => void
+  onOpenUserProfile?: (params: { userId: number | string; avatarUrl?: string; displayName?: string }) => void
   isAddingComment?: boolean
   focusSignal?: number
   scrollable?: boolean

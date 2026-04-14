@@ -5,7 +5,7 @@ import * as React from "react"
 import { useAuth } from "@/providers/auth-provider"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useNavRouter } from "@/hooks/use-nav-router"
-import { profileService } from "@/services/api"
+import * as profileService from "@/services/api/profile.service"
 import type { OtherUserProfile } from "@/types"
 import { Spinner } from "@/components/ui/spinner"
 import { Callout } from "@/components/ui/callout"
@@ -13,7 +13,7 @@ import { Callout } from "@/components/ui/callout"
 import { ProfileViews } from "./ProfileViews"
 
 interface OtherUserProfilePageProps {
-  targetUserId: number
+  targetUserId: number | string
 }
 
 type OtherUserProfileStats = {
@@ -41,7 +41,7 @@ function buildDisplayName(profile: OtherUserProfile, lang: "ar" | "en"): string 
   return lang === "ar" ? "مستخدم" : "User"
 }
 
-function buildHandle(profile: OtherUserProfile, fallbackUserId: number): string {
+function buildHandle(profile: OtherUserProfile, fallbackUserId: number | string): string {
   const handleRaw = `${profile.firstName ?? ""}${profile.lastName ?? ""}`
     .replace(/\s+/g, "")
     .toLowerCase()
@@ -50,7 +50,22 @@ function buildHandle(profile: OtherUserProfile, fallbackUserId: number): string 
     return `@${handleRaw}`
   }
 
-  return `@user${fallbackUserId}`
+  return `@user${String(fallbackUserId)}`
+}
+
+function parseNumericUserId(value: number | string): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+
+  return null
 }
 
 function buildAboutText(profile: OtherUserProfile, lang: "ar" | "en"): string {
@@ -116,6 +131,10 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
   const { lang } = useDictionary()
   const { user, isAuthenticated, isLoading } = useAuth()
   const router = useNavRouter()
+  const normalizedTargetUserId = React.useMemo(
+    () => parseNumericUserId(targetUserId),
+    [targetUserId],
+  )
 
   const [profile, setProfile] = React.useState<OtherUserProfile | null>(null)
   const [isFetching, setIsFetching] = React.useState(true)
@@ -128,16 +147,20 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
   }, [isAuthenticated, isLoading, lang, router])
 
   React.useEffect(() => {
-    if (!isLoading && isAuthenticated && user?.id === targetUserId) {
+    if (!isLoading && isAuthenticated && normalizedTargetUserId !== null && user?.id === normalizedTargetUserId) {
       router.replace(`/${lang}/profile`)
     }
-  }, [isAuthenticated, isLoading, lang, router, targetUserId, user?.id])
+  }, [isAuthenticated, isLoading, lang, normalizedTargetUserId, router, user?.id])
 
   React.useEffect(() => {
     let isMounted = true
 
     const loadProfile = async () => {
-      if (!isAuthenticated || !targetUserId || user?.id === targetUserId) {
+      if (
+        !isAuthenticated
+        || !String(targetUserId).trim()
+        || (normalizedTargetUserId !== null && user?.id === normalizedTargetUserId)
+      ) {
         setIsFetching(false)
         return
       }
@@ -167,9 +190,14 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
     return () => {
       isMounted = false
     }
-  }, [isAuthenticated, targetUserId, user?.id])
+  }, [isAuthenticated, normalizedTargetUserId, targetUserId, user?.id])
 
-  if (isLoading || !isAuthenticated || (isAuthenticated && user?.id === targetUserId) || isFetching) {
+  if (
+    isLoading
+    || !isAuthenticated
+    || (isAuthenticated && normalizedTargetUserId !== null && user?.id === normalizedTargetUserId)
+    || isFetching
+  ) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Spinner className="size-10" />
@@ -202,7 +230,7 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
         handle={handle}
         avatarUrl={avatarUrl}
         userRole="USER"
-        userId={targetUserId}
+        userId={profile.id}
         isOwnProfile={false}
         aboutText={aboutText}
         stats={stats}

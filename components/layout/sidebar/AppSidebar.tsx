@@ -8,7 +8,7 @@ import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, type WheelEvent } from "react"
 import Image from "next/image"
 
 const navItems = [
@@ -70,6 +70,31 @@ export default function AppSidebar({
       mainContent.scrollTo({ top: 0, behavior: "smooth" })
     }
   }
+
+  const handoffWheelToMainContent = useCallback((event: WheelEvent<HTMLElement>) => {
+    const deltaY = event.deltaY
+    if (deltaY === 0) {
+      return
+    }
+
+    const current = event.currentTarget
+    const canScrollLocally = current.scrollHeight > current.clientHeight
+    const isScrollingDown = deltaY > 0
+    const isAtTop = current.scrollTop <= 0
+    const isAtBottom = current.scrollTop + current.clientHeight >= current.scrollHeight - 1
+
+    if (canScrollLocally && ((isScrollingDown && !isAtBottom) || (!isScrollingDown && !isAtTop))) {
+      return
+    }
+
+    const mainContent = document.getElementById("main-content")
+    if (!mainContent) {
+      return
+    }
+
+    event.preventDefault()
+    mainContent.scrollBy({ top: deltaY, behavior: "auto" })
+  }, [])
 
   useEffect(() => {
     if (isMobile && isOpen) {
@@ -138,7 +163,7 @@ export default function AppSidebar({
                 </Button>
               </div>
 
-              <nav className="flex-1 overflow-y-auto p-4">
+              <nav onWheel={handoffWheelToMainContent} className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-1">
                   {visibleItems.map((item) => {
                     const active = isActive(item.path)
@@ -269,7 +294,7 @@ export default function AppSidebar({
         <nav className={cn(
           "flex-1 overflow-y-auto overflow-x-hidden p-4 min-w-0",
           isCollapsed && "scrollbar-hidden"
-        )}>
+        )} onWheel={handoffWheelToMainContent}>
           <div className="space-y-1">
             {visibleItems.filter(item => !item.mobileOnly).map((item) => {
               const active = isActive(item.path)

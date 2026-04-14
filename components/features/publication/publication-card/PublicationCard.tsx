@@ -35,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/primitives/dialog"
+import { Textarea } from "@/components/ui/primitives/textarea"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -106,10 +107,18 @@ export function PublicationCard({
   onReportComment?: (publicationId: number, commentId: number) => Promise<boolean> | boolean
   onUpdatePost?: (
     publicationId: number,
-    payload: { content: string; visibility: VisibilityPublication },
+    payload: {
+      content: string
+      visibility: VisibilityPublication
+      mediaFiles: File[]
+      mediaIdsToRemove: number[]
+    },
   ) => Promise<boolean> | boolean
   onDeletePost?: (publicationId: number) => Promise<boolean> | boolean
-  onSharePublication?: (publicationId: number) => Promise<void> | void
+  onSharePublication?: (
+    publicationId: number,
+    payload: { content: string; visibility: VisibilityPublication },
+  ) => Promise<boolean> | boolean
   totalCommentsCount?: number
   areCommentsInitialized?: boolean
   hasMoreComments?: boolean
@@ -129,8 +138,13 @@ export function PublicationCard({
   const isRTL = lang === "ar"
   const [isExpanded, setIsExpanded] = useState(false)
   const [commentFocusSignal, setCommentFocusSignal] = useState(0)
-  const [showEditModal, setShowEditModal] = useState(false)
+  const [isEditingInline, setIsEditingInline] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareText, setShareText] = useState("")
+  const [shareVisibility, setShareVisibility] = useState<VisibilityPublication>("PUBLIC")
+  const [isShareTextExpanded, setIsShareTextExpanded] = useState(false)
+  const [isShareSubmitting, setIsShareSubmitting] = useState(false)
   const isLong = post.text && post.text.length > TEXT_LIMIT
   const isOwner = user?.id === post.author.id
   const canShowDelete = canDelete ?? isOwner
@@ -138,6 +152,8 @@ export function PublicationCard({
   const canShowReport = true
   const hasMenuActions = canShowDelete || canShowEdit || canShowReport
   const sharedPost = post.sharedPublication
+  const shareSourcePost = sharedPost ?? post
+  const shareTargetPublicationId = shareSourcePost.id
   const editPostLabel = t.editPost
   const reportPostLabel = t.reportPost
   const updatePostLabel = t.updatePost
@@ -151,6 +167,54 @@ export function PublicationCard({
     privacyFriends: t.privacyFriends,
     privacyPrivate: t.privacyPrivate,
   })
+  const shareSourceVisibilityMeta = resolveVisibilityMeta(shareSourcePost.visibility, {
+    privacyPublic: t.privacyPublic,
+    privacyFriends: t.privacyFriends,
+    privacyPrivate: t.privacyPrivate,
+  })
+  const shareVisibilityMeta = resolveVisibilityMeta(shareVisibility, {
+    privacyPublic: t.privacyPublic,
+    privacyFriends: t.privacyFriends,
+    privacyPrivate: t.privacyPrivate,
+  })
+  const shareVisibilityOptions: Array<{
+    value: VisibilityPublication
+    label: string
+    icon: string
+  }> = [
+    {
+      value: "PUBLIC",
+      label: t.privacyPublic,
+      icon: "solar:global-linear",
+    },
+    {
+      value: "FRIENDS",
+      label: t.privacyFriends,
+      icon: "solar:users-group-rounded-linear",
+    },
+    {
+      value: "PRIVATE",
+      label: t.privacyPrivate,
+      icon: "solar:lock-keyhole-linear",
+    },
+  ]
+  const shareMediaPreviewItems = [
+    ...(shareSourcePost.images ?? []).map((src, index) => ({
+      key: `share-image-${index}`,
+      type: "image" as const,
+      src,
+      poster: null,
+    })),
+    ...(shareSourcePost.videos ?? []).map((src, index) => ({
+      key: `share-video-${index}`,
+      type: "video" as const,
+      src,
+      poster: shareSourcePost.videoThumbnails?.[index] ?? null,
+    })),
+  ]
+  const visibleShareMediaPreviewItems = shareMediaPreviewItems.slice(0, 3)
+  const remainingShareMediaPreviewCount = Math.max(shareMediaPreviewItems.length - visibleShareMediaPreviewItems.length, 0)
+  const isShareBusy = Boolean(isSharing) || isShareSubmitting
 
   const handleDeleteConfirm = async () => {
     if (!onDeletePost) {
@@ -173,6 +237,7 @@ export function PublicationCard({
     content: string
     visibility: VisibilityPublication
     mediaFiles: File[]
+    mediaIdsToRemove: number[]
   }): Promise<boolean> => {
     if (!onUpdatePost) {
       return false
@@ -180,31 +245,66 @@ export function PublicationCard({
 
     const updated = await onUpdatePost(post.id, payload)
     if (updated) {
-      setShowEditModal(false)
+      setIsEditingInline(false)
     }
 
     return updated
   }
 
   const handleOpenUserProfile = useCallback((params: {
-    userId: number
+    userId: number | string
     avatarUrl?: string
     displayName?: string
   }) => {
     void params.avatarUrl
     void params.displayName
 
-    if (!params.userId) {
+    const targetUserIdRaw = `${params.userId ?? ""}`.trim()
+    if (!targetUserIdRaw) {
       return
     }
 
-    if (user?.id === params.userId) {
+    const targetUserIdNumber = Number(targetUserIdRaw)
+
+    if (Number.isFinite(targetUserIdNumber) && targetUserIdNumber > 0 && user?.id === targetUserIdNumber) {
       router.push(`/${lang}/profile`)
       return
     }
 
-    router.push(`/${lang}/users/${params.userId}`)
+    router.push(`/${lang}/users/${encodeURIComponent(targetUserIdRaw)}`)
   }, [lang, router, user?.id])
+
+  const handleOpenShareModal = () => {
+    if (!onSharePublication || isShareBusy) {
+      return
+    }
+
+    setShareText("")
+    setShareVisibility(shareSourcePost.visibility ?? "PUBLIC")
+    setIsShareTextExpanded(false)
+    setShowShareModal(true)
+  }
+
+  const handleShareSubmit = async () => {
+    if (!onSharePublication || isShareBusy) {
+      return
+    }
+
+    setIsShareSubmitting(true)
+
+    const shared = await onSharePublication(shareTargetPublicationId, {
+      content: shareText,
+      visibility: shareVisibility,
+    })
+
+    setIsShareSubmitting(false)
+
+    if (shared) {
+      setShowShareModal(false)
+      setShareText("")
+      setIsShareTextExpanded(false)
+    }
+  }
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
@@ -274,7 +374,7 @@ export function PublicationCard({
                 <DropdownMenuItem
                   onSelect={() => {
                     if (!isUpdating) {
-                      setShowEditModal(true)
+                      setIsEditingInline(true)
                     }
                   }}
                   className="cursor-pointer"
@@ -312,145 +412,157 @@ export function PublicationCard({
         )}
       </div>
 
-      {/* Body text */}
-      {post.text && (
-        <div className="px-4 pb-3">
-          <p className={cn("text-sm text-foreground leading-relaxed", isRTL && "text-right")}>
-            {isLong && !isExpanded ? `${post.text.slice(0, TEXT_LIMIT)}…` : post.text}
-          </p>
-          {isLong && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="cursor-pointer text-xs font-medium text-primary hover:underline mt-1"
-            >
-              {isExpanded ? t.showLess : t.showMore}
-            </button>
-          )}
+      {isEditingInline ? (
+        <div className="px-4 pb-4">
+          <CreatePublication
+            mode="update"
+            initialContent={post.text}
+            initialVisibility={post.visibility ?? "PUBLIC"}
+            initialMedia={post.media ?? []}
+            allowMediaAdditions={!Boolean(sharedPost)}
+            onCancel={() => setIsEditingInline(false)}
+            onSubmit={handleUpdateSubmit}
+            className="border-border/70"
+          />
         </div>
-      )}
-
-      {sharedPost && (
-        <div className="px-4 pb-3">
-          <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/25">
-            <div className={cn("flex items-center gap-1.5 border-b border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground", isRTL && "justify-end")}>
-              <Icon icon="solar:share-linear" className="size-3.5" />
-              <span>{t.sharedPublication}</span>
-            </div>
-
-            <div className="px-3 pb-2 pt-3">
-              <div className={cn("flex items-center gap-2", isRTL && "text-right")}>
+      ) : (
+        <>
+          {/* Body text */}
+          {post.text && (
+            <div className="px-4 pb-3">
+              <p className={cn("text-sm text-foreground leading-relaxed", isRTL && "text-right")}>
+                {isLong && !isExpanded ? `${post.text.slice(0, TEXT_LIMIT)}…` : post.text}
+              </p>
+              {isLong && (
                 <button
-                  type="button"
-                  onClick={() => handleOpenUserProfile({
-                    userId: sharedPost.author.id,
-                    avatarUrl: sharedPost.author.avatarUrl,
-                    displayName: sharedPost.author.name,
-                  })}
-                  className="cursor-pointer shrink-0 rounded-full"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="cursor-pointer text-xs font-medium text-primary hover:underline mt-1"
                 >
-                  <Image
-                    src={sharedPost.author.avatarUrl}
-                    alt={sharedPost.author.name}
-                    width={34}
-                    height={34}
-                    className="size-8.5 rounded-full object-cover"
-                  />
+                  {isExpanded ? t.showLess : t.showMore}
                 </button>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenUserProfile({
-                      userId: sharedPost.author.id,
-                      avatarUrl: sharedPost.author.avatarUrl,
-                      displayName: sharedPost.author.name,
-                    })}
-                    className="cursor-pointer text-sm font-semibold leading-tight text-foreground hover:underline"
-                  >
-                    {sharedPost.author.name}
-                  </button>
-                  <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span dir="ltr" className="tabular-nums">
-                        {sharedPost.createdAt}
-                      </span>
-                      {sharedVisibilityMeta && (
-                        <span
-                          className="inline-flex items-center"
-                          title={sharedVisibilityMeta.label}
-                          aria-label={sharedVisibilityMeta.label}
-                        >
-                          <Icon icon={sharedVisibilityMeta.icon} className="size-3.5 text-muted-foreground" />
+              )}
+            </div>
+          )}
+
+          {sharedPost && (
+            <div className="px-4 pb-3">
+              <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/25">
+                <div className="px-3 py-3">
+                  <div className={cn("flex items-center gap-2", isRTL && "text-right")}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenUserProfile({
+                        userId: sharedPost.author.id,
+                        avatarUrl: sharedPost.author.avatarUrl,
+                        displayName: sharedPost.author.name,
+                      })}
+                      className="cursor-pointer shrink-0 rounded-full"
+                    >
+                      <Image
+                        src={sharedPost.author.avatarUrl}
+                        alt={sharedPost.author.name}
+                        width={34}
+                        height={34}
+                        className="size-8.5 rounded-full object-cover"
+                      />
+                    </button>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenUserProfile({
+                          userId: sharedPost.author.id,
+                          avatarUrl: sharedPost.author.avatarUrl,
+                          displayName: sharedPost.author.name,
+                        })}
+                        className="cursor-pointer text-sm font-semibold leading-tight text-foreground hover:underline"
+                      >
+                        {sharedPost.author.name}
+                      </button>
+                      <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span dir="ltr" className="tabular-nums">
+                            {sharedPost.createdAt}
+                          </span>
+                          {sharedVisibilityMeta && (
+                            <span
+                              className="inline-flex items-center"
+                              title={sharedVisibilityMeta.label}
+                              aria-label={sharedVisibilityMeta.label}
+                            >
+                              <Icon icon={sharedVisibilityMeta.icon} className="size-3.5 text-muted-foreground" />
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
-                  </p>
+                      </p>
+                    </div>
+                  </div>
                 </div>
+
+                {sharedPost.text && (
+                  <div className="px-3 pb-2">
+                    <p className={cn("text-sm text-foreground leading-relaxed", isRTL && "text-right")}>
+                      {sharedPost.text}
+                    </p>
+                  </div>
+                )}
+
+                {(sharedPost.images.length > 0 || (sharedPost.videos?.length ?? 0) > 0) && (
+                  <PublicationMedia
+                    images={sharedPost.images}
+                    originalImages={sharedPost.originalImages}
+                    videos={sharedPost.videos}
+                    videoThumbnails={sharedPost.videoThumbnails}
+                  />
+                )}
               </div>
             </div>
+          )}
 
-            {sharedPost.text && (
-              <div className="px-3 pb-2">
-                <p className={cn("text-sm text-foreground leading-relaxed", isRTL && "text-right")}>
-                  {sharedPost.text}
-                </p>
-              </div>
-            )}
+          {/* Media grid */}
+          <PublicationMedia
+            images={post.images}
+            originalImages={post.originalImages}
+            videos={post.videos}
+            videoThumbnails={post.videoThumbnails}
+            forceSquareSingle={forceSquareSingleImage}
+          />
 
-            {(sharedPost.images.length > 0 || (sharedPost.videos?.length ?? 0) > 0) && (
-              <PublicationMedia
-                images={sharedPost.images}
-                originalImages={sharedPost.originalImages}
-                videos={sharedPost.videos}
-                videoThumbnails={sharedPost.videoThumbnails}
-              />
-            )}
-          </div>
-        </div>
+          {/* Actions: like, comment, share */}
+          <PublicationActions
+            publicationId={post.id}
+            likesCount={post.likesCount}
+            commentsCount={post.commentsCount}
+            sharesCount={post.sharesCount}
+            reactionsCountByType={post.reactionsCountByType}
+            currentUserReaction={post.currentUserReaction}
+            onReact={onReact}
+            onCommentClick={handleCommentClick}
+            onShare={handleOpenShareModal}
+            isSharing={isShareBusy}
+          />
+
+          {/* Comments section */}
+          <CommentSection
+            comments={post.comments}
+            totalCommentsCount={totalCommentsCount ?? post.commentsCount}
+            areCommentsInitialized={areCommentsInitialized}
+            hasMoreComments={hasMoreComments}
+            isLoadingMoreComments={isLoadingMoreComments}
+            onLoadMoreComments={() => onLoadMoreComments?.(post.id)}
+            onAddComment={(content) => onAddComment?.(post.id, content)}
+            onReactComment={(commentId, reactionType) => onReactComment?.(post.id, commentId, reactionType)}
+            onOpenUserProfile={handleOpenUserProfile}
+            onAddReply={(parentCommentId, content) => onAddReply?.(post.id, parentCommentId, content) ?? false}
+            onLoadReplies={(commentId) => onLoadReplies?.(post.id, commentId)}
+            onUpdateComment={(commentId, content) => onUpdateComment?.(post.id, commentId, content) ?? false}
+            onDeleteComment={(commentId) => onDeleteComment?.(post.id, commentId) ?? false}
+            onReportComment={(commentId) => onReportComment?.(post.id, commentId) ?? false}
+            isAddingComment={isAddingComment}
+            focusSignal={commentFocusSignal}
+            scrollable={scrollableComments}
+          />
+        </>
       )}
-
-      {/* Media grid */}
-      <PublicationMedia
-        images={post.images}
-        originalImages={post.originalImages}
-        videos={post.videos}
-        videoThumbnails={post.videoThumbnails}
-        forceSquareSingle={forceSquareSingleImage}
-      />
-
-      {/* Actions: like, comment, share */}
-      <PublicationActions
-        publicationId={post.id}
-        likesCount={post.likesCount}
-        commentsCount={post.commentsCount}
-        sharesCount={post.sharesCount}
-        reactionsCountByType={post.reactionsCountByType}
-        currentUserReaction={post.currentUserReaction}
-        onReact={onReact}
-        onCommentClick={handleCommentClick}
-        onShare={onSharePublication}
-        isSharing={isSharing}
-      />
-
-      {/* Comments section */}
-      <CommentSection
-        comments={post.comments}
-        totalCommentsCount={totalCommentsCount ?? post.commentsCount}
-        areCommentsInitialized={areCommentsInitialized}
-        hasMoreComments={hasMoreComments}
-        isLoadingMoreComments={isLoadingMoreComments}
-        onLoadMoreComments={() => onLoadMoreComments?.(post.id)}
-        onAddComment={(content) => onAddComment?.(post.id, content)}
-        onReactComment={(commentId, reactionType) => onReactComment?.(post.id, commentId, reactionType)}
-        onOpenUserProfile={handleOpenUserProfile}
-        onAddReply={(parentCommentId, content) => onAddReply?.(post.id, parentCommentId, content)}
-        onLoadReplies={(commentId) => onLoadReplies?.(post.id, commentId)}
-        onUpdateComment={(commentId, content) => onUpdateComment?.(post.id, commentId, content)}
-        onDeleteComment={(commentId) => onDeleteComment?.(post.id, commentId)}
-        onReportComment={(commentId) => onReportComment?.(post.id, commentId)}
-        isAddingComment={isAddingComment}
-        focusSignal={commentFocusSignal}
-        scrollable={scrollableComments}
-      />
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent size="sm">
@@ -478,11 +590,11 @@ export function PublicationCard({
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="sm:max-w-3xl" showCloseButton={false}>
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent className="max-h-[88vh] sm:max-w-2xl" showCloseButton={false}>
           <button
             type="button"
-            onClick={() => setShowEditModal(false)}
+            onClick={() => setShowShareModal(false)}
             className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
             title={dictionary.common.close}
             aria-label={dictionary.common.close}
@@ -490,19 +602,217 @@ export function PublicationCard({
             <Icon icon="lucide:x" className="size-5" />
           </button>
           <DialogHeader>
-            <DialogTitle>{editPostLabel}</DialogTitle>
+            <DialogTitle>{t.share}</DialogTitle>
             <DialogDescription>
-              {isRTL ? "يمكنك تعديل النص والخصوصية لهذا المنشور." : "Update your post text and privacy."}
+              {isRTL
+                ? "أضف نصا وحدد الخصوصية قبل مشاركة هذا المنشور."
+                : "Add text and choose privacy before sharing this publication."}
             </DialogDescription>
           </DialogHeader>
-          <CreatePublication
-            mode="update"
-            initialContent={post.text}
-            initialVisibility={post.visibility ?? "PUBLIC"}
-            onCancel={() => setShowEditModal(false)}
-            onSubmit={handleUpdateSubmit}
-            className="border-0"
-          />
+
+          <div className="space-y-4">
+            <div className="max-h-[42vh] overflow-y-auto pe-1 ps-0.5">
+              <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+                <div className="px-3 py-3">
+                  <div className={cn("flex items-center gap-2", isRTL && "text-right")}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenUserProfile({
+                        userId: shareSourcePost.author.id,
+                        avatarUrl: shareSourcePost.author.avatarUrl,
+                        displayName: shareSourcePost.author.name,
+                      })}
+                      className="cursor-pointer shrink-0 rounded-full"
+                    >
+                      <Image
+                        src={shareSourcePost.author.avatarUrl}
+                        alt={shareSourcePost.author.name}
+                        width={34}
+                        height={34}
+                        className="size-8.5 rounded-full object-cover"
+                      />
+                    </button>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenUserProfile({
+                          userId: shareSourcePost.author.id,
+                          avatarUrl: shareSourcePost.author.avatarUrl,
+                          displayName: shareSourcePost.author.name,
+                        })}
+                        className="cursor-pointer text-sm font-semibold leading-tight text-foreground hover:underline"
+                      >
+                        {shareSourcePost.author.name}
+                      </button>
+                      <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span dir="ltr" className="tabular-nums">
+                            {shareSourcePost.createdAt}
+                          </span>
+                          {shareSourceVisibilityMeta && (
+                            <span
+                              className="inline-flex items-center"
+                              title={shareSourceVisibilityMeta.label}
+                              aria-label={shareSourceVisibilityMeta.label}
+                            >
+                              <Icon icon={shareSourceVisibilityMeta.icon} className="size-3.5 text-muted-foreground" />
+                            </span>
+                          )}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {shareSourcePost.text && (
+                  <div className="px-3 pb-2">
+                    <p className={cn("text-sm text-foreground leading-relaxed", isRTL && "text-right")}>
+                      {shareSourcePost.text}
+                    </p>
+                  </div>
+                )}
+
+                {visibleShareMediaPreviewItems.length > 0 && (
+                  <div className="px-3 pb-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      {visibleShareMediaPreviewItems.map((mediaItem, mediaIndex) => {
+                        const shouldShowMoreOverlay =
+                          remainingShareMediaPreviewCount > 0
+                          && mediaIndex === visibleShareMediaPreviewItems.length - 1
+
+                        return (
+                          <div
+                            key={mediaItem.key}
+                            className="relative h-20 overflow-hidden rounded-md border border-border/60 bg-muted/30"
+                          >
+                            {mediaItem.type === "image" ? (
+                              mediaItem.src ? (
+                                <Image
+                                  src={mediaItem.src}
+                                  alt={shareSourcePost.author.name}
+                                  fill
+                                  sizes="(max-width: 768px) 30vw, 160px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                  <Icon icon="lucide:image-off" className="size-4" />
+                                </div>
+                              )
+                            ) : mediaItem.poster ? (
+                              <>
+                                <Image
+                                  src={mediaItem.poster}
+                                  alt={shareSourcePost.author.name}
+                                  fill
+                                  sizes="(max-width: 768px) 30vw, 160px"
+                                  className="object-cover"
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-white">
+                                  <Icon icon="solar:play-bold" className="size-4" />
+                                </span>
+                              </>
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-black/50 text-white">
+                                <Icon icon="solar:videocamera-record-linear" className="size-4" />
+                              </div>
+                            )}
+
+                            {shouldShowMoreOverlay && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-semibold text-white">
+                                +{remainingShareMediaPreviewCount}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-1">
+              {isShareTextExpanded ? (
+                <Textarea
+                  value={shareText}
+                  onChange={(event) => setShareText(event.target.value)}
+                  onBlur={() => {
+                    if (!shareText.trim()) {
+                      setIsShareTextExpanded(false)
+                    }
+                  }}
+                  placeholder={isRTL ? "أضف نصا مع المشاركة..." : "Add text to your share..."}
+                  className={cn(
+                    "min-h-28 resize-none rounded-xl border-border bg-surface text-sm focus-visible:ring-2 focus-visible:ring-primary/30",
+                    isRTL ? "text-right" : "text-left",
+                  )}
+                  autoFocus
+                />
+              ) : (
+                <input
+                  type="text"
+                  placeholder={isRTL ? "أضف نصا مع المشاركة..." : "Add text to your share..."}
+                  className={cn(
+                    "cursor-text h-10 w-full rounded-full border border-border bg-surface px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30",
+                    isRTL ? "text-right" : "text-left",
+                  )}
+                  onFocus={() => setIsShareTextExpanded(true)}
+                  onClick={() => setIsShareTextExpanded(true)}
+                  readOnly
+                />
+              )}
+            </div>
+
+            <div className={cn("flex items-center justify-between gap-2", isRTL && "flex-row-reverse")}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50"
+                  >
+                    <Icon icon={shareVisibilityMeta?.icon ?? "solar:global-linear"} className="size-4" />
+                    <span>{shareVisibilityMeta?.label ?? t.privacyPublic}</span>
+                    <Icon icon="solar:alt-arrow-down-linear" className="size-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isRTL ? "start" : "end"} className="min-w-44">
+                  {shareVisibilityOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onSelect={() => setShareVisibility(option.value)}
+                      className={cn(
+                        "flex items-center gap-2",
+                        option.value === shareVisibility && "bg-muted dark:bg-muted/60",
+                      )}
+                    >
+                      <Icon icon={option.icon} className="size-4" />
+                      <span>{option.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(false)}
+                  className="cursor-pointer rounded-md border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleShareSubmit()}
+                  disabled={!onSharePublication || isShareBusy}
+                  className="cursor-pointer inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isShareBusy ? <Spinner className="size-4" /> : <Icon icon="solar:share-linear" className="size-4" />}
+                  {t.share}
+                </button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

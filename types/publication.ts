@@ -90,6 +90,10 @@ export interface CommentDto {
   parentCommentId: number | null
   repliesCount: number
   replies: CommentDto[]
+  likesCount?: number | null
+  reactionsCountByType?: Record<string, number> | null
+  reactionsCount?: Record<string, number> | null
+  currentUserReaction?: string | null
 }
 
 export interface ReactionUserDto {
@@ -112,6 +116,11 @@ export interface ReactionToggleResponseDto {
   reactionsCount: Record<string, number>
 }
 
+export interface CommentReactionStateDto {
+  currentUserReaction: string | null
+  reactionsCount: Record<string, number>
+}
+
 export interface FeedUser {
   id: number
   name: string
@@ -123,6 +132,7 @@ export interface FeedSharedPublication {
   id: number
   author: FeedUser
   text: string
+  media?: PublicationMediaDto[]
   images: string[]
   originalImages?: string[]
   videos?: string[]
@@ -149,6 +159,7 @@ export interface FeedPost {
   id: number
   author: FeedUser
   text: string
+  media?: PublicationMediaDto[]
   images: string[]
   originalImages?: string[]
   videos?: string[]

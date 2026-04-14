@@ -9,6 +9,7 @@ import {
   cacheCommentReactionState,
   hydrateCommentsWithReactionCache,
 } from "@/lib/comment-reaction-cache"
+import { hydrateCommentsWithServerReactions } from "@/lib/comment-reaction-hydration"
 import {
   buildPublicationFeedCacheKey,
   getPublicationFeedCache,
@@ -23,6 +24,7 @@ import type {
   PublicationDto,
   ReactionCountsByType,
   ReactionType,
+  VisibilityPublication,
 } from "@/types"
 import { Callout } from "@/components/ui/callout"
 import { Spinner } from "@/components/ui/spinner"
@@ -120,6 +122,19 @@ function resolveHasMoreFromPageMeta(
   return pageContentLength >= pageSize
 }
 
+function canViewerSeePublication(
+  publication: Pick<PublicationDto, "visibility" | "user">,
+  viewerUserId?: number,
+): boolean {
+  if (publication.visibility !== "PRIVATE") {
+    return true
+  }
+
+  const authorId = resolveFeedUserId(publication.user)
+
+  return Boolean(viewerUserId) && authorId > 0 && viewerUserId === authorId
+}
+
 function buildCommentPaginationSnapshot(posts: FeedPost[]): Record<number, CommentPaginationState> {
   return posts.reduce<Record<number, CommentPaginationState>>((acc, post) => {
     const loadedCommentsCount = post.comments.length
@@ -213,9 +228,33 @@ export function PublicationFeed({
         publicationItems = fallbackItems.filter((publication) => publication.user?.id === userId)
       }
 
+      const visiblePublicationItems = publicationItems.filter((publication) =>
+        canViewerSeePublication(publication, user?.id),
+      )
+
+      const reactionStates = await Promise.all(
+        visiblePublicationItems.map((publication) =>
+          loadReactionState(publication.id, publication.likesCount ?? 0, user?.id),
+        ),
+      )
+
+      const mappedPosts = visiblePublicationItems.map((publication, index) => {
+        const reactionState = reactionStates[index] ?? {
+          reactionsCountByType: {},
+          currentUserReaction: null,
+        }
+
+        return mapPublicationToFeedPost(
+          publication,
+          [],
+          reactionState.reactionsCountByType,
+          reactionState.currentUserReaction,
+        )
+      })
+
       return {
         success: true,
-        posts: publicationItems.map((publication) => mapPublicationToFeedPost(publication, [], {}, null)),
+        posts: mappedPosts,
         page: 0,
         hasMore: false,
       }
@@ -255,13 +294,37 @@ export function PublicationFeed({
         },
       )
 
+    const visiblePublicationItems = publicationItems.filter((publication) =>
+      canViewerSeePublication(publication, user?.id),
+    )
+
+    const reactionStates = await Promise.all(
+      visiblePublicationItems.map((publication) =>
+        loadReactionState(publication.id, publication.likesCount ?? 0, user?.id),
+      ),
+    )
+
+    const mappedPosts = visiblePublicationItems.map((publication, index) => {
+      const reactionState = reactionStates[index] ?? {
+        reactionsCountByType: {},
+        currentUserReaction: null,
+      }
+
+      return mapPublicationToFeedPost(
+        publication,
+        [],
+        reactionState.reactionsCountByType,
+        reactionState.currentUserReaction,
+      )
+    })
+
     return {
       success: true,
-      posts: publicationItems.map((publication) => mapPublicationToFeedPost(publication, [], {}, null)),
+      posts: mappedPosts,
       page: resolvedPageNumber,
       hasMore: resolvedHasMore,
     }
-  }, [userId])
+  }, [user?.id, userId])
 
   const bootstrapInitialComments = React.useCallback(async (
     incomingPosts: FeedPost[],
@@ -303,10 +366,11 @@ export function PublicationFeed({
         }
 
         const pageData = rootCommentsResult.data
-        const mappedComments = hydrateCommentsWithReactionCache(
+        const serverHydratedComments = await hydrateCommentsWithServerReactions(
           (pageData.content ?? []).map((comment) => mapCommentToFeedComment(comment)),
           user?.id,
         )
+        const mappedComments = hydrateCommentsWithReactionCache(serverHydratedComments, user?.id)
 
         const pageNumber = typeof pageData.number === "number" ? pageData.number : 0
         const hasMoreFromMeta = resolveHasMoreFromPageMeta(
@@ -508,10 +572,11 @@ export function PublicationFeed({
 
     const pageData = result.data
     const rawComments = pageData.content ?? []
-    const mappedComments = hydrateCommentsWithReactionCache(
+    const serverHydratedComments = await hydrateCommentsWithServerReactions(
       rawComments.map((comment) => mapCommentToFeedComment(comment)),
       user?.id,
     )
+    const mappedComments = hydrateCommentsWithReactionCache(serverHydratedComments, user?.id)
 
     const currentCommentPage = typeof pageData.number === "number" ? pageData.number : pageToLoad
     let hasMore = resolveHasMoreFromPageMeta(
@@ -612,18 +677,26 @@ export function PublicationFeed({
       return
     }
 
-    const mappedCounts = normalizeReactionCounts(result.data.reactionsCount)
-    const totalReactions = Object.values(mappedCounts).reduce((sum, count) => sum + (count ?? 0), 0)
-
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
         post.id === publicationId
-          ? {
+          ? (() => {
+            const nextReactionState = applyReactionToggleDelta({
+              currentCounts: post.reactionsCountByType,
+              previousReaction: post.currentUserReaction,
+              selectedReaction: reactionType,
+              status: result.data.status,
+            })
+
+            return {
               ...post,
-              reactionsCountByType: mappedCounts,
-              likesCount: totalReactions,
-              currentUserReaction: parseReactionType(result.data?.currentUserReaction),
+              reactionsCountByType: nextReactionState.counts,
+              likesCount: Object.values(nextReactionState.counts).reduce((sum, count) => sum + (count ?? 0), 0),
+              currentUserReaction:
+                parseReactionType(result.data?.currentUserReaction)
+                ?? nextReactionState.currentUserReaction,
             }
+          })()
           : post,
       ),
     )
@@ -711,10 +784,11 @@ export function PublicationFeed({
     }
 
     const repliesData: CommentDto[] = result.data
-    const mappedReplies = hydrateCommentsWithReactionCache(
+    const serverHydratedReplies = await hydrateCommentsWithServerReactions(
       repliesData.map((reply) => mapCommentToFeedComment(reply)),
       user?.id,
     )
+    const mappedReplies = hydrateCommentsWithReactionCache(serverHydratedReplies, user?.id)
 
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
@@ -751,6 +825,16 @@ export function PublicationFeed({
     const createdReplyDto: CommentDto = createResult.data
 
     const repliesResult = await publicationService.getReplies(parentCommentId)
+    let mappedRepliesFromServer: FeedComment[] | null = null
+
+    if (repliesResult.success && repliesResult.data) {
+      const repliesData: CommentDto[] = repliesResult.data
+      const serverHydratedReplies = await hydrateCommentsWithServerReactions(
+        repliesData.map((reply) => mapCommentToFeedComment(reply)),
+        user?.id,
+      )
+      mappedRepliesFromServer = hydrateCommentsWithReactionCache(serverHydratedReplies, user?.id)
+    }
 
     setPosts((currentPosts) =>
       currentPosts.map((post) => {
@@ -758,16 +842,10 @@ export function PublicationFeed({
           return post
         }
 
-        if (repliesResult.success && repliesResult.data) {
-          const repliesData: CommentDto[] = repliesResult.data
-          const mappedReplies = hydrateCommentsWithReactionCache(
-            repliesData.map((reply) => mapCommentToFeedComment(reply)),
-            user?.id,
-          )
-
+        if (mappedRepliesFromServer) {
           return {
             ...post,
-            comments: replaceRepliesForComment(post.comments, parentCommentId, mappedReplies),
+            comments: replaceRepliesForComment(post.comments, parentCommentId, mappedRepliesFromServer),
             commentsCount: post.commentsCount + 1,
           }
         }
@@ -887,12 +965,14 @@ export function PublicationFeed({
     return true
   }
 
-  const handleSharePublication = async (publicationId: number) => {
+  const handleSharePublication = async (
+    publicationId: number,
+    payload: { content: string; visibility: VisibilityPublication },
+  ): Promise<boolean> => {
     if (sharingPostById[publicationId]) {
-      return
+      return false
     }
-
-    const sourcePost = posts.find((post) => post.id === publicationId)
+    const trimmedContent = payload.content.trim()
 
     setSharingPostById((current) => ({
       ...current,
@@ -900,7 +980,8 @@ export function PublicationFeed({
     }))
 
     const result = await publicationService.createPublication({
-      visibility: sourcePost?.visibility ?? "PUBLIC",
+      content: trimmedContent,
+      visibility: payload.visibility,
       sharedPublicationId: publicationId,
     })
 
@@ -910,7 +991,7 @@ export function PublicationFeed({
     }))
 
     if (!result.success || !result.data) {
-      return
+      return false
     }
 
     const createdSharedPost = mapPublicationToFeedPost(result.data, [], {}, null)
@@ -936,11 +1017,18 @@ export function PublicationFeed({
 
       return [createdSharedPost, ...withUpdatedShareCount]
     })
+
+    return true
   }
 
   const handleUpdatePost = async (
     publicationId: number,
-    payload: { content: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
+    payload: {
+      content: string
+      visibility: "PUBLIC" | "FRIENDS" | "PRIVATE"
+      mediaFiles: File[]
+      mediaIdsToRemove: number[]
+    },
   ): Promise<boolean> => {
     if (updatingPostById[publicationId]) {
       return false
@@ -954,6 +1042,8 @@ export function PublicationFeed({
     const result = await publicationService.updatePublication(publicationId, {
       content: payload.content,
       visibility: payload.visibility,
+      mediaFiles: payload.mediaFiles,
+      mediaIdsToRemove: payload.mediaIdsToRemove,
     })
 
     setUpdatingPostById((current) => ({
@@ -988,6 +1078,7 @@ export function PublicationFeed({
               ...post,
               text: updatedPublication.content ?? "",
               visibility: updatedPublication.visibility,
+              media: updatedPublication.media ?? [],
               images: updatedImages,
               originalImages: updatedOriginalImages,
               videos: updatedVideos,
@@ -1093,6 +1184,11 @@ function mapPublicationToFeedPost(
   reactionsCountByType: ReactionCountsByType,
   currentUserReaction: ReactionType | null,
 ): FeedPost {
+  const resolvedLikesCount = Object.values(reactionsCountByType ?? {}).reduce(
+    (sum, count) => sum + (count ?? 0),
+    0,
+  )
+  const authorId = resolveFeedUserId(publication.user)
   const authorFirstName = publication.user?.firstName ?? ""
   const authorLastName = publication.user?.lastName ?? ""
   const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
@@ -1103,12 +1199,19 @@ function mapPublicationToFeedPost(
   return {
     id: publication.id,
     author: {
-      id: publication.user?.id ?? 0,
+      id: authorId,
       name: authorFullName,
       handle: buildHandle(authorFirstName, authorLastName),
       avatarUrl: publication.user?.profileImageUrl || "/images/default-user.jpg",
     },
     text: publication.content ?? "",
+    media: mediaItems.map((media) => ({
+      id: media.id,
+      mediaType: media.mediaType,
+      url: media.url,
+      thumbnailUrl: media.thumbnailUrl ?? null,
+      displayOrder: media.displayOrder,
+    })),
     images: imageMedia
       .map((media) => media.thumbnailUrl || media.url)
       .filter(Boolean),
@@ -1122,7 +1225,7 @@ function mapPublicationToFeedPost(
     sharedPublication: mapSharedPublicationToFeedData(publication.sharedPublication),
     visibility: publication.visibility,
     createdAt: formatDateTime(publication.createdAt),
-    likesCount: publication.likesCount ?? 0,
+    likesCount: resolvedLikesCount > 0 ? resolvedLikesCount : (publication.likesCount ?? 0),
     commentsCount: publication.commentsCount ?? 0,
     sharesCount: publication.sharesCount ?? 0,
     comments,
@@ -1138,6 +1241,7 @@ function mapSharedPublicationToFeedData(
     return null
   }
 
+  const authorId = resolveFeedUserId(sharedPublication.user)
   const authorFirstName = sharedPublication.user?.firstName ?? ""
   const authorLastName = sharedPublication.user?.lastName ?? ""
   const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
@@ -1148,12 +1252,19 @@ function mapSharedPublicationToFeedData(
   return {
     id: sharedPublication.id,
     author: {
-      id: sharedPublication.user?.id ?? 0,
+      id: authorId,
       name: authorFullName,
       handle: buildHandle(authorFirstName, authorLastName),
       avatarUrl: sharedPublication.user?.profileImageUrl || "/images/default-user.jpg",
     },
     text: sharedPublication.content ?? "",
+    media: mediaItems.map((media) => ({
+      id: media.id,
+      mediaType: media.mediaType,
+      url: media.url,
+      thumbnailUrl: media.thumbnailUrl ?? null,
+      displayOrder: media.displayOrder,
+    })),
     images: imageMedia
       .map((media) => media.thumbnailUrl || media.url)
       .filter(Boolean),
@@ -1170,14 +1281,39 @@ function mapSharedPublicationToFeedData(
 }
 
 function mapCommentToFeedComment(comment: CommentDto): FeedComment {
+  const rawComment = comment as unknown as Record<string, unknown>
+  const authorId = resolveFeedUserId(comment.user)
   const firstName = comment.user?.firstName ?? ""
   const lastName = comment.user?.lastName ?? ""
   const fullName = `${firstName} ${lastName}`.trim() || "User"
+  const rawReactionsCount = (
+    rawComment.reactionsCountByType
+    ?? rawComment.reactionsCount
+  ) as Record<string, number> | null | undefined
+  const hasReactionsCountField =
+    Object.prototype.hasOwnProperty.call(rawComment, "reactionsCountByType")
+    || Object.prototype.hasOwnProperty.call(rawComment, "reactionsCount")
+  const normalizedReactionsCount = rawReactionsCount
+    ? normalizeReactionCounts(rawReactionsCount)
+    : {}
+  const normalizedReactionsLikesCount = Object.values(normalizedReactionsCount).reduce(
+    (sum, count) => sum + (count ?? 0),
+    0,
+  )
+  const hasLikesCountField = Object.prototype.hasOwnProperty.call(rawComment, "likesCount")
+    && typeof rawComment.likesCount === "number"
+  const likesCount = hasLikesCountField
+    ? Math.max(0, Number(rawComment.likesCount))
+    : normalizedReactionsLikesCount
+  const hasCurrentUserReactionField = Object.prototype.hasOwnProperty.call(rawComment, "currentUserReaction")
+  const currentUserReaction = hasCurrentUserReactionField
+    ? parseReactionType(rawComment.currentUserReaction as string | null | undefined)
+    : undefined
 
   return {
     id: comment.id,
     author: {
-      id: comment.user?.id ?? 0,
+      id: authorId,
       name: fullName,
       handle: buildHandle(firstName, lastName),
       avatarUrl: comment.user?.profileImageUrl || "/images/default-user.jpg",
@@ -1185,13 +1321,43 @@ function mapCommentToFeedComment(comment: CommentDto): FeedComment {
     text: comment.content,
     isDeleted: comment.isDeleted,
     createdAt: formatDateTime(comment.createdAt),
-    likesCount: 0,
-    reactionsCountByType: undefined,
-    currentUserReaction: null,
+    likesCount,
+    reactionsCountByType: hasReactionsCountField ? normalizedReactionsCount : undefined,
+    currentUserReaction,
     parentCommentId: comment.parentCommentId,
     repliesCount: comment.repliesCount ?? 0,
     replies: (comment.replies ?? []).map((reply) => mapCommentToFeedComment(reply)),
   }
+}
+
+function parsePositiveUserId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+
+  return null
+}
+
+function resolveFeedUserId(user: unknown): number {
+  if (!user || typeof user !== "object") {
+    return 0
+  }
+
+  const raw = user as Record<string, unknown>
+
+  return (
+    parsePositiveUserId(raw.id)
+    ?? parsePositiveUserId(raw.userId)
+    ?? parsePositiveUserId(raw.user_id)
+    ?? 0
+  )
 }
 
 function updateCommentReactionState(
@@ -1511,4 +1677,117 @@ function normalizeReactionCounts(rawCounts: Record<string, number>): ReactionCou
   })
 
   return ordered
+}
+
+async function loadReactionState(
+  publicationId: number,
+  totalReactions: number,
+  currentUserId?: number,
+): Promise<{ reactionsCountByType: ReactionCountsByType; currentUserReaction: ReactionType | null }> {
+  const size = 100
+  let page = 0
+  let hasNext = true
+  const counts: ReactionCountsByType = {}
+  let currentUserReaction: ReactionType | null = null
+
+  while (hasNext) {
+    const result = await publicationService.getReactionUsers(publicationId, {
+      page,
+      size,
+    })
+
+    if (!result.success || !result.data) {
+      return {
+        reactionsCountByType: counts,
+        currentUserReaction,
+      }
+    }
+
+    result.data.content.forEach((reaction) => {
+      const key = reaction.reactionType
+      counts[key] = (counts[key] ?? 0) + 1
+
+      if (currentUserId && reaction.user?.id === currentUserId) {
+        currentUserReaction = key
+      }
+    })
+
+    if (result.data.last || result.data.content.length < size || page >= result.data.totalPages - 1) {
+      hasNext = false
+    } else {
+      page += 1
+    }
+  }
+
+  if (!Object.keys(counts).length && totalReactions > 0) {
+    counts.LIKE = totalReactions
+  }
+
+  const orderedCounts: ReactionCountsByType = {}
+  REACTION_TYPES.forEach((type) => {
+    if (counts[type]) {
+      orderedCounts[type] = counts[type]
+    }
+  })
+
+  return {
+    reactionsCountByType: orderedCounts,
+    currentUserReaction,
+  }
+}
+
+function applyReactionToggleDelta(params: {
+  currentCounts?: ReactionCountsByType
+  previousReaction?: ReactionType | null
+  selectedReaction: ReactionType
+  status: "added" | "updated" | "removed"
+}): { counts: ReactionCountsByType; currentUserReaction: ReactionType | null } {
+  const counts: ReactionCountsByType = { ...(params.currentCounts ?? {}) }
+
+  const decrement = (reactionType: ReactionType | null | undefined) => {
+    if (!reactionType) {
+      return
+    }
+
+    const nextValue = (counts[reactionType] ?? 0) - 1
+    if (nextValue > 0) {
+      counts[reactionType] = nextValue
+      return
+    }
+
+    delete counts[reactionType]
+  }
+
+  const increment = (reactionType: ReactionType) => {
+    counts[reactionType] = (counts[reactionType] ?? 0) + 1
+  }
+
+  let currentUserReaction: ReactionType | null = params.previousReaction ?? null
+
+  if (params.status === "removed") {
+    decrement(params.previousReaction ?? params.selectedReaction)
+    currentUserReaction = null
+  } else {
+    if (params.previousReaction && params.previousReaction !== params.selectedReaction) {
+      decrement(params.previousReaction)
+    }
+
+    if (params.previousReaction !== params.selectedReaction || params.status === "added") {
+      increment(params.selectedReaction)
+    }
+
+    currentUserReaction = params.selectedReaction
+  }
+
+  const ordered: ReactionCountsByType = {}
+  REACTION_TYPES.forEach((type) => {
+    if (counts[type]) {
+      ordered[type] = counts[type]
+    }
+  })
+
+  return {
+    counts: ordered,
+    currentUserReaction,
+  }
 }

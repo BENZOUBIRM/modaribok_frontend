@@ -15,6 +15,7 @@ import { CreatePublication, PublicationFeed } from "@/components/features/public
 import { PublicationCard } from "@/components/features/publication"
 import { Spinner } from "@/components/ui/spinner"
 import { Callout } from "@/components/ui/callout"
+import { MediaPreviewer } from "@/components/ui/media-previewer"
 import {
   Dialog,
   DialogContent,
@@ -28,8 +29,17 @@ import {
   cacheCommentReactionState,
   hydrateCommentsWithReactionCache,
 } from "@/lib/comment-reaction-cache"
+import { hydrateCommentsWithServerReactions } from "@/lib/comment-reaction-hydration"
 import type { UserRole } from "@/types/auth"
-import type { CommentDto, FeedComment, FeedPost, PublicationDto, ReactionCountsByType, ReactionType } from "@/types"
+import type {
+  CommentDto,
+  FeedComment,
+  FeedPost,
+  PublicationDto,
+  ReactionCountsByType,
+  ReactionType,
+  VisibilityPublication,
+} from "@/types"
 import { ProfilePatternOverlay } from "./ProfilePatternOverlay"
 
 type ProfileType = "user" | "store" | "coach"
@@ -79,6 +89,49 @@ const REACTION_TYPES: ReactionType[] = [
   "CHAMPION",
 ]
 
+function parsePositiveUserId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+
+  return null
+}
+
+function resolvePublicationUserId(user: unknown): number {
+  if (!user || typeof user !== "object") {
+    return 0
+  }
+
+  const raw = user as Record<string, unknown>
+
+  return (
+    parsePositiveUserId(raw.id)
+    ?? parsePositiveUserId(raw.userId)
+    ?? parsePositiveUserId(raw.user_id)
+    ?? 0
+  )
+}
+
+function canViewerSeePublication(
+  publication: Pick<PublicationDto, "visibility" | "user">,
+  viewerUserId?: number,
+): boolean {
+  if (publication.visibility !== "PRIVATE") {
+    return true
+  }
+
+  const authorId = resolvePublicationUserId(publication.user)
+
+  return Boolean(viewerUserId) && authorId > 0 && viewerUserId === authorId
+}
+
 function mapSharedPublicationToFeedData(
   sharedPublication: PublicationDto["sharedPublication"],
 ): FeedPost["sharedPublication"] {
@@ -90,6 +143,7 @@ function mapSharedPublicationToFeedData(
   const authorLastName = sharedPublication.user?.lastName ?? ""
   const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
   const handleRaw = `${authorFirstName}${authorLastName}`.replace(/\s+/g, "").toLowerCase()
+  const authorId = resolvePublicationUserId(sharedPublication.user)
   const mediaItems = sharedPublication.media ?? []
   const imageMedia = mediaItems.filter((media) => media.mediaType === "image")
   const videoMedia = mediaItems.filter((media) => media.mediaType === "video")
@@ -97,12 +151,19 @@ function mapSharedPublicationToFeedData(
   return {
     id: sharedPublication.id,
     author: {
-      id: sharedPublication.user?.id ?? 0,
+      id: authorId,
       name: authorFullName,
       handle: handleRaw ? `@${handleRaw}` : "@user",
       avatarUrl: sharedPublication.user?.profileImageUrl || "/images/default-user.jpg",
     },
     text: sharedPublication.content ?? "",
+    media: mediaItems.map((media) => ({
+      id: media.id,
+      mediaType: media.mediaType,
+      url: media.url,
+      thumbnailUrl: media.thumbnailUrl ?? null,
+      displayOrder: media.displayOrder,
+    })),
     images: imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean),
     originalImages: imageMedia.map((media) => media.url).filter(Boolean),
     videos: videoMedia.map((media) => media.url).filter(Boolean),
@@ -120,20 +181,16 @@ function mapPublicationToMediaPost(
   const videoMedia = (publication.media ?? []).filter((media) => media.mediaType === "video")
   const sharedPublication = mapSharedPublicationToFeedData(publication.sharedPublication)
 
-  const imagePreviewCandidates = imageMedia.length > 0
-    ? imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean)
-    : (sharedPublication?.images ?? [])
+  const imagePreviewCandidates = imageMedia
+    .map((media) => media.thumbnailUrl || media.url)
+    .filter(Boolean)
 
   const directVideoPreviewCandidates = videoMedia
     .map((media) => media.thumbnailUrl)
     .filter((value): value is string => Boolean(value))
-  const sharedVideoPreviewCandidates = (sharedPublication?.videoThumbnails ?? [])
-    .filter((value): value is string => Boolean(value))
   const directVideoCount = videoMedia.length
-  const sharedVideoCount = sharedPublication?.videos?.length ?? 0
-  const videoCount = directVideoCount > 0 ? directVideoCount : sharedVideoCount
+  const videoCount = directVideoCount
   const videoPreview = directVideoPreviewCandidates[0]
-    ?? sharedVideoPreviewCandidates[0]
     ?? VIDEO_PREVIEW_FALLBACK
 
   const hasImages = imagePreviewCandidates.length > 0
@@ -147,16 +204,24 @@ function mapPublicationToMediaPost(
   const authorLastName = publication.user?.lastName ?? ""
   const authorFullName = `${authorFirstName} ${authorLastName}`.trim() || "User"
   const handleRaw = `${authorFirstName}${authorLastName}`.replace(/\s+/g, "").toLowerCase()
+  const authorId = resolvePublicationUserId(publication.user)
 
   const post: FeedPost = {
     id: publication.id,
     author: {
-      id: publication.user?.id ?? 0,
+      id: authorId,
       name: authorFullName,
       handle: handleRaw ? `@${handleRaw}` : "@user",
       avatarUrl: publication.user?.profileImageUrl || "/images/default-user.jpg",
     },
     text: publication.content ?? "",
+    media: (publication.media ?? []).map((media) => ({
+      id: media.id,
+      mediaType: media.mediaType,
+      url: media.url,
+      thumbnailUrl: media.thumbnailUrl ?? null,
+      displayOrder: media.displayOrder,
+    })),
     images: imageMedia.map((media) => media.thumbnailUrl || media.url).filter(Boolean),
     originalImages: imageMedia.map((media) => media.url).filter(Boolean),
     videos: videoMedia.map((media) => media.url).filter(Boolean),
@@ -184,15 +249,40 @@ function mapPublicationToMediaPost(
 }
 
 function mapCommentToFeedComment(comment: CommentDto): FeedComment {
+  const rawComment = comment as unknown as Record<string, unknown>
   const firstName = comment.user?.firstName ?? ""
   const lastName = comment.user?.lastName ?? ""
   const fullName = `${firstName} ${lastName}`.trim() || "User"
   const handleRaw = `${firstName}${lastName}`.replace(/\s+/g, "").toLowerCase()
+  const authorId = resolvePublicationUserId(comment.user)
+  const rawReactionsCount = (
+    rawComment.reactionsCountByType
+    ?? rawComment.reactionsCount
+  ) as Record<string, number> | null | undefined
+  const hasReactionsCountField =
+    Object.prototype.hasOwnProperty.call(rawComment, "reactionsCountByType")
+    || Object.prototype.hasOwnProperty.call(rawComment, "reactionsCount")
+  const normalizedReactionsCount = rawReactionsCount
+    ? normalizeReactionCounts(rawReactionsCount)
+    : {}
+  const normalizedReactionsLikesCount = Object.values(normalizedReactionsCount).reduce(
+    (sum, count) => sum + (count ?? 0),
+    0,
+  )
+  const hasLikesCountField = Object.prototype.hasOwnProperty.call(rawComment, "likesCount")
+    && typeof rawComment.likesCount === "number"
+  const likesCount = hasLikesCountField
+    ? Math.max(0, Number(rawComment.likesCount))
+    : normalizedReactionsLikesCount
+  const hasCurrentUserReactionField = Object.prototype.hasOwnProperty.call(rawComment, "currentUserReaction")
+  const currentUserReaction = hasCurrentUserReactionField
+    ? parseReactionType(rawComment.currentUserReaction as string | null | undefined)
+    : undefined
 
   return {
     id: comment.id,
     author: {
-      id: comment.user?.id ?? 0,
+      id: authorId,
       name: fullName,
       handle: handleRaw ? `@${handleRaw}` : "@user",
       avatarUrl: comment.user?.profileImageUrl || "/images/default-user.jpg",
@@ -200,9 +290,9 @@ function mapCommentToFeedComment(comment: CommentDto): FeedComment {
     text: comment.content,
     isDeleted: comment.isDeleted,
     createdAt: formatPostDate(comment.createdAt),
-    likesCount: 0,
-    reactionsCountByType: undefined,
-    currentUserReaction: null,
+    likesCount,
+    reactionsCountByType: hasReactionsCountField ? normalizedReactionsCount : undefined,
+    currentUserReaction,
     parentCommentId: comment.parentCommentId,
     repliesCount: comment.repliesCount ?? 0,
     replies: (comment.replies ?? []).map((reply) => mapCommentToFeedComment(reply)),
@@ -464,18 +554,67 @@ function normalizeReactionCounts(rawCounts: Record<string, number>): ReactionCou
   return ordered
 }
 
+function applyReactionToggleDelta(params: {
+  currentCounts?: ReactionCountsByType
+  previousReaction?: ReactionType | null
+  selectedReaction: ReactionType
+  status: "added" | "updated" | "removed"
+}): { counts: ReactionCountsByType; currentUserReaction: ReactionType | null } {
+  const counts: ReactionCountsByType = { ...(params.currentCounts ?? {}) }
+
+  const decrement = (reactionType: ReactionType | null | undefined) => {
+    if (!reactionType) {
+      return
+    }
+
+    const nextValue = (counts[reactionType] ?? 0) - 1
+    if (nextValue > 0) {
+      counts[reactionType] = nextValue
+      return
+    }
+
+    delete counts[reactionType]
+  }
+
+  const increment = (reactionType: ReactionType) => {
+    counts[reactionType] = (counts[reactionType] ?? 0) + 1
+  }
+
+  let currentUserReaction: ReactionType | null = params.previousReaction ?? null
+
+  if (params.status === "removed") {
+    decrement(params.previousReaction ?? params.selectedReaction)
+    currentUserReaction = null
+  } else {
+    if (params.previousReaction && params.previousReaction !== params.selectedReaction) {
+      decrement(params.previousReaction)
+    }
+
+    if (params.previousReaction !== params.selectedReaction || params.status === "added") {
+      increment(params.selectedReaction)
+    }
+
+    currentUserReaction = params.selectedReaction
+  }
+
+  const ordered: ReactionCountsByType = {}
+  REACTION_TYPES.forEach((type) => {
+    if (counts[type]) {
+      ordered[type] = counts[type]
+    }
+  })
+
+  return {
+    counts: ordered,
+    currentUserReaction,
+  }
+}
+
 async function loadReactionState(
   publicationId: number,
   totalReactions: number,
   currentUserId?: number,
 ): Promise<{ reactionsCountByType: ReactionCountsByType; currentUserReaction: ReactionType | null }> {
-  if (!totalReactions) {
-    return {
-      reactionsCountByType: {},
-      currentUserReaction: null,
-    }
-  }
-
   const size = 100
   let page = 0
   let hasNext = true
@@ -591,6 +730,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
       }
 
       const mapped = publications
+        .filter((publication) => canViewerSeePublication(publication, user?.id))
         .map((publication) => mapPublicationToMediaPost(publication, mode))
         .filter((item): item is MediaPostItem => Boolean(item))
 
@@ -604,28 +744,34 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
         ),
       )
 
-      const withInteractions = mapped.map((item, index) => {
+      const withInteractions = await Promise.all(mapped.map(async (item, index) => {
         const comments = commentsResults[index]?.success
           ? commentsResults[index]?.data?.content ?? []
           : []
 
-        const mappedComments = hydrateCommentsWithReactionCache(
+        const serverHydratedComments = await hydrateCommentsWithServerReactions(
           comments.map((comment) => mapCommentToFeedComment(comment)),
           user?.id,
         )
+        const mappedComments = hydrateCommentsWithReactionCache(serverHydratedComments, user?.id)
 
         const reactionState = reactionsResults[index]
+        const resolvedLikesCount = Object.values(reactionState.reactionsCountByType ?? {}).reduce(
+          (sum, count) => sum + (count ?? 0),
+          0,
+        )
 
         return {
           ...item,
           post: {
             ...item.post,
             comments: mappedComments,
+            likesCount: resolvedLikesCount > 0 ? resolvedLikesCount : item.post.likesCount,
             reactionsCountByType: reactionState.reactionsCountByType ?? {},
             currentUserReaction: reactionState.currentUserReaction,
           },
         }
-      })
+      }))
 
       setImagePosts(withInteractions)
       setIsLoading(false)
@@ -650,21 +796,29 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
       return
     }
 
-    const mappedCounts = normalizeReactionCounts(result.data.reactionsCount ?? {})
-    const totalReactions = Object.values(mappedCounts).reduce((sum, count) => sum + (count ?? 0), 0)
-
     setImagePosts((currentPosts) =>
       currentPosts.map((item) =>
         item.post.id === publicationId
-          ? {
+          ? (() => {
+            const nextReactionState = applyReactionToggleDelta({
+              currentCounts: item.post.reactionsCountByType,
+              previousReaction: item.post.currentUserReaction,
+              selectedReaction: reactionType,
+              status: result.data.status,
+            })
+
+            return {
               ...item,
               post: {
                 ...item.post,
-                reactionsCountByType: mappedCounts,
-                likesCount: totalReactions,
-                currentUserReaction: parseReactionType(result.data?.currentUserReaction),
+                reactionsCountByType: nextReactionState.counts,
+                likesCount: Object.values(nextReactionState.counts).reduce((sum, count) => sum + (count ?? 0), 0),
+                currentUserReaction:
+                  parseReactionType(result.data?.currentUserReaction)
+                  ?? nextReactionState.currentUserReaction,
               },
             }
+          })()
           : item,
       ),
     )
@@ -758,10 +912,11 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     }
 
     const repliesData: CommentDto[] = result.data
-    const mappedReplies = hydrateCommentsWithReactionCache(
+    const serverHydratedReplies = await hydrateCommentsWithServerReactions(
       repliesData.map((reply) => mapCommentToFeedComment(reply)),
       user?.id,
     )
+    const mappedReplies = hydrateCommentsWithReactionCache(serverHydratedReplies, user?.id)
 
     setImagePosts((currentPosts) =>
       currentPosts.map((item) =>
@@ -801,6 +956,16 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     const createdReplyDto: CommentDto = createResult.data
 
     const repliesResult = await publicationService.getReplies(parentCommentId)
+    let mappedRepliesFromServer: FeedComment[] | null = null
+
+    if (repliesResult.success && repliesResult.data) {
+      const repliesData: CommentDto[] = repliesResult.data
+      const serverHydratedReplies = await hydrateCommentsWithServerReactions(
+        repliesData.map((reply) => mapCommentToFeedComment(reply)),
+        user?.id,
+      )
+      mappedRepliesFromServer = hydrateCommentsWithReactionCache(serverHydratedReplies, user?.id)
+    }
 
     setImagePosts((currentPosts) =>
       currentPosts.map((item) => {
@@ -808,18 +973,12 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
           return item
         }
 
-        if (repliesResult.success && repliesResult.data) {
-          const repliesData: CommentDto[] = repliesResult.data
-          const mappedReplies = hydrateCommentsWithReactionCache(
-            repliesData.map((reply) => mapCommentToFeedComment(reply)),
-            user?.id,
-          )
-
+        if (mappedRepliesFromServer) {
           return {
             ...item,
             post: {
               ...item.post,
-              comments: replaceRepliesForComment(item.post.comments, parentCommentId, mappedReplies),
+              comments: replaceRepliesForComment(item.post.comments, parentCommentId, mappedRepliesFromServer),
               commentsCount: item.post.commentsCount + 1,
             },
           }
@@ -929,12 +1088,14 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     return true
   }
 
-  const handleSharePublication = async (publicationId: number) => {
+  const handleSharePublication = async (
+    publicationId: number,
+    payload: { content: string; visibility: VisibilityPublication },
+  ): Promise<boolean> => {
     if (sharingPostById[publicationId]) {
-      return
+      return false
     }
-
-    const sourcePost = imagePosts.find((item) => item.post.id === publicationId)?.post
+    const trimmedContent = payload.content.trim()
 
     setSharingPostById((current) => ({
       ...current,
@@ -942,7 +1103,8 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     }))
 
     const result = await publicationService.createPublication({
-      visibility: sourcePost?.visibility ?? "PUBLIC",
+      content: trimmedContent,
+      visibility: payload.visibility,
       sharedPublicationId: publicationId,
     })
 
@@ -952,7 +1114,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     }))
 
     if (!result.success || !result.data) {
-      return
+      return false
     }
 
     const createdImagePost = mapPublicationToMediaPost(result.data, mode)
@@ -983,11 +1145,18 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     })
 
     onPublished?.()
+
+    return true
   }
 
   const handleUpdatePost = async (
     publicationId: number,
-    payload: { content: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
+    payload: {
+      content: string
+      visibility: "PUBLIC" | "FRIENDS" | "PRIVATE"
+      mediaFiles: File[]
+      mediaIdsToRemove: number[]
+    },
   ): Promise<boolean> => {
     if (updatingPostById[publicationId]) {
       return false
@@ -1001,6 +1170,8 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
     const result = await publicationService.updatePublication(publicationId, {
       content: payload.content,
       visibility: payload.visibility,
+      mediaFiles: payload.mediaFiles,
+      mediaIdsToRemove: payload.mediaIdsToRemove,
     })
 
     setUpdatingPostById((current) => ({
@@ -1050,6 +1221,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
             ...item.post,
             text: updatedPublication.content ?? "",
             visibility: updatedPublication.visibility,
+            media: updatedPublication.media ?? [],
             images: updatedImages,
             originalImages: updatedOriginalImages,
             videos: updatedVideos,
@@ -1372,16 +1544,6 @@ function ProfileHeader({
   const t = labels(lang)
   const isRTL = lang === "ar"
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false)
-  const [zoom, setZoom] = React.useState(1)
-
-  const closePreview = () => {
-    setIsPreviewOpen(false)
-    setZoom(1)
-  }
-
-  const zoomIn = () => setZoom((prev) => Math.min(4, Number((prev + 0.25).toFixed(2))))
-  const zoomOut = () => setZoom((prev) => Math.max(1, Number((prev - 0.25).toFixed(2))))
-  const resetZoom = () => setZoom(1)
   const badgeType =
     profileType === "store"
       ? "STORE"
@@ -1449,19 +1611,6 @@ function ProfileHeader({
   const postsCountText = formatCompactCount(resolvedStats.posts, lang)
   const followersCountText = formatCompactCount(resolvedStats.followers, lang)
   const followingCountText = formatCompactCount(resolvedStats.following, lang)
-
-  React.useEffect(() => {
-    if (!isPreviewOpen) return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closePreview()
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [isPreviewOpen])
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -1745,86 +1894,19 @@ function ProfileHeader({
         </>
       )}
 
-      {isPreviewOpen && (
-        <div
-          className="fixed inset-0 z-70 bg-black/80 backdrop-blur-sm p-4 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={lang === "ar" ? "معاينة الصورة الشخصية" : "Profile image preview"}
-          onClick={closePreview}
-        >
-          <div
-            className="mx-auto flex h-full w-full max-w-5xl flex-col"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-white">
-              <div className="text-sm font-medium">{displayName}</div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={zoomOut}
-                  disabled={zoom <= 1}
-                  className="inline-flex size-9 items-center justify-center rounded-md border border-white/25 bg-white/10 transition-colors hover:bg-white/20 disabled:opacity-50"
-                  title={lang === "ar" ? "تصغير" : "Zoom out"}
-                  aria-label={lang === "ar" ? "تصغير" : "Zoom out"}
-                >
-                  <Icon icon="solar:minus-circle-linear" className="size-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={zoomIn}
-                  disabled={zoom >= 4}
-                  className="inline-flex size-9 items-center justify-center rounded-md border border-white/25 bg-white/10 transition-colors hover:bg-white/20 disabled:opacity-50"
-                  title={lang === "ar" ? "تكبير" : "Zoom in"}
-                  aria-label={lang === "ar" ? "تكبير" : "Zoom in"}
-                >
-                  <Icon icon="solar:add-circle-linear" className="size-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={resetZoom}
-                  className="inline-flex items-center rounded-md border border-white/25 bg-white/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-white/20"
-                >
-                  {lang === "ar" ? "إعادة" : "Reset"}
-                </button>
-                <button
-                  type="button"
-                  onClick={closePreview}
-                  className="inline-flex size-9 items-center justify-center rounded-md border border-white/25 bg-white/10 transition-colors hover:bg-white/20"
-                  title={lang === "ar" ? "إغلاق" : "Close"}
-                  aria-label={lang === "ar" ? "إغلاق" : "Close"}
-                >
-                  <Icon icon="solar:close-circle-linear" className="size-5" />
-                </button>
-              </div>
-            </div>
-
-            <div
-              className="relative flex-1 overflow-hidden rounded-2xl border border-white/20 bg-black/30"
-              onWheel={(event) => {
-                event.preventDefault()
-                if (event.deltaY < 0) {
-                  zoomIn()
-                } else {
-                  zoomOut()
-                }
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center p-4">
-                <Image
-                  src={avatarUrl}
-                  alt={displayName}
-                  width={1000}
-                  height={1000}
-                  className="max-h-full w-auto max-w-full object-contain transition-transform duration-200"
-                  style={{ transform: `scale(${zoom})` }}
-                  priority
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <MediaPreviewer
+        open={isPreviewOpen}
+        items={[
+          {
+            type: "image",
+            src: avatarUrl,
+            alt: displayName,
+            downloadName: "profile-image",
+          },
+        ]}
+        onClose={() => setIsPreviewOpen(false)}
+        title={displayName}
+      />
     </div>
   )
 }

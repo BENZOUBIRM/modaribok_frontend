@@ -49,6 +49,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "Bro 80 kg bench is solid! What program are you running? I've been stuck at 70 for weeks 😩",
           createdAt: "1h",
           likesCount: 6,
+          parentCommentId: null,
+          repliesCount: 1,
           replies: [
             {
               id: 102,
@@ -56,6 +58,8 @@ export function getMockPosts(locale: string): MockPost[] {
               text: "Thanks man! I'm doing a PPL split, 4 days a week. The trick for me was adding paused reps on lighter days — really helps with the sticking point off the chest.",
               createdAt: "45m",
               likesCount: 3,
+              parentCommentId: 101,
+              repliesCount: 0,
               replies: [],
             },
           ],
@@ -66,6 +70,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "Progressive overload is everything 🔥 people underestimate how important it is to just add 1-2 kg each week. Great post!",
           createdAt: "30m",
           likesCount: 9,
+          parentCommentId: null,
+          repliesCount: 0,
           replies: [],
         },
       ],
@@ -87,6 +93,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "ماشاء الله يا فاطمة! 10 كيلومتاات إنجاز كبير 🎉 أنا مزال فـ 5 كيلو ولكن غادي نوصل إن شاء الله",
           createdAt: "4h",
           likesCount: 14,
+          parentCommentId: null,
+          repliesCount: 1,
           replies: [
             {
               id: 202,
@@ -94,6 +102,8 @@ export function getMockPosts(locale: string): MockPost[] {
               text: "إن شاء الله يا منصف! المهم ما توقفش، 5 كيلو رائعة والباقي غادي يجي بوحدو 💪",
               createdAt: "3h",
               likesCount: 8,
+              parentCommentId: 201,
+              repliesCount: 0,
               replies: [],
             },
           ],
@@ -117,6 +127,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "Where do you guys play? I'm in Maârif and looking for a regular squad!",
           createdAt: "7h",
           likesCount: 5,
+          parentCommentId: null,
+          repliesCount: 1,
           replies: [
             {
               id: 302,
@@ -124,6 +136,8 @@ export function getMockPosts(locale: string): MockPost[] {
               text: "We play at the Terrain Bourgogne pitch every Sunday 9 AM. DM me your number and I'll add you to the group!",
               createdAt: "6h",
               likesCount: 3,
+              parentCommentId: 301,
+              repliesCount: 0,
               replies: [],
             },
           ],
@@ -134,6 +148,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "A brace? Let's go Hamza! 🔥 Next week I'm joining for sure",
           createdAt: "5h",
           likesCount: 7,
+          parentCommentId: null,
+          repliesCount: 0,
           replies: [],
         },
       ],
@@ -155,6 +171,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "هاد الكلام صحيح 💯 الاستمرارية هي المفتاح. واش كتبع شي برنامج معين؟",
           createdAt: "11h",
           likesCount: 11,
+          parentCommentId: null,
+          repliesCount: 1,
           replies: [
             {
               id: 402,
@@ -162,6 +180,8 @@ export function getMockPosts(locale: string): MockPost[] {
               text: "أيه أخي، كنبع برنامج Push/Pull/Legs مع كارديو خفيف 3 مرات فـ الأسبوع. المهم هو الانتظام 🗓️",
               createdAt: "10h",
               likesCount: 5,
+              parentCommentId: 401,
+              repliesCount: 0,
               replies: [],
             },
           ],
@@ -172,6 +192,8 @@ export function getMockPosts(locale: string): MockPost[] {
           text: "الله يعطيك الصحة يا منصف! 6 أشهر ماشي ساهلة — respect كبير 👏",
           createdAt: "9h",
           likesCount: 15,
+          parentCommentId: null,
+          repliesCount: 0,
           replies: [],
         },
       ],

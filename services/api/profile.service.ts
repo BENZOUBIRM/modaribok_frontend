@@ -29,7 +29,7 @@ function parseNumber(value: unknown): number | undefined {
   return undefined
 }
 
-function normalizeOtherUserProfile(payload: unknown, fallbackUserId: number): OtherUserProfile {
+function normalizeOtherUserProfile(payload: unknown, fallbackUserId: number | string): OtherUserProfile {
   if (!payload || typeof payload !== "object") {
     return {
       id: fallbackUserId,
@@ -43,7 +43,12 @@ function normalizeOtherUserProfile(payload: unknown, fallbackUserId: number): Ot
       ?? (typeof raw.profilePicture === "string" ? raw.profilePicture : null)
       ?? (typeof raw.profilePictureUrl === "string" ? raw.profilePictureUrl : null)
 
-  const normalizedId = parseNumber(raw.id) ?? fallbackUserId
+  const normalizedId =
+    parseNumber(raw.id)
+    ?? parseNumber(raw.userId)
+    ?? parseNumber(raw.user_id)
+    ?? parseNumber(fallbackUserId)
+    ?? 0
 
   return {
     id: normalizedId,
@@ -90,10 +95,18 @@ export async function getMyProfile(): Promise<ApiResult<UserProfile>> {
 }
 
 export async function getUserProfileById(
-  userId: number,
+  userId: number | string,
 ): Promise<ApiResult<OtherUserProfile>> {
   try {
-    const response = await apiClient.get<ApiResponse<unknown>>(`/users/${userId}`)
+    const normalizedUserId = `${userId ?? ""}`.trim()
+    if (!normalizedUserId) {
+      return {
+        success: false,
+        code: "NETWORK_ERROR",
+      }
+    }
+
+    const response = await apiClient.get<ApiResponse<unknown>>(`/users/${encodeURIComponent(normalizedUserId)}`)
     const normalizedProfile = normalizeOtherUserProfile(response.data.data, userId)
 
     return {

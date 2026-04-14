@@ -99,8 +99,12 @@ function hydrateCommentFromCache(
   const cacheEntry = cacheMap[String(comment.id)]
   let hasChanged = false
   let nextComment = comment
+  const hasServerReactionSnapshot =
+    typeof comment.currentUserReaction !== "undefined"
+    || typeof comment.reactionsCountByType !== "undefined"
+    || comment.likesCount > 0
 
-  if (cacheEntry) {
+  if (cacheEntry && !hasServerReactionSnapshot) {
     hasChanged = true
     nextComment = {
       ...nextComment,

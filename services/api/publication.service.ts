@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios"
 import apiClient from "./client"
 import type {
+  CommentReactionStateDto,
   CommentDto,
   PaginationMeta,
   PublicationDto,
@@ -116,12 +117,15 @@ export async function updatePublication(
   params: {
     content?: string
     visibility?: VisibilityPublication
+    mediaIdsToRemove?: number[]
+    mediaFiles?: File[]
   },
 ): Promise<ApiResult<PublicationDto>> {
   try {
     const payload: {
       content?: string
       visibility?: VisibilityPublication
+      mediaIdsToRemove?: number[]
     } = {}
 
     if (params.content !== undefined) {
@@ -132,10 +136,40 @@ export async function updatePublication(
       payload.visibility = params.visibility
     }
 
-    const response = await apiClient.put<ApiResponse<PublicationDto>>(
-      `/publications/${publicationId}`,
-      payload,
-    )
+    if (params.mediaIdsToRemove !== undefined) {
+      payload.mediaIdsToRemove = params.mediaIdsToRemove
+    }
+
+    const mediaFiles = (params.mediaFiles ?? []).filter(Boolean)
+    const shouldUseMultipart = mediaFiles.length > 0
+
+    const response = shouldUseMultipart
+      ? await (async () => {
+        const formData = new FormData()
+
+        formData.append(
+          "publication",
+          new Blob([JSON.stringify(payload)], { type: "application/json" }),
+        )
+
+        mediaFiles.forEach((mediaFile) => {
+          formData.append("media", mediaFile)
+        })
+
+        return apiClient.put<ApiResponse<PublicationDto>>(
+          `/publications/${publicationId}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        )
+      })()
+      : await apiClient.put<ApiResponse<PublicationDto>>(
+        `/publications/${publicationId}`,
+        payload,
+      )
 
     return {
       success: true,
@@ -312,6 +346,29 @@ export async function toggleCommentReaction(
     const response = await apiClient.post<ApiResponse<ReactionToggleResponseDto>>(
       `/comments/${commentId}/reactions`,
       { type },
+    )
+
+    return {
+      success: true,
+      data: response.data.data,
+      code: response.data.code,
+    }
+  } catch (error: unknown) {
+    return handleApiError(error)
+  }
+}
+
+export async function getCommentReactions(
+  commentId: number,
+): Promise<ApiResult<CommentReactionStateDto>> {
+  try {
+    const response = await apiClient.get<ApiResponse<CommentReactionStateDto>>(
+      `/comments/${commentId}/reactions`,
+      {
+        // Non-critical in feed/profile listing; handled gracefully by caller.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        _skipToast: true as any,
+      },
     )
 
     return {

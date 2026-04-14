@@ -8,7 +8,7 @@ export interface PublicationFeedCacheEntry {
   timestamp: number
 }
 
-const CACHE_PREFIX = "modaribok_publication_feed_cache_v2:"
+const CACHE_PREFIX = "modaribok_publication_feed_cache_v5:"
 const FEED_CACHE_FRESH_MS = 60_000
 const FEED_CACHE_MAX_AGE_MS = 30 * 60_000
 

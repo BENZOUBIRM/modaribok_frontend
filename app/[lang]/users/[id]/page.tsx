@@ -8,9 +8,9 @@ interface UserProfileDetailRouteProps {
 
 export default async function UserProfileDetailRoute({ params }: UserProfileDetailRouteProps) {
   const { id } = await params
-  const targetUserId = Number(id)
+  const targetUserId = decodeURIComponent(id ?? "").trim()
 
-  if (!Number.isFinite(targetUserId) || targetUserId <= 0) {
+  if (!targetUserId) {
     notFound()
   }
 

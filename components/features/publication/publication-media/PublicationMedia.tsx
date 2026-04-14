@@ -4,9 +4,37 @@ import * as React from "react"
 import Image from "next/image"
 import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
+import { MediaPreviewer } from "@/components/ui/media-previewer"
+import { cn } from "@/lib/utils"
 import type { PublicationMediaProps } from "./PublicationMedia.types"
 
 const VIDEO_POSTER_FALLBACK = "/images/man-running.png"
+const MAX_VISIBLE_MEDIA = 4
+
+type FeedMediaItem = {
+  key: string
+  type: "image" | "video"
+  sourceIndex: number
+  previewIndex: number
+  src: string
+  poster?: string
+  unavailable: boolean
+}
+
+function MediaUnavailablePlaceholder({
+  label,
+  className,
+}: {
+  label: string
+  className?: string
+}) {
+  return (
+    <div className={cn("flex h-full w-full min-h-52 flex-col items-center justify-center gap-2 rounded-lg bg-muted/35 text-muted-foreground", className)}>
+      <Icon icon="lucide:image-off" className="size-5" />
+      <span className="text-xs font-medium">{label}</span>
+    </div>
+  )
+}
 
 /**
  * Renders publication images using lightweight feed thumbnails.
@@ -19,224 +47,422 @@ export function PublicationMedia({
   videoThumbnails = [],
   forceSquareSingle = false,
 }: PublicationMediaProps) {
-  const { isRTL } = useDictionary()
-  const [previewIndex, setPreviewIndex] = React.useState<number | null>(null)
+  const { isRTL, lang } = useDictionary()
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false)
+  const [previewIndex, setPreviewIndex] = React.useState(0)
   const [singleImageAspectRatio, setSingleImageAspectRatio] = React.useState<number | null>(null)
-  const [videoAspectRatios, setVideoAspectRatios] = React.useState<Record<number, number>>({})
+  const [unavailableImages, setUnavailableImages] = React.useState<Record<number, boolean>>({})
+  const [unavailableVideos, setUnavailableVideos] = React.useState<Record<number, boolean>>({})
+  const [hoveredVideoIndex, setHoveredVideoIndex] = React.useState<number | null>(null)
+  const inlineVideoRefs = React.useRef<Record<number, HTMLVideoElement | null>>({})
 
   const hasImages = images.length > 0
   const hasVideos = videos.length > 0
+  const hasMedia = hasImages || hasVideos
 
-  if (!hasImages && !hasVideos) return null
-
-  const resolvePreviewUrl = (index: number) => originalImages?.[index] || images[index]
-  const visibleImages = images.length > 3 ? images.slice(0, 3) : images
-  const remainingImagesCount = Math.max(images.length - 3, 0)
-
-  const isSingle = hasImages && images.length === 1
-  const isSingleLandscape = !forceSquareSingle && isSingle && (singleImageAspectRatio ?? 1) > 1.2
-
-  const goToPrevious = () => {
-    if (previewIndex === null) return
-    setPreviewIndex((current) => {
-      if (current === null) return current
-      return current > 0 ? current - 1 : current
-    })
-  }
-
-  const goToNext = () => {
-    if (previewIndex === null) return
-    setPreviewIndex((current) => {
-      if (current === null) return current
-      return current < images.length - 1 ? current + 1 : current
-    })
-  }
-
-  const canGoPrevious = previewIndex !== null && previewIndex > 0
-  const canGoNext = previewIndex !== null && previewIndex < images.length - 1
-  const defaultVideoAspectRatio = 16 / 9
-
-  const getVideoAspectRatio = (index: number): number => {
-    const ratio = videoAspectRatios[index]
-    if (!ratio || !Number.isFinite(ratio) || ratio <= 0) {
-      return defaultVideoAspectRatio
-    }
-    return ratio
-  }
-
-  const getVideoAspectClass = (index: number): string => {
-    const ratio = getVideoAspectRatio(index)
-
-    if (ratio >= 1.65) return "aspect-video"
-    if (ratio >= 1.2) return "aspect-[4/3]"
-    if (ratio >= 0.9) return "aspect-square"
-    if (ratio >= 0.7) return "aspect-[3/4]"
-    return "aspect-[9/16]"
-  }
-
-  const resolveVideoPoster = (index: number): string => {
+  const resolveVideoPoster = React.useCallback((index: number): string => {
     const thumbnail = videoThumbnails[index]
     if (typeof thumbnail === "string" && thumbnail.trim().length > 0) {
       return thumbnail
     }
     return VIDEO_POSTER_FALLBACK
-  }
+  }, [videoThumbnails])
+
+  const openPreviewAt = React.useCallback((index: number) => {
+    setPreviewIndex(index)
+    setIsPreviewOpen(true)
+  }, [])
+
+  const markImageUnavailable = React.useCallback((index: number) => {
+    setUnavailableImages((current) => {
+      if (current[index]) return current
+      return {
+        ...current,
+        [index]: true,
+      }
+    })
+  }, [])
+
+  const markVideoUnavailable = React.useCallback((index: number) => {
+    setUnavailableVideos((current) => {
+      if (current[index]) return current
+      return {
+        ...current,
+        [index]: true,
+      }
+    })
+  }, [])
+
+  React.useEffect(() => {
+    setUnavailableImages({})
+    setSingleImageAspectRatio(null)
+  }, [images])
+
+  React.useEffect(() => {
+    setUnavailableVideos({})
+    setHoveredVideoIndex(null)
+  }, [videos])
+
+  const stopInlineVideo = React.useCallback((index: number) => {
+    const videoEl = inlineVideoRefs.current[index]
+    if (!videoEl) return
+
+    videoEl.pause()
+    videoEl.currentTime = 0
+    videoEl.muted = true
+  }, [])
+
+  const startInlineVideo = React.useCallback((index: number) => {
+    Object.entries(inlineVideoRefs.current).forEach(([key, videoEl]) => {
+      if (!videoEl || Number(key) === index) return
+      videoEl.pause()
+      videoEl.currentTime = 0
+      videoEl.muted = true
+    })
+
+    const videoEl = inlineVideoRefs.current[index]
+    if (!videoEl) return
+
+    videoEl.muted = true
+    void videoEl.play().catch(() => {})
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      Object.values(inlineVideoRefs.current).forEach((videoEl) => {
+        if (!videoEl) return
+        videoEl.pause()
+      })
+    }
+  }, [])
+
+  const previewItems = React.useMemo(
+    () => [
+      ...images.map((imageUrl, index) => ({
+        type: "image" as const,
+        src: originalImages?.[index] || imageUrl,
+        alt: lang === "ar" ? `وسائط المنشور ${index + 1}` : `Post media ${index + 1}`,
+        downloadName: `post-image-${index + 1}`,
+      })),
+      ...videos.map((videoUrl, index) => ({
+        type: "video" as const,
+        src: videoUrl,
+        poster:
+          typeof videoThumbnails[index] === "string" && videoThumbnails[index]?.trim().length
+            ? videoThumbnails[index]
+            : VIDEO_POSTER_FALLBACK,
+        alt: lang === "ar" ? `فيديو المنشور ${index + 1}` : `Post video ${index + 1}`,
+        downloadName: `post-video-${index + 1}`,
+      })),
+    ],
+    [images, originalImages, videos, videoThumbnails, lang],
+  )
+
+  const mediaItems = React.useMemo<FeedMediaItem[]>(() => {
+    const imageItems: FeedMediaItem[] = images.map((imageUrl, index) => {
+      const imageSrc = imageUrl?.trim() ?? ""
+
+      return {
+        key: `image-${index}`,
+        type: "image",
+        sourceIndex: index,
+        previewIndex: index,
+        src: imageSrc,
+        unavailable: !imageSrc || !!unavailableImages[index],
+      }
+    })
+
+    const videoItems: FeedMediaItem[] = videos.map((videoUrl, index) => {
+      const videoSrc = videoUrl?.trim() ?? ""
+
+      return {
+        key: `video-${index}`,
+        type: "video",
+        sourceIndex: index,
+        previewIndex: images.length + index,
+        src: videoSrc,
+        poster: resolveVideoPoster(index),
+        unavailable: !videoSrc || !!unavailableVideos[index],
+      }
+    })
+
+    return [...imageItems, ...videoItems]
+  }, [images, videos, unavailableImages, unavailableVideos, resolveVideoPoster])
+
+  if (!hasMedia) return null
+
+  const unavailableLabel = lang === "ar" ? "الوسائط غير متاحة" : "Media unavailable"
+  const visibleMediaItems = mediaItems.slice(0, MAX_VISIBLE_MEDIA)
+  const visibleCount = visibleMediaItems.length
+  const remainingMediaCount = Math.max(mediaItems.length - visibleCount, 0)
+  const singleItem = visibleMediaItems[0]
+  const isSingle = visibleCount === 1
+  const isSingleSquareImage =
+    forceSquareSingle && isSingle && singleItem?.type === "image"
+  const singleImageFrameRatio = React.useMemo(() => {
+    if (isSingleSquareImage) return 1
+
+    const rawRatio = singleImageAspectRatio ?? 1
+    // Keep adaptive behavior while avoiding extreme, overly tall or wide frames.
+    return Math.min(1.8, Math.max(0.75, rawRatio))
+  }, [isSingleSquareImage, singleImageAspectRatio])
+
+  const gridClass = cn(
+    "grid gap-2",
+    visibleCount === 2
+      && "grid-cols-2 aspect-[2/1]",
+    visibleCount >= 3
+      && "grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,1fr)] grid-rows-2 aspect-[5/2]",
+  )
+
+  const getCardClass = (item: FeedMediaItem, index: number): string =>
+    cn(
+      "group relative w-full overflow-hidden rounded-xl border border-border/60 bg-muted/20",
+      item.type === "video" && "bg-black",
+      isSingleSquareImage && "aspect-square",
+      visibleCount === 2 && "h-full",
+      visibleCount >= 3 && (index === 0 || index === 1) && "row-span-2 h-full",
+      visibleCount === 3 && index === 2 && "row-span-2 h-full",
+      visibleCount >= 4 && (index === 2 || index === 3) && "h-full",
+    )
 
   return (
     <>
-      {hasImages && (
-        <div className="px-4 pb-3">
-          {isSingle ? (
-            <div className={`flex ${isSingleLandscape ? "justify-stretch" : "justify-start"}`}>
-              <button
-                type="button"
-                onClick={() => setPreviewIndex(0)}
-                className={`cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-muted/20 p-1 ${forceSquareSingle ? "aspect-square w-full max-w-115" : isSingleLandscape ? "w-full" : "w-full max-w-115"}`}
-                title="Preview image"
-                aria-label="Preview image"
-              >
-                <Image
-                  src={images[0]}
-                  alt="Post media"
-                  width={1200}
-                  height={800}
-                  onLoadingComplete={(img) => {
-                    if (forceSquareSingle) {
-                      return
-                    }
-                    const { naturalWidth, naturalHeight } = img
-                    if (naturalWidth > 0 && naturalHeight > 0) {
-                      setSingleImageAspectRatio(naturalWidth / naturalHeight)
-                    }
-                  }}
-                  className={forceSquareSingle ? "h-full w-full rounded-lg bg-muted/30 object-cover" : "h-auto max-h-[70vh] w-full rounded-lg bg-muted/30 object-cover"}
+      <div className={cn("px-4 pb-3", isSingleSquareImage && "flex")}>
+        {isSingle && singleItem ? (
+          singleItem.type === "image" ? (
+            <button
+              type="button"
+              onClick={() => openPreviewAt(singleItem.previewIndex)}
+              disabled={singleItem.unavailable}
+              className={cn(
+                "w-full max-w-115 cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-muted/20 disabled:cursor-not-allowed",
+                isRTL ? "ml-auto" : "mr-auto",
+              )}
+              title={lang === "ar" ? "معاينة الصورة" : "Preview image"}
+              aria-label={lang === "ar" ? "معاينة الصورة" : "Preview image"}
+            >
+              {singleItem.unavailable ? (
+                <MediaUnavailablePlaceholder
+                  label={unavailableLabel}
+                  className={
+                    isSingleSquareImage
+                      ? "min-h-0"
+                      : "min-h-56"
+                  }
                 />
-              </button>
-            </div>
-          ) : (
-            <div dir={isRTL ? "rtl" : "ltr"} className={`grid gap-2 ${visibleImages.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
-              {visibleImages.map((img, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setPreviewIndex(index)}
-                  className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-muted/20 p-1"
-                  title="Preview image"
-                  aria-label="Preview image"
+              ) : isSingleSquareImage ? (
+                <div className="relative aspect-square w-full overflow-hidden rounded-[inherit] bg-muted/30">
+                  <Image
+                    src={singleItem.src}
+                    alt={lang === "ar" ? `وسائط المنشور ${singleItem.sourceIndex + 1}` : `Post media ${singleItem.sourceIndex + 1}`}
+                    fill
+                    onError={() => markImageUnavailable(singleItem.sourceIndex)}
+                    sizes="(max-width: 768px) 100vw, 720px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="relative w-full overflow-hidden rounded-[inherit] bg-muted/30"
+                  style={{ aspectRatio: singleImageFrameRatio }}
                 >
                   <Image
-                    src={img}
-                    alt={`Post media ${index + 1}`}
-                    width={800}
-                    height={800}
-                    className="h-full w-full rounded-lg bg-muted/30 object-cover"
+                    src={singleItem.src}
+                    alt={lang === "ar" ? `وسائط المنشور ${singleItem.sourceIndex + 1}` : `Post media ${singleItem.sourceIndex + 1}`}
+                    fill
+                    onError={() => markImageUnavailable(singleItem.sourceIndex)}
+                    onLoadingComplete={(img) => {
+                      const { naturalWidth, naturalHeight } = img
+                      if (naturalWidth > 0 && naturalHeight > 0) {
+                        setSingleImageAspectRatio(naturalWidth / naturalHeight)
+                      }
+                    }}
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    className="object-cover"
                   />
-
-                  {remainingImagesCount > 0 && index === 2 && (
-                    <div className="absolute inset-1 flex items-center justify-center rounded-lg bg-black/55 text-lg font-bold text-white">
-                      +{remainingImagesCount}
-                    </div>
-                  )}
+                </div>
+              )}
+            </button>
+          ) : (
+            <div
+              onMouseEnter={
+                singleItem.unavailable
+                  ? undefined
+                  : () => {
+                    setHoveredVideoIndex(singleItem.sourceIndex)
+                    startInlineVideo(singleItem.sourceIndex)
+                  }
+              }
+              onMouseLeave={
+                singleItem.unavailable
+                  ? undefined
+                  : () => {
+                    setHoveredVideoIndex((current) =>
+                      current === singleItem.sourceIndex ? null : current,
+                    )
+                    stopInlineVideo(singleItem.sourceIndex)
+                  }
+              }
+              className="relative w-full overflow-hidden rounded-xl border border-border/60 bg-black aspect-video"
+            >
+              {!singleItem.unavailable && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    openPreviewAt(singleItem.previewIndex)
+                  }}
+                  className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                  title={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
+                  aria-label={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
+                >
+                  <span className="inline-flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/30 bg-black/55 text-white transition-colors hover:bg-black/75">
+                    <Icon icon="solar:play-bold" className="size-6" />
+                  </span>
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              )}
 
-      {hasVideos && (
-        <div className={`px-4 pb-3 ${hasImages ? "pt-0" : ""}`}>
-          <div className={`grid gap-2 ${videos.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
-            {videos.map((videoUrl, index) => (
-              <div
-                key={`${videoUrl}-${index}`}
-                className={`overflow-hidden rounded-xl border border-border/60 bg-black ${getVideoAspectClass(index)}`}
-              >
+              {singleItem.unavailable ? (
+                <MediaUnavailablePlaceholder label={unavailableLabel} className="h-full min-h-0" />
+              ) : (
                 <video
-                  src={videoUrl}
-                  poster={resolveVideoPoster(index)}
-                  controls
+                  src={singleItem.src}
+                  poster={singleItem.poster || VIDEO_POSTER_FALLBACK}
+                  ref={(node) => {
+                    inlineVideoRefs.current[singleItem.sourceIndex] = node
+                  }}
+                  controls={hoveredVideoIndex === singleItem.sourceIndex}
                   preload="metadata"
                   playsInline
-                  onLoadedMetadata={(event) => {
-                    const { videoWidth, videoHeight } = event.currentTarget
-                    if (videoWidth > 0 && videoHeight > 0) {
-                      const nextRatio = videoWidth / videoHeight
-                      setVideoAspectRatios((current) => {
-                        if (current[index] === nextRatio) {
-                          return current
-                        }
-                        return {
-                          ...current,
-                          [index]: nextRatio,
-                        }
-                      })
-                    }
-                  }}
+                  onError={() => markVideoUnavailable(singleItem.sourceIndex)}
                   className="h-full w-full bg-black object-contain"
                 />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {hasImages && previewIndex !== null && (
-        <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-4"
-          onClick={() => setPreviewIndex(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image preview"
-        >
-          <div
-            className="relative w-full max-w-4xl rounded-xl border border-white/20 bg-black/40 p-3"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="relative flex h-[80vh] items-center justify-center rounded-lg bg-black/25 p-2">
-              {canGoPrevious && (
-                <button
-                  type="button"
-                  onClick={goToPrevious}
-                  className={`absolute z-20 inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800 ${isRTL ? "right-3" : "left-3"}`}
-                  title="Previous"
-                  aria-label="Previous"
-                >
-                  <Icon icon={isRTL ? "lucide:chevron-right" : "lucide:chevron-left"} className="size-5" />
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setPreviewIndex(null)}
-                className="absolute right-3 top-3 z-20 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
-                title="Close preview"
-                aria-label="Close preview"
-              >
-                <Icon icon="lucide:x" className="size-5" />
-              </button>
-
-              <img
-                src={resolvePreviewUrl(previewIndex)}
-                alt={`Post media ${previewIndex + 1}`}
-                className="max-h-full w-full rounded-lg object-contain"
-              />
-
-              {canGoNext && (
-                <button
-                  type="button"
-                  onClick={goToNext}
-                  className={`absolute z-20 inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800 ${isRTL ? "left-3" : "right-3"}`}
-                  title="Next"
-                  aria-label="Next"
-                >
-                  <Icon icon={isRTL ? "lucide:chevron-left" : "lucide:chevron-right"} className="size-5" />
-                </button>
               )}
             </div>
+          )
+        ) : (
+          <div
+            dir={isRTL ? "rtl" : "ltr"}
+            className={cn("w-full", gridClass)}
+          >
+            {visibleMediaItems.map((item, index) => {
+              const showRemainingBadge = remainingMediaCount > 0 && index === visibleCount - 1
+
+              if (item.type === "image") {
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => openPreviewAt(item.previewIndex)}
+                    disabled={item.unavailable}
+                    className={cn(
+                      getCardClass(item, index),
+                      "cursor-pointer disabled:cursor-not-allowed",
+                    )}
+                    title={lang === "ar" ? "معاينة الصورة" : "Preview image"}
+                    aria-label={lang === "ar" ? "معاينة الصورة" : "Preview image"}
+                  >
+                    {item.unavailable ? (
+                      <MediaUnavailablePlaceholder label={unavailableLabel} className="min-h-0" />
+                    ) : (
+                      <div className="relative h-full w-full overflow-hidden rounded-lg bg-muted/30">
+                        <Image
+                          src={item.src}
+                          alt={lang === "ar" ? `وسائط المنشور ${item.sourceIndex + 1}` : `Post media ${item.sourceIndex + 1}`}
+                          fill
+                          onError={() => markImageUnavailable(item.sourceIndex)}
+                          sizes="(max-width: 768px) 50vw, 360px"
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {showRemainingBadge && (
+                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-black/55 text-lg font-bold text-white">
+                        +{remainingMediaCount}
+                      </div>
+                    )}
+                  </button>
+                )
+              }
+
+              return (
+                <div
+                  key={item.key}
+                  onMouseEnter={
+                    item.unavailable
+                      ? undefined
+                      : () => {
+                        setHoveredVideoIndex(item.sourceIndex)
+                        startInlineVideo(item.sourceIndex)
+                      }
+                  }
+                  onMouseLeave={
+                    item.unavailable
+                      ? undefined
+                      : () => {
+                        setHoveredVideoIndex((current) =>
+                          current === item.sourceIndex ? null : current,
+                        )
+                        stopInlineVideo(item.sourceIndex)
+                      }
+                  }
+                  className={getCardClass(item, index)}
+                >
+                  {!item.unavailable && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openPreviewAt(item.previewIndex)
+                      }}
+                      className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                      title={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
+                      aria-label={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
+                    >
+                      <span className="inline-flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/30 bg-black/55 text-white transition-colors hover:bg-black/75">
+                        <Icon icon="solar:play-bold" className="size-6" />
+                      </span>
+                    </button>
+                  )}
+
+                  {item.unavailable ? (
+                    <MediaUnavailablePlaceholder label={unavailableLabel} className="min-h-0" />
+                  ) : (
+                    <video
+                      src={item.src}
+                      poster={item.poster || VIDEO_POSTER_FALLBACK}
+                      ref={(node) => {
+                        inlineVideoRefs.current[item.sourceIndex] = node
+                      }}
+                      controls={hoveredVideoIndex === item.sourceIndex}
+                      preload="metadata"
+                      playsInline
+                      onError={() => markVideoUnavailable(item.sourceIndex)}
+                      className="h-full w-full bg-black object-contain"
+                    />
+                  )}
+
+                  {showRemainingBadge && (
+                    <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/50 text-lg font-bold text-white">
+                      +{remainingMediaCount}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      <MediaPreviewer
+        open={isPreviewOpen && previewItems.length > 0}
+        items={previewItems}
+        startIndex={previewIndex}
+        onClose={() => setIsPreviewOpen(false)}
+        title={lang === "ar" ? "وسائط المنشور" : "Post media"}
+      />
     </>
   )
 }

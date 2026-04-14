@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Icon } from "@iconify/react"
-import { useState } from "react"
+import { useState, useCallback, type WheelEvent } from "react"
 import { usePathname } from "next/navigation"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { cn } from "@/lib/utils"
@@ -29,6 +29,31 @@ function PanelContent({ onLogout }: { onLogout: () => void }) {
   ]
   const isProfileRoute = profileSlugs.some((slug) => bare === slug || bare.startsWith(`${slug}/`))
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+
+  const handoffWheelToMainContent = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    const deltaY = event.deltaY
+    if (deltaY === 0) {
+      return
+    }
+
+    const current = event.currentTarget
+    const canScrollLocally = current.scrollHeight > current.clientHeight
+    const isScrollingDown = deltaY > 0
+    const isAtTop = current.scrollTop <= 0
+    const isAtBottom = current.scrollTop + current.clientHeight >= current.scrollHeight - 1
+
+    if (canScrollLocally && ((isScrollingDown && !isAtBottom) || (!isScrollingDown && !isAtTop))) {
+      return
+    }
+
+    const mainContent = document.getElementById("main-content")
+    if (!mainContent) {
+      return
+    }
+
+    event.preventDefault()
+    mainContent.scrollBy({ top: deltaY, behavior: "auto" })
+  }, [])
 
   const generalSettingsItems = [
     { href: `/${lang}/settings/profile`, label: dictionary.profile.menu.personalInfo, icon: "solar:user-linear" },
@@ -118,7 +143,7 @@ function PanelContent({ onLogout }: { onLogout: () => void }) {
 
   if (isProfileRoute) {
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onWheel={handoffWheelToMainContent}>
         <UserProfileCard />
 
         <div className="px-4 py-5">
@@ -167,7 +192,7 @@ function PanelContent({ onLogout }: { onLogout: () => void }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto" onWheel={handoffWheelToMainContent}>
       <UserProfileCard />
       <CurrentEvents />
       <EventInvitations />
