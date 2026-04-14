@@ -5,6 +5,7 @@ import * as React from "react"
 import { useAuth } from "@/providers/auth-provider"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useNavRouter } from "@/hooks/use-nav-router"
+import { followService, profileStatsService } from "@/services/api"
 import * as profileService from "@/services/api/profile.service"
 import type { OtherUserProfile } from "@/types"
 import { Spinner } from "@/components/ui/spinner"
@@ -20,6 +21,40 @@ type OtherUserProfileStats = {
   posts: number
   followers: number
   following: number
+}
+
+const EMPTY_STATS: OtherUserProfileStats = {
+  posts: 0,
+  followers: 0,
+  following: 0,
+}
+
+type FollowState = "follow" | "following" | "requested"
+
+function getPendingFollowStorageKey(currentUserId: number, targetUserId: number): string {
+  return `modaribok:follow:pending:${currentUserId}:${targetUserId}`
+}
+
+function readPendingFollowFlag(currentUserId: number, targetUserId: number): boolean {
+  if (typeof window === "undefined") {
+    return false
+  }
+
+  return window.localStorage.getItem(getPendingFollowStorageKey(currentUserId, targetUserId)) === "1"
+}
+
+function writePendingFollowFlag(currentUserId: number, targetUserId: number, isPending: boolean): void {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  const key = getPendingFollowStorageKey(currentUserId, targetUserId)
+  if (isPending) {
+    window.localStorage.setItem(key, "1")
+    return
+  }
+
+  window.localStorage.removeItem(key)
 }
 
 function formatSimpleDate(value?: string | null): string {
@@ -137,6 +172,9 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
   )
 
   const [profile, setProfile] = React.useState<OtherUserProfile | null>(null)
+  const [stats, setStats] = React.useState<OtherUserProfileStats>(EMPTY_STATS)
+  const [followState, setFollowState] = React.useState<FollowState>("follow")
+  const [isFollowBusy, setIsFollowBusy] = React.useState(false)
   const [isFetching, setIsFetching] = React.useState(true)
   const [errorCode, setErrorCode] = React.useState<string | null>(null)
 
@@ -161,6 +199,8 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
         || !String(targetUserId).trim()
         || (normalizedTargetUserId !== null && user?.id === normalizedTargetUserId)
       ) {
+        setStats(EMPTY_STATS)
+        setFollowState("follow")
         setIsFetching(false)
         return
       }
@@ -176,12 +216,37 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
 
       if (!result.success || !result.data) {
         setProfile(null)
+        setStats(EMPTY_STATS)
+        setFollowState("follow")
         setErrorCode(result.code ?? "NETWORK_ERROR")
         setIsFetching(false)
         return
       }
 
+      const fallbackStats = resolveProfileStats(result.data)
+      const resolvedStats = normalizedTargetUserId
+        ? await profileStatsService.getUserProfileStats(normalizedTargetUserId, fallbackStats)
+        : fallbackStats
+
+      if (!isMounted) {
+        return
+      }
+
+      const isFollowing = normalizedTargetUserId && user?.id
+        ? await followService.isFollowingUser(user.id, normalizedTargetUserId)
+        : false
+
+      if (!isMounted) {
+        return
+      }
+
+      const isPendingFollow = normalizedTargetUserId && user?.id
+        ? readPendingFollowFlag(user.id, normalizedTargetUserId)
+        : false
+
       setProfile(result.data)
+      setStats(resolvedStats)
+      setFollowState(isFollowing ? "following" : isPendingFollow ? "requested" : "follow")
       setIsFetching(false)
     }
 
@@ -191,6 +256,78 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
       isMounted = false
     }
   }, [isAuthenticated, normalizedTargetUserId, targetUserId, user?.id])
+
+  const handleToggleFollow = async () => {
+    if (!normalizedTargetUserId || !profile || !user?.id || isFollowBusy) {
+      return
+    }
+
+    setIsFollowBusy(true)
+
+    const previousState = followState
+    const previousStats = stats
+    const refreshStatsFromBackend = async () => {
+      const fallbackStats = resolveProfileStats(profile)
+      const refreshed = await profileStatsService.getUserProfileStats(normalizedTargetUserId, fallbackStats)
+      setStats(refreshed)
+    }
+
+    if (followState === "following") {
+      const result = await followService.unfollowUser(normalizedTargetUserId)
+      if (!result.success) {
+        setFollowState(previousState)
+        setStats(previousStats)
+        setIsFollowBusy(false)
+        return
+      }
+
+      writePendingFollowFlag(user.id, normalizedTargetUserId, false)
+      setFollowState("follow")
+      await refreshStatsFromBackend()
+
+      setIsFollowBusy(false)
+      return
+    }
+
+    if (followState === "requested") {
+      const result = await followService.unfollowUser(normalizedTargetUserId)
+      if (!result.success) {
+        setFollowState(previousState)
+        setStats(previousStats)
+        setIsFollowBusy(false)
+        return
+      }
+
+      writePendingFollowFlag(user.id, normalizedTargetUserId, false)
+      setFollowState("follow")
+      await refreshStatsFromBackend()
+
+      setIsFollowBusy(false)
+      return
+    }
+
+    const result = await followService.followUser(normalizedTargetUserId)
+    if (!result.success) {
+      setFollowState(previousState)
+      setStats(previousStats)
+      setIsFollowBusy(false)
+      return
+    }
+
+    if (result.data?.status === "PENDING") {
+      writePendingFollowFlag(user.id, normalizedTargetUserId, true)
+      setFollowState("requested")
+      await refreshStatsFromBackend()
+      setIsFollowBusy(false)
+      return
+    }
+
+    writePendingFollowFlag(user.id, normalizedTargetUserId, false)
+    setFollowState("following")
+    await refreshStatsFromBackend()
+
+    setIsFollowBusy(false)
+  }
 
   if (
     isLoading
@@ -219,7 +356,6 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
   const handle = buildHandle(profile, targetUserId)
   const avatarUrl = profile.profileImageUrl || profile.profilePicture || profile.profilePictureUrl || "/images/default-user.jpg"
   const aboutText = buildAboutText(profile, lang)
-  const stats = resolveProfileStats(profile)
 
   return (
     <div className="max-w-4xl mx-auto py-6 px-4">
@@ -234,6 +370,9 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
         isOwnProfile={false}
         aboutText={aboutText}
         stats={stats}
+        followState={followState}
+        isFollowBusy={isFollowBusy}
+        onToggleFollow={handleToggleFollow}
       />
     </div>
   )

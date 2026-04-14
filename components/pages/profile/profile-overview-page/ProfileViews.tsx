@@ -53,6 +53,8 @@ type ProfileStats = {
   following: number
 }
 
+type FollowButtonState = "follow" | "following" | "requested"
+
 interface ProfileViewsProps {
   lang: "ar" | "en"
   profileType: ProfileType
@@ -64,6 +66,9 @@ interface ProfileViewsProps {
   isOwnProfile?: boolean
   aboutText?: string
   stats?: ProfileStats
+  followState?: FollowButtonState
+  isFollowBusy?: boolean
+  onToggleFollow?: () => void
 }
 
 type MediaPostItem = {
@@ -1467,6 +1472,9 @@ function labels(lang: "ar" | "en") {
         links: "روابط التواصل",
         products: "منتجات المتجر",
         follow: "متابعة",
+        followingAction: "إلغاء المتابعة",
+        requested: "طلب مرسل",
+        followLoading: "جاري المعالجة...",
         message: "مراسلة",
         more: "المزيد",
         comingSoon: "قريبا",
@@ -1500,6 +1508,9 @@ function labels(lang: "ar" | "en") {
         links: "Social links",
         products: "Store products",
         follow: "Follow",
+        followingAction: "Unfollow",
+        requested: "Requested",
+        followLoading: "Processing...",
         message: "Message",
         more: "More",
         comingSoon: "Coming soon",
@@ -1530,6 +1541,9 @@ function ProfileHeader({
   userRole,
   isOwnProfile = true,
   stats,
+  followState = "follow",
+  isFollowBusy = false,
+  onToggleFollow,
 }: {
   lang: "ar" | "en"
   profileType: ProfileType
@@ -1540,6 +1554,9 @@ function ProfileHeader({
   userRole: UserRole
   isOwnProfile?: boolean
   stats?: ProfileStats
+  followState?: FollowButtonState
+  isFollowBusy?: boolean
+  onToggleFollow?: () => void
 }) {
   const t = labels(lang)
   const isRTL = lang === "ar"
@@ -1611,6 +1628,18 @@ function ProfileHeader({
   const postsCountText = formatCompactCount(resolvedStats.posts, lang)
   const followersCountText = formatCompactCount(resolvedStats.followers, lang)
   const followingCountText = formatCompactCount(resolvedStats.following, lang)
+  const followButtonLabel = isFollowBusy
+    ? t.followLoading
+    : followState === "following"
+      ? t.followingAction
+      : followState === "requested"
+        ? t.requested
+        : t.follow
+  const followButtonClassName = followState === "following"
+    ? "inline-flex cursor-pointer rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground"
+    : followState === "requested"
+      ? "inline-flex cursor-pointer rounded-md border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm font-semibold text-warning"
+      : "inline-flex cursor-pointer rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -1670,9 +1699,11 @@ function ProfileHeader({
                 <div className="flex w-full flex-wrap items-center justify-end gap-2">
                   <button
                     type="button"
-                    className="inline-flex cursor-pointer rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
+                    onClick={onToggleFollow}
+                    disabled={isFollowBusy || !onToggleFollow}
+                    className={`${followButtonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
                   >
-                    {t.follow}
+                    {followButtonLabel}
                   </button>
                   <button
                     type="button"
@@ -1809,9 +1840,11 @@ function ProfileHeader({
                 <div className="flex w-full flex-wrap items-center justify-start gap-2">
                   <button
                     type="button"
-                    className="inline-flex cursor-pointer rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
+                    onClick={onToggleFollow}
+                    disabled={isFollowBusy || !onToggleFollow}
+                    className={`${followButtonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
                   >
-                    {t.follow}
+                    {followButtonLabel}
                   </button>
                   <button
                     type="button"
@@ -2049,6 +2082,9 @@ function UserProfileView({
   isOwnProfile = true,
   aboutText,
   stats,
+  followState,
+  isFollowBusy,
+  onToggleFollow,
 }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
@@ -2064,6 +2100,9 @@ function UserProfileView({
         about={aboutText ?? t.aboutUser}
         isOwnProfile={isOwnProfile}
         stats={stats}
+        followState={followState}
+        isFollowBusy={isFollowBusy}
+        onToggleFollow={onToggleFollow}
       />
       <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
     </div>
@@ -2079,6 +2118,9 @@ function StoreProfileView({
   userId,
   isOwnProfile = true,
   stats,
+  followState,
+  isFollowBusy,
+  onToggleFollow,
 }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
@@ -2094,6 +2136,9 @@ function StoreProfileView({
         about={t.aboutStore}
         isOwnProfile={isOwnProfile}
         stats={stats}
+        followState={followState}
+        isFollowBusy={isFollowBusy}
+        onToggleFollow={onToggleFollow}
       />
 
       <SectionCard title={t.links}>
@@ -2132,6 +2177,9 @@ function CoachProfileView({
   userId,
   isOwnProfile = true,
   stats,
+  followState,
+  isFollowBusy,
+  onToggleFollow,
 }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
 
@@ -2147,6 +2195,9 @@ function CoachProfileView({
         about={t.aboutCoach}
         isOwnProfile={isOwnProfile}
         stats={stats}
+        followState={followState}
+        isFollowBusy={isFollowBusy}
+        onToggleFollow={onToggleFollow}
       />
 
       <SectionCard title={t.certificates}>
@@ -2198,6 +2249,9 @@ export function ProfileViews({
   isOwnProfile = true,
   aboutText,
   stats,
+  followState,
+  isFollowBusy,
+  onToggleFollow,
 }: ProfileViewsProps) {
   if (profileType === "store") {
     return (
@@ -2210,6 +2264,9 @@ export function ProfileViews({
         userId={userId}
         isOwnProfile={isOwnProfile}
         stats={stats}
+        followState={followState}
+        isFollowBusy={isFollowBusy}
+        onToggleFollow={onToggleFollow}
       />
     )
   }
@@ -2225,6 +2282,9 @@ export function ProfileViews({
         userId={userId}
         isOwnProfile={isOwnProfile}
         stats={stats}
+        followState={followState}
+        isFollowBusy={isFollowBusy}
+        onToggleFollow={onToggleFollow}
       />
     )
   }
@@ -2240,6 +2300,9 @@ export function ProfileViews({
       isOwnProfile={isOwnProfile}
       aboutText={aboutText}
       stats={stats}
+      followState={followState}
+      isFollowBusy={isFollowBusy}
+      onToggleFollow={onToggleFollow}
     />
   )
 }

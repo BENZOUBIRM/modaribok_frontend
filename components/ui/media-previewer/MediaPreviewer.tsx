@@ -63,7 +63,7 @@ export function MediaPreviewer({
     }
   }, [])
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!open) return
 
     setActiveIndex(clamp(startIndex, 0, Math.max(items.length - 1, 0)))
@@ -387,7 +387,7 @@ export function MediaPreviewer({
             </button>
           )}
 
-          <div ref={viewportRef} className="absolute inset-0 flex items-center justify-center p-4">
+          <div ref={viewportRef} className="absolute inset-0 flex items-center justify-center px-4">
             {isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -401,7 +401,7 @@ export function MediaPreviewer({
                 onPointerUp={(event) => endImageDrag(event)}
                 onPointerCancel={(event) => endImageDrag(event)}
                 className={cn(
-                  "max-h-full w-auto max-w-full object-contain select-none",
+                  "h-full w-auto max-w-none rounded-lg object-contain select-none",
                   isDraggingImage ? "cursor-grabbing touch-none" : "cursor-grab touch-none",
                   isDraggingImage ? "transition-none" : "transition-transform duration-200",
                 )}
