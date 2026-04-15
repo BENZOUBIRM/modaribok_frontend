@@ -16,7 +16,7 @@ const navItems = [
   { path: "/search", icon: "solar:magnifer-linear", translationKey: "search", mobileOnly: true },
   { path: "/dashboard", icon: "solar:chart-square-bold", translationKey: "dashboard", adminOnly: true },
   { path: "/products", icon: "solar:cart-3-bold", translationKey: "products" },
-  { path: "/trainers", icon: "solar:users-group-rounded-bold", translationKey: "trainers" },
+  { path: "/coaches", icon: "solar:users-group-rounded-bold", translationKey: "coaches" },
   { path: "/gyms", icon: "solar:dumbbells-bold", translationKey: "gyms" },
   { path: "/events", icon: "solar:calendar-mark-bold", translationKey: "events" },
   { path: "/stores", icon: "solar:shop-bold", translationKey: "stores" },

@@ -1,4 +1,5 @@
 export * from "./auth"
+export * from "./coaches"
 export * from "./errors"
 export * from "./home"
 export * from "./profile"

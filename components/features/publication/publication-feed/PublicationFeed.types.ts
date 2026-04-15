@@ -1,5 +1,6 @@
 export interface PublicationFeedProps {
   className?: string
+  publicationCardClassName?: string
   refreshKey?: number
   userId?: number
   showHeader?: boolean

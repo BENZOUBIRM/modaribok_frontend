@@ -176,7 +176,7 @@ export function CommentSection({
   }
 
   return (
-    <div className="border-t border-border bg-muted/30 [&_button:not(:disabled)]:cursor-pointer">
+    <div className="border-t border-border/30 bg-muted/30 [&_button:not(:disabled)]:cursor-pointer">
       {shouldRenderCommentsContainer && (
         <div
           data-comment-reaction-boundary
@@ -248,7 +248,7 @@ export function CommentSection({
       )}
 
       {isEditingComment && (
-        <div className="mt-2 flex items-center justify-between border-t border-border/70 px-4 py-2">
+        <div className="mt-2 flex items-center justify-between border-t border-border/35 px-4 py-2">
           <span className="text-sm font-semibold text-foreground">{t.editingComment}</span>
           <button
             type="button"

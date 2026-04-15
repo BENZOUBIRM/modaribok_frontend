@@ -11,7 +11,7 @@ export function FriendSuggestionCard({ suggestion }: FriendSuggestionCardProps) 
   const { dictionary } = useDictionary()
 
   return (
-    <div className="flex flex-col items-center bg-card rounded-xl border border-border p-4 w-36 shrink-0 text-center gap-2">
+    <div className="flex w-36 shrink-0 flex-col items-center gap-2 rounded-xl border border-border/30 bg-card p-4 text-center transition-colors hover:border-border/55">
       <Image
         src={suggestion.avatarUrl}
         alt={suggestion.name}

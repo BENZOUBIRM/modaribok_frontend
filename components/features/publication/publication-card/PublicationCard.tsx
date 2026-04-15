@@ -69,6 +69,12 @@ function resolveVisibilityMeta(
  */
 export function PublicationCard({
   post,
+  className,
+  currentUserId,
+  followStateByUserId,
+  isFollowBusyByUserId,
+  onFollowUser,
+  onUnfollowUser,
   onReact,
   onReactComment,
   onAddComment,
@@ -95,6 +101,12 @@ export function PublicationCard({
   scrollableComments,
 }: {
   post: MockPost
+  className?: string
+  currentUserId?: number
+  followStateByUserId?: Record<number, "follow" | "following">
+  isFollowBusyByUserId?: Record<number, boolean>
+  onFollowUser?: (targetUserId: number) => Promise<boolean> | boolean
+  onUnfollowUser?: (targetUserId: number) => Promise<boolean> | boolean
   onReact?: (publicationId: number, reactionType: ReactionType) => void
   onReactComment?: (publicationId: number, commentId: number, reactionType: ReactionType) => void
   onAddComment?: (publicationId: number, content: string) => Promise<void> | void
@@ -215,6 +227,122 @@ export function PublicationCard({
   const visibleShareMediaPreviewItems = shareMediaPreviewItems.slice(0, 3)
   const remainingShareMediaPreviewCount = Math.max(shareMediaPreviewItems.length - visibleShareMediaPreviewItems.length, 0)
   const isShareBusy = Boolean(isSharing) || isShareSubmitting
+  const followLabel = lang === "ar" ? "متابعة" : "Follow"
+  const followingLabel = lang === "ar" ? "متابَع" : "Following"
+  const notificationsLabel = lang === "ar" ? "الإشعارات" : "Notifications"
+  const blockLabel = lang === "ar" ? "حظر" : "Block"
+  const unfollowLabel = lang === "ar" ? "إلغاء المتابعة" : "Unfollow"
+  const followProcessingLabel = lang === "ar" ? "جاري المعالجة..." : "Processing..."
+
+  const canShowFollowActionForUser = useCallback((targetUserId: number): boolean => {
+    return Boolean(currentUserId)
+      && targetUserId > 0
+      && targetUserId !== currentUserId
+      && Boolean(onFollowUser)
+      && Boolean(onUnfollowUser)
+  }, [currentUserId, onFollowUser, onUnfollowUser])
+
+  const resolveFollowStateForUser = useCallback((targetUserId: number): "follow" | "following" => {
+    const resolved = followStateByUserId?.[targetUserId]
+    return resolved === "following" ? "following" : "follow"
+  }, [followStateByUserId])
+
+  const isFollowBusyForUser = useCallback((targetUserId: number): boolean => {
+    return Boolean(isFollowBusyByUserId?.[targetUserId])
+  }, [isFollowBusyByUserId])
+
+  const handleFollowClick = useCallback(async (targetUserId: number) => {
+    if (!onFollowUser || isFollowBusyForUser(targetUserId)) {
+      return
+    }
+
+    await onFollowUser(targetUserId)
+  }, [isFollowBusyForUser, onFollowUser])
+
+  const handleUnfollowClick = useCallback(async (targetUserId: number) => {
+    if (!onUnfollowUser || isFollowBusyForUser(targetUserId)) {
+      return
+    }
+
+    await onUnfollowUser(targetUserId)
+  }, [isFollowBusyForUser, onUnfollowUser])
+
+  const renderFollowAction = useCallback((targetUserId: number) => {
+    if (!canShowFollowActionForUser(targetUserId)) {
+      return null
+    }
+
+    const followState = resolveFollowStateForUser(targetUserId)
+    const isBusy = isFollowBusyForUser(targetUserId)
+
+    if (isBusy) {
+      return (
+        <span className="inline-flex items-center text-xs font-semibold text-muted-foreground">
+          {followProcessingLabel}
+        </span>
+      )
+    }
+
+    if (followState === "follow") {
+      return (
+        <button
+          type="button"
+          onClick={() => void handleFollowClick(targetUserId)}
+          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primary transition-colors hover:text-primary/80 hover:underline"
+        >
+          {followLabel}
+          <Icon icon="solar:user-plus-linear" className="size-3.5" />
+        </button>
+      )
+    }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-success transition-colors hover:text-success/80 hover:underline"
+          >
+            {followingLabel}
+            <Icon icon="solar:user-check-linear" className="size-3.5" />
+            <Icon icon="solar:alt-arrow-down-linear" className="size-3" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align={lang === "ar" ? "start" : "end"} className="min-w-36">
+          <DropdownMenuItem disabled>
+            <Icon icon="solar:bell-linear" className="size-4" />
+            <span>{notificationsLabel}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled>
+            <Icon icon="solar:user-block-linear" className="size-4" />
+            <span>{blockLabel}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              void handleUnfollowClick(targetUserId)
+            }}
+            className="cursor-pointer text-destructive focus:text-destructive"
+          >
+            <Icon icon="solar:user-minus-linear" className="size-4" />
+            <span>{unfollowLabel}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }, [
+    blockLabel,
+    canShowFollowActionForUser,
+    followLabel,
+    followProcessingLabel,
+    followingLabel,
+    handleFollowClick,
+    handleUnfollowClick,
+    isFollowBusyForUser,
+    lang,
+    notificationsLabel,
+    resolveFollowStateForUser,
+    unfollowLabel,
+  ])
 
   const handleDeleteConfirm = async () => {
     if (!onDeletePost) {
@@ -307,7 +435,7 @@ export function PublicationCard({
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
+    <div className={cn("bg-card rounded-xl overflow-hidden shadow-[0_6px_18px_rgba(0,0,0,0.05)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.16)]", className)} dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="flex items-start justify-between p-4 pb-2">
         <div className={cn("flex items-center gap-3", isRTL && "text-right")}>
@@ -329,17 +457,23 @@ export function PublicationCard({
             />
           </button>
           <div>
-            <button
-              type="button"
-              onClick={() => handleOpenUserProfile({
-                userId: post.author.id,
-                avatarUrl: post.author.avatarUrl,
-                displayName: post.author.name,
-              })}
-              className="cursor-pointer text-sm font-semibold text-foreground leading-tight hover:underline"
-            >
-              {post.author.name}
-            </button>
+            <div className={cn("flex items-center gap-2", isRTL && "justify-end")}>
+              <button
+                type="button"
+                onClick={() => handleOpenUserProfile({
+                  userId: post.author.id,
+                  avatarUrl: post.author.avatarUrl,
+                  displayName: post.author.name,
+                })}
+                className="cursor-pointer text-sm font-semibold text-foreground leading-tight hover:underline"
+              >
+                {post.author.name}
+              </button>
+              {canShowFollowActionForUser(post.author.id) && (
+                <span className="mx-1 text-muted-foreground">-</span>
+              )}
+              {renderFollowAction(post.author.id)}
+            </div>
             <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
               <span className="inline-flex items-center gap-1.5">
                 <span dir="ltr" className="tabular-nums">
@@ -422,7 +556,7 @@ export function PublicationCard({
             allowMediaAdditions={!Boolean(sharedPost)}
             onCancel={() => setIsEditingInline(false)}
             onSubmit={handleUpdateSubmit}
-            className="border-border/70"
+            className="border-border/35"
           />
         </div>
       ) : (
@@ -446,7 +580,7 @@ export function PublicationCard({
 
           {sharedPost && (
             <div className="px-4 pb-3">
-              <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/25">
+              <div className="overflow-hidden rounded-xl border border-border/35 bg-muted/25">
                 <div className="px-3 py-3">
                   <div className={cn("flex items-center gap-2", isRTL && "text-right")}>
                     <button
@@ -467,17 +601,23 @@ export function PublicationCard({
                       />
                     </button>
                     <div>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenUserProfile({
-                          userId: sharedPost.author.id,
-                          avatarUrl: sharedPost.author.avatarUrl,
-                          displayName: sharedPost.author.name,
-                        })}
-                        className="cursor-pointer text-sm font-semibold leading-tight text-foreground hover:underline"
-                      >
-                        {sharedPost.author.name}
-                      </button>
+                      <div className={cn("flex items-center gap-2", isRTL && "justify-end")}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenUserProfile({
+                            userId: sharedPost.author.id,
+                            avatarUrl: sharedPost.author.avatarUrl,
+                            displayName: sharedPost.author.name,
+                          })}
+                          className="cursor-pointer text-sm font-semibold leading-tight text-foreground hover:underline"
+                        >
+                          {sharedPost.author.name}
+                        </button>
+                        {canShowFollowActionForUser(sharedPost.author.id) && (
+                          <span className="mx-1 text-muted-foreground">-</span>
+                        )}
+                        {renderFollowAction(sharedPost.author.id)}
+                      </div>
                       <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
                         <span className="inline-flex items-center gap-1.5">
                           <span dir="ltr" className="tabular-nums">
@@ -595,7 +735,7 @@ export function PublicationCard({
           <button
             type="button"
             onClick={() => setShowShareModal(false)}
-            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
             title={dictionary.common.close}
             aria-label={dictionary.common.close}
           >
@@ -612,7 +752,7 @@ export function PublicationCard({
 
           <div className="space-y-4">
             <div className="max-h-[42vh] overflow-y-auto pe-1 ps-0.5">
-              <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+              <div className="overflow-hidden rounded-xl border border-border/35 bg-muted/20">
                 <div className="px-3 py-3">
                   <div className={cn("flex items-center gap-2", isRTL && "text-right")}>
                     <button
@@ -683,7 +823,7 @@ export function PublicationCard({
                         return (
                           <div
                             key={mediaItem.key}
-                            className="relative h-20 overflow-hidden rounded-md border border-border/60 bg-muted/30"
+                            className="relative h-20 overflow-hidden rounded-md border border-border/35 bg-muted/30"
                           >
                             {mediaItem.type === "image" ? (
                               mediaItem.src ? (
@@ -744,7 +884,7 @@ export function PublicationCard({
                   }}
                   placeholder={isRTL ? "أضف نصا مع المشاركة..." : "Add text to your share..."}
                   className={cn(
-                    "min-h-28 resize-none rounded-xl border-border bg-surface text-sm focus-visible:ring-2 focus-visible:ring-primary/30",
+                    "min-h-28 resize-none rounded-xl border-border/40 bg-surface text-sm focus-visible:ring-2 focus-visible:ring-primary/30",
                     isRTL ? "text-right" : "text-left",
                   )}
                   autoFocus
@@ -754,7 +894,7 @@ export function PublicationCard({
                   type="text"
                   placeholder={isRTL ? "أضف نصا مع المشاركة..." : "Add text to your share..."}
                   className={cn(
-                    "cursor-text h-10 w-full rounded-full border border-border bg-surface px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30",
+                    "cursor-text h-10 w-full rounded-full border border-border/40 bg-surface px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30",
                     isRTL ? "text-right" : "text-left",
                   )}
                   onFocus={() => setIsShareTextExpanded(true)}
@@ -769,7 +909,7 @@ export function PublicationCard({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50"
+                    className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-border/35 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/50"
                   >
                     <Icon icon={shareVisibilityMeta?.icon ?? "solar:global-linear"} className="size-4" />
                     <span>{shareVisibilityMeta?.label ?? t.privacyPublic}</span>
@@ -797,7 +937,7 @@ export function PublicationCard({
                 <button
                   type="button"
                   onClick={() => setShowShareModal(false)}
-                  className="cursor-pointer rounded-md border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+                  className="cursor-pointer rounded-md border border-border/35 px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-border/60 hover:bg-muted/60"
                 >
                   {t.cancel}
                 </button>

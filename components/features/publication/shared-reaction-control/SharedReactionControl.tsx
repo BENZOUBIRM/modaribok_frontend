@@ -541,7 +541,7 @@ export function SharedReactionControl({
         variant === "publication" ? "absolute bottom-full mb-2" : "fixed",
         variant === "publication" && "inset-x-2 sm:inset-x-auto",
         resolvedPickerZIndexClassName,
-        "rounded-2xl border border-border bg-card p-2 shadow-xl transition-all duration-200 ease-out",
+        "rounded-2xl border border-border/30 bg-card p-2 shadow-xl transition-all duration-200 ease-out",
         resolvedPickerWidthClassName,
         "origin-bottom",
         resolvedPickerSideClassName,
@@ -564,7 +564,7 @@ export function SharedReactionControl({
             onClick={() => scrollReactions("left")}
             disabled={!canScrollLeft}
             className={cn(
-              "cursor-pointer inline-flex size-6 items-center justify-center rounded-md border border-border bg-muted/50 text-muted-foreground transition-colors",
+              "cursor-pointer inline-flex size-6 items-center justify-center rounded-md border border-border/30 bg-muted/50 text-muted-foreground transition-colors hover:border-border/60",
               "hover:bg-black/10 dark:hover:bg-white/10",
               !canScrollLeft && "opacity-40 cursor-not-allowed",
             )}
@@ -577,7 +577,7 @@ export function SharedReactionControl({
             onClick={() => scrollReactions("right")}
             disabled={!canScrollRight}
             className={cn(
-              "cursor-pointer inline-flex size-6 items-center justify-center rounded-md border border-border bg-muted/50 text-muted-foreground transition-colors",
+              "cursor-pointer inline-flex size-6 items-center justify-center rounded-md border border-border/30 bg-muted/50 text-muted-foreground transition-colors hover:border-border/60",
               "hover:bg-black/10 dark:hover:bg-white/10",
               !canScrollRight && "opacity-40 cursor-not-allowed",
             )}

@@ -353,7 +353,7 @@ export function CreatePublication({
   }
 
   return (
-    <div className={cn("bg-card rounded-xl border border-border", className)} dir={isRTL ? "rtl" : "ltr"}>
+    <div className={cn("bg-card rounded-xl shadow-[0_6px_18px_rgba(0,0,0,0.05)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.16)]", className)} dir={isRTL ? "rtl" : "ltr"}>
       {/* Input row */}
       <div className="flex items-center gap-3 p-4">
         <Image
@@ -371,7 +371,7 @@ export function CreatePublication({
                 onChange={(event) => setContent(event.target.value)}
                 placeholder={t.whatsOnYourMind}
                 className={cn(
-                  "min-h-28 resize-none rounded-xl border-border bg-surface text-sm",
+                  "min-h-28 resize-none rounded-xl border-border/40 bg-surface text-sm",
                   isRTL ? "text-right" : "text-left",
                 )}
                 autoFocus
@@ -381,7 +381,7 @@ export function CreatePublication({
                   type="button"
                   onClick={() => setIsExpanded(false)}
                   className={cn(
-                    "absolute top-2 inline-flex size-7 cursor-pointer items-center justify-center rounded-md border border-border bg-background/85 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground",
+                    "absolute top-2 inline-flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/30 bg-background/85 text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/70 hover:text-foreground",
                     isRTL ? "left-2" : "right-2",
                   )}
                   title={collapseTextareaLabel}
@@ -397,7 +397,7 @@ export function CreatePublication({
               value={isUpdateMode ? content : undefined}
               placeholder={t.whatsOnYourMind}
               className={cn(
-                "cursor-text w-full h-10 rounded-full bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+                "cursor-text w-full h-10 rounded-full bg-surface border border-border/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
                 isRTL ? "pr-4 pl-4 text-right" : "pl-4 pr-4"
               )}
               onFocus={() => setIsExpanded(true)}
@@ -410,7 +410,7 @@ export function CreatePublication({
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-2">
+      <div className="flex items-center justify-between border-t border-border/30 px-4 py-2">
         {isMediaEnabled && (
           <>
             <div className="flex items-center gap-1">
@@ -500,13 +500,13 @@ export function CreatePublication({
       <div
         className={cn(
           "grid transition-all duration-300 ease-in-out",
-          isComposerBodyExpanded ? "grid-rows-[1fr] border-t border-border" : "grid-rows-[0fr]",
+          isComposerBodyExpanded ? "grid-rows-[1fr] border-t border-border/30" : "grid-rows-[0fr]",
         )}
       >
         <div className="overflow-hidden">
           {isMediaEnabled && hasMediaAttachments && (
             <div className="px-4 pt-3">
-              <div className="rounded-xl border border-border bg-surface/40 p-3">
+              <div className="rounded-xl border border-border/30 bg-surface/40 p-3">
                 <div className={cn("mb-3 text-xs font-semibold text-foreground", isRTL && "text-right")}>{attachmentLabels.title}</div>
 
                 {existingPhotoAttachments.length > 0 && (
@@ -520,7 +520,7 @@ export function CreatePublication({
                         const previewIndex = existingMediaAttachments.findIndex((item) => item.id === photo.id)
 
                         return (
-                          <div key={`existing-photo-${photo.id}`} className="group relative h-28 w-44 shrink-0 overflow-hidden rounded-lg border border-border bg-card sm:w-52">
+                          <div key={`existing-photo-${photo.id}`} className="group relative h-28 w-44 shrink-0 overflow-hidden rounded-lg border border-border/35 bg-card sm:w-52">
                             <Image
                               src={photo.thumbnailUrl || photo.url}
                               alt={`existing-photo-${photo.id}`}
@@ -571,7 +571,7 @@ export function CreatePublication({
                         const previewIndex = existingMediaAttachments.findIndex((item) => item.id === video.id)
 
                         return (
-                          <div key={`existing-video-${video.id}`} className="group relative h-28 w-52 shrink-0 overflow-hidden rounded-lg border border-border bg-card">
+                          <div key={`existing-video-${video.id}`} className="group relative h-28 w-52 shrink-0 overflow-hidden rounded-lg border border-border/35 bg-card">
                             {video.thumbnailUrl ? (
                               <Image
                                 src={video.thumbnailUrl}
@@ -628,7 +628,7 @@ export function CreatePublication({
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {photoAttachments.map((photo, photoIndex) => (
-                        <div key={photo.id} className="group relative h-28 w-44 shrink-0 overflow-hidden rounded-lg border border-border bg-card sm:w-52">
+                        <div key={photo.id} className="group relative h-28 w-44 shrink-0 overflow-hidden rounded-lg border border-border/35 bg-card sm:w-52">
                           <Image
                             src={photo.url}
                             alt={photo.file.name}
@@ -671,7 +671,7 @@ export function CreatePublication({
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {videoAttachments.map((video, videoIndex) => (
-                        <div key={video.id} className="group relative h-28 w-52 shrink-0 overflow-hidden rounded-lg border border-border bg-card">
+                        <div key={video.id} className="group relative h-28 w-52 shrink-0 overflow-hidden rounded-lg border border-border/35 bg-card">
                           <video src={video.url} className="h-full w-full bg-muted/40 object-cover transition-all duration-200 group-hover:blur-[1px] group-hover:brightness-75" muted playsInline />
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/30 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                             <button
@@ -707,7 +707,7 @@ export function CreatePublication({
             <button
               type="button"
               onClick={handleCancel}
-              className="cursor-pointer rounded-md border border-border px-4 py-1.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+              className="cursor-pointer rounded-md border border-border/35 px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-border/60 hover:bg-muted/60"
             >
               {t.cancel}
             </button>

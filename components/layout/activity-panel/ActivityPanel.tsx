@@ -264,10 +264,10 @@ export default function ActivityPanelMobile({
         >
           <div
             className={cn(
-              "h-20 w-6 bg-card flex items-center justify-center shadow-md",
+              "h-20 w-6 bg-card flex items-center justify-center border border-border shadow-md",
               isRTL
-                ? "rounded-r-lg border-r border-t border-b border-primary-200"
-                : "rounded-l-lg border-l border-t border-b border-primary-200"
+                ? "rounded-r-lg border-r"
+                : "rounded-l-lg border-l"
             )}
           >
             {isRTL ? (
@@ -312,7 +312,7 @@ export default function ActivityPanelMobile({
                 <h2 className="font-bold text-lg">
                   {isProfileRoute ? dictionary.profile.title : dictionary.activity.title}
                 </h2>
-                <Button variant="ghost" size="icon" onClick={onClose}>
+                <Button variant="ghost" size="icon" onClick={onClose} className="border border-border">
                   <Icon
                     icon="material-symbols:close-rounded"
                     className="size-5"

@@ -1251,7 +1251,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
             <button
               type="button"
               onClick={() => setShowCreator(true)}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border/35 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-border/60 hover:bg-muted/60"
             >
               <Icon icon="solar:add-circle-linear" className="size-4" />
               {lang === "ar" ? "إنشاء منشور" : "Create post"}
@@ -1263,7 +1263,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
               <button
                 type="button"
                 onClick={() => setShowCreator(false)}
-                className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+                className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
                 title={lang === "ar" ? "إغلاق" : "Close"}
                 aria-label={lang === "ar" ? "إغلاق" : "Close"}
               >
@@ -1276,6 +1276,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
                 </DialogDescription>
               </DialogHeader>
               <CreatePublication
+                className="border border-border/30"
                 onPublished={() => {
                   setShowCreator(false)
                   onPublished?.()
@@ -1287,7 +1288,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
       )}
 
       {isLoading && (
-        <div className="flex min-h-56 items-center justify-center rounded-lg border border-border bg-muted/20">
+        <div className="flex min-h-56 items-center justify-center rounded-lg border border-border/30 bg-muted/20">
           <Spinner className="size-12" />
         </div>
       )}
@@ -1309,7 +1310,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
               key={item.id}
               type="button"
               onClick={() => setActivePostIndex(index)}
-              className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/20 p-1"
+              className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl border border-border/35 bg-muted/20 p-1 transition-colors hover:border-border/60"
               title={mode === "videos" ? (lang === "ar" ? "فتح فيديو" : "Open video") : (lang === "ar" ? "فتح المنشور" : "Open post")}
             >
               <Image
@@ -1349,7 +1350,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
           <button
             type="button"
             onClick={() => setActivePostIndex(null)}
-            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+            className="fixed right-4 top-4 z-90 inline-flex size-9 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
             title={lang === "ar" ? "إغلاق" : "Close"}
             aria-label={lang === "ar" ? "إغلاق" : "Close"}
           >
@@ -1365,7 +1366,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
               <button
                 type="button"
                 onClick={() => setActivePostIndex((current) => (current !== null ? current - 1 : current))}
-                className={`absolute top-1/2 z-20 hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 md:inline-flex dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800 ${isRTL ? "-right-12" : "-left-12"}`}
+                className={`absolute top-1/2 z-20 hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 md:inline-flex dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800 ${isRTL ? "-right-12" : "-left-12"}`}
                 title={lang === "ar" ? "المنشور السابق" : "Previous post"}
               >
                 <Icon icon={isRTL ? "lucide:chevron-right" : "lucide:chevron-left"} className="size-5" />
@@ -1376,7 +1377,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
               <button
                 type="button"
                 onClick={() => setActivePostIndex((current) => (current !== null ? current + 1 : current))}
-                className={`absolute top-1/2 z-20 hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 md:inline-flex dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800 ${isRTL ? "-left-12" : "-right-12"}`}
+                className={`absolute top-1/2 z-20 hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 md:inline-flex dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800 ${isRTL ? "-left-12" : "-right-12"}`}
                 title={lang === "ar" ? "المنشور التالي" : "Next post"}
               >
                 <Icon icon={isRTL ? "lucide:chevron-left" : "lucide:chevron-right"} className="size-5" />
@@ -1384,6 +1385,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
             )}
 
             <PublicationCard
+              className="border border-border/30"
               post={imagePosts[activePostIndex].post}
               onReact={handleReact}
               onReactComment={handleReactComment}
@@ -1410,7 +1412,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
                   <button
                     type="button"
                     onClick={() => setActivePostIndex((current) => (current !== null ? current - 1 : current))}
-                    className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+                    className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
                     title={lang === "ar" ? "المنشور السابق" : "Previous post"}
                     aria-label={lang === "ar" ? "المنشور السابق" : "Previous post"}
                   >
@@ -1424,7 +1426,7 @@ function ProfileMediaTab({ mode, lang, userId, emptyTitle, emptyDesc, refreshKey
                   <button
                     type="button"
                     onClick={() => setActivePostIndex((current) => (current !== null ? current + 1 : current))}
-                    className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-background/85 text-foreground transition-colors hover:bg-muted/80 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white dark:hover:bg-zinc-800"
+                    className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-border/30 bg-background/85 text-foreground transition-colors hover:border-border/60 hover:bg-muted/80 dark:border-zinc-700/40 dark:bg-zinc-900/80 dark:text-white dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
                     title={lang === "ar" ? "المنشور التالي" : "Next post"}
                     aria-label={lang === "ar" ? "المنشور التالي" : "Next post"}
                   >
@@ -1636,13 +1638,13 @@ function ProfileHeader({
         ? t.requested
         : t.follow
   const followButtonClassName = followState === "following"
-    ? "inline-flex cursor-pointer rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground"
+    ? "inline-flex cursor-pointer rounded-md border border-border/35 bg-muted px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:border-border/60"
     : followState === "requested"
       ? "inline-flex cursor-pointer rounded-md border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm font-semibold text-warning"
       : "inline-flex cursor-pointer rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground"
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+    <div className="rounded-xl bg-card p-4 shadow-[0_6px_18px_rgba(0,0,0,0.05)] sm:p-5 dark:shadow-[0_6px_18px_rgba(0,0,0,0.16)]">
       {isRTL ? (
         <>
           <div className="space-y-5">
@@ -1653,13 +1655,13 @@ function ProfileHeader({
                     type="button"
                     title="إضافة"
                     aria-label="إضافة"
-                    className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                    className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/35 bg-background text-muted-foreground transition-colors hover:border-border/60"
                   >
                     <Icon icon="solar:add-circle-linear" className="size-5" />
                   </button>
 
                   <div className="flex flex-wrap items-center justify-end gap-2">
-                    <button className="hidden sm:inline-flex rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground">
+                    <button className="hidden sm:inline-flex rounded-md border border-border/35 bg-muted px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:border-border/60">
                       عرض الأرشيف
                     </button>
                     <button className="hidden sm:inline-flex rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
@@ -1675,13 +1677,13 @@ function ProfileHeader({
                           type="button"
                           title="خيارات"
                           aria-label="خيارات"
-                          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/35 bg-background text-muted-foreground transition-colors hover:border-border/60"
                         >
                           <Icon icon="solar:menu-dots-linear" className="size-5" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="sm:hidden min-w-56 space-y-1 p-2">
-                        <DropdownMenuItem className="justify-center rounded-md border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
+                        <DropdownMenuItem className="justify-center rounded-md border border-border/35 bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:border-border/60 hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
                           عرض الأرشيف
                         </DropdownMenuItem>
                         <DropdownMenuItem className="justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 dark:hover:bg-primary/90 dark:focus:bg-primary/90 data-highlighted:bg-primary/90 dark:data-highlighted:bg-primary/90">
@@ -1707,7 +1709,7 @@ function ProfileHeader({
                   </button>
                   <button
                     type="button"
-                    className="inline-flex cursor-pointer rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground"
+                    className="inline-flex cursor-pointer rounded-md border border-border/35 bg-muted px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:border-border/60"
                   >
                     {t.message}
                   </button>
@@ -1717,7 +1719,7 @@ function ProfileHeader({
                         type="button"
                         title={t.more}
                         aria-label={t.more}
-                        className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                        className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/35 bg-background text-muted-foreground transition-colors hover:border-border/60"
                       >
                         <Icon icon="solar:menu-dots-linear" className="size-5" />
                       </button>
@@ -1784,7 +1786,7 @@ function ProfileHeader({
               </div>
           </div>
 
-          <div className="mt-5 border-t border-border pt-4 text-right">
+          <div className="mt-5 border-t border-border/30 pt-4 text-right">
             <h3 className="mb-2 text-lg font-bold text-foreground">نبذة</h3>
             <p className="text-base leading-8 text-muted-foreground">{about}</p>
           </div>
@@ -1796,7 +1798,7 @@ function ProfileHeader({
               {isOwnProfile ? (
                 <>
                   <div className="flex flex-wrap items-center justify-start gap-2">
-                    <button className="hidden sm:inline-flex rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground">
+                    <button className="hidden sm:inline-flex rounded-md border border-border/35 bg-muted px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:border-border/60">
                       {t.report}
                     </button>
                     <button className="hidden sm:inline-flex rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground">
@@ -1808,12 +1810,12 @@ function ProfileHeader({
                     </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground" type="button" title="Options" aria-label="Options">
+                        <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/35 bg-background text-muted-foreground transition-colors hover:border-border/60" type="button" title="Options" aria-label="Options">
                           <Icon icon="solar:menu-dots-linear" className="size-5" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="sm:hidden min-w-56 space-y-1 p-2">
-                        <DropdownMenuItem className="justify-center rounded-md border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
+                        <DropdownMenuItem className="justify-center rounded-md border border-border/35 bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:border-border/60 hover:bg-muted/80 focus:bg-muted/80 dark:hover:bg-muted/80 dark:focus:bg-muted/80 data-highlighted:bg-muted/80 dark:data-highlighted:bg-muted/80">
                           {t.report}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 dark:hover:bg-primary/90 dark:focus:bg-primary/90 data-highlighted:bg-primary/90 dark:data-highlighted:bg-primary/90">
@@ -1831,7 +1833,7 @@ function ProfileHeader({
                     type="button"
                     title="Add"
                     aria-label="Add"
-                    className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
+                    className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/35 bg-background text-muted-foreground transition-colors hover:border-border/60"
                   >
                     <Icon icon="solar:add-circle-linear" className="size-5" />
                   </button>
@@ -1848,13 +1850,13 @@ function ProfileHeader({
                   </button>
                   <button
                     type="button"
-                    className="inline-flex cursor-pointer rounded-md border border-border bg-muted px-4 py-1.5 text-sm font-semibold text-foreground"
+                    className="inline-flex cursor-pointer rounded-md border border-border/35 bg-muted px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:border-border/60"
                   >
                     {t.message}
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground" type="button" title={t.more} aria-label={t.more}>
+                      <button className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/35 bg-background text-muted-foreground transition-colors hover:border-border/60" type="button" title={t.more} aria-label={t.more}>
                         <Icon icon="solar:menu-dots-linear" className="size-5" />
                       </button>
                     </DropdownMenuTrigger>
@@ -1920,7 +1922,7 @@ function ProfileHeader({
               </div>
           </div>
 
-          <div className="mt-5 border-t border-border pt-4 text-left">
+          <div className="mt-5 border-t border-border/30 pt-4 text-left">
             <h3 className="mb-2 text-lg font-bold text-foreground">Bio</h3>
             <p className="text-base leading-8 text-muted-foreground">{about}</p>
           </div>
@@ -1962,9 +1964,9 @@ function EmptyProfileTabs({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl bg-card p-4 shadow-[0_6px_18px_rgba(0,0,0,0.05)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.16)]">
       <Tabs defaultValue="posts" className="w-full">
-        <TabsList variant="line" className={`w-full justify-between border-b border-border pb-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+        <TabsList variant="line" className={`w-full justify-between border-b border-border/30 pb-2 ${isRTL ? "flex-row-reverse" : ""}`}>
           <TabsTrigger value="posts" className="cursor-pointer">
             <span className={`inline-flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
               <Icon icon="solar:document-text-linear" className="size-4" />
@@ -1994,12 +1996,13 @@ function EmptyProfileTabs({
         <TabsContent value="posts">
           {userId ? (
             <div className="mt-4" dir={isRTL ? "rtl" : "ltr"}>
-              {canCreatePost && <CreatePublication onPublished={handlePublished} className="mb-4" />}
+              {canCreatePost && <CreatePublication onPublished={handlePublished} className="mb-4 border border-border/30" />}
               <PublicationFeed
                 userId={userId}
                 showHeader={false}
                 showSuggestions={false}
                 refreshKey={refreshKey}
+                publicationCardClassName="border border-border/30"
                 emptyState={<EmptyState title={t.emptyTitle} description={t.emptyDesc} />}
               />
             </div>
@@ -2041,7 +2044,7 @@ function EmptyProfileTabs({
 
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/20 py-10 text-center mt-4">
+    <div className="mt-4 rounded-lg border border-dashed border-border/35 bg-muted/20 py-10 text-center">
       <div className="mx-auto mb-2 size-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
         <Icon icon="solar:document-linear" className="size-5" />
       </div>
@@ -2055,7 +2058,7 @@ function ChipsRow({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((item) => (
-        <span key={item} className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground">
+        <span key={item} className="rounded-full border border-border/35 bg-background px-3 py-1 text-xs text-foreground">
           {item}
         </span>
       ))}
@@ -2065,7 +2068,7 @@ function ChipsRow({ items }: { items: string[] }) {
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl bg-card p-4 shadow-[0_6px_18px_rgba(0,0,0,0.05)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.16)]">
       <h3 className="mb-3 text-sm font-semibold text-foreground">{title}</h3>
       {children}
     </div>
@@ -2144,7 +2147,7 @@ function StoreProfileView({
       <SectionCard title={t.links}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            <div key={index} className="rounded-md border border-border/35 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
               https://example.com
             </div>
           ))}
@@ -2154,7 +2157,7 @@ function StoreProfileView({
       <SectionCard title={t.products}>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="rounded-lg border border-border bg-background p-2">
+            <div key={index} className="rounded-lg border border-border/35 bg-background p-2">
               <div className="aspect-square rounded-md bg-muted/50" />
               <p className="mt-2 text-xs font-medium text-foreground">{lang === "ar" ? "منتج" : "Product"} {index + 1}</p>
               <p className="text-[11px] text-muted-foreground">97.50 {lang === "ar" ? "درهم" : "MAD"}</p>
@@ -2203,7 +2206,7 @@ function CoachProfileView({
       <SectionCard title={t.certificates}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-lg border border-border bg-background p-3">
+            <div key={index} className="rounded-lg border border-border/35 bg-background p-3">
               <div className="h-16 rounded-md bg-muted/50" />
               <p className="mt-2 text-xs text-foreground">{lang === "ar" ? "شهادة تدريب" : "Training certificate"}</p>
             </div>
@@ -2226,7 +2229,7 @@ function CoachProfileView({
       <SectionCard title={t.links}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            <div key={index} className="rounded-md border border-border/35 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
               https://example.com
             </div>
           ))}

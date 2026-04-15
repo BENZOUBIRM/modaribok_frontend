@@ -297,7 +297,7 @@ export default function AuthenticatedShell({
             {!activityPanel.isMobile && (
               <div
                 className={cn(
-                  "w-6 shrink-0 bg-card flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors",
+                  "w-6 shrink-0 bg-card flex items-center justify-center cursor-pointer transition-colors hover:bg-muted/50",
                   isRTL
                     ? "border-r border-border"
                     : "border-l border-border"

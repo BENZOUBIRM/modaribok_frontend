@@ -171,7 +171,7 @@ export function OtherUserProfileModal({
                 alt={displayName}
                 width={64}
                 height={64}
-                className="size-16 rounded-full border border-border object-cover"
+                className="size-16 rounded-full border border-border/35 object-cover"
               />
               <div>
                 <p className={cn("text-base font-semibold text-foreground", isRTL && "font-arabic")}>{displayName}</p>
@@ -225,7 +225,7 @@ export function OtherUserProfileModal({
                           : sport.nameFr
 
                       return (
-                        <span key={sport.id} className={cn("rounded-full border border-border bg-background px-2 py-0.5 text-xs", isRTL && "font-arabic")}>
+                        <span key={sport.id} className={cn("rounded-full border border-border/35 bg-background px-2 py-0.5 text-xs", isRTL && "font-arabic")}>
                           {sportName}
                         </span>
                       )

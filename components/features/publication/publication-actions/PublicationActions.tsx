@@ -44,7 +44,7 @@ export function PublicationActions({
       : []
 
   return (
-    <div className="border-t border-border" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="border-t border-border/30" dir={isRTL ? "rtl" : "ltr"}>
       {/* Stats row */}
       <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-2">
@@ -87,7 +87,7 @@ export function PublicationActions({
       </div>
 
       {/* Action buttons */}
-      <div className="relative flex items-center border-t border-border">
+      <div className="relative flex items-center border-t border-border/30">
         <SharedReactionControl
           entityId={publicationId}
           likesCount={likesCount}

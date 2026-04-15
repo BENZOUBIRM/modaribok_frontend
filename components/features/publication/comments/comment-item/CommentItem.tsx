@@ -157,7 +157,7 @@ export function CommentItem({
       </button>
       <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
         {/* Comment bubble */}
-        <div className="rounded-xl border border-border/70 bg-muted/75 px-3 py-2 dark:bg-surface">
+        <div className="rounded-xl border border-border/35 bg-muted/75 px-3 py-2 dark:bg-surface">
           <div className="mb-0.5 flex items-start justify-between gap-2">
             <button
               type="button"

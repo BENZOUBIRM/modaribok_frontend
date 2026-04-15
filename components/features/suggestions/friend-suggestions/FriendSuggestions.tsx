@@ -71,7 +71,7 @@ export function FriendSuggestions({ className, pageSize = DEFAULT_PAGE_SIZE }: F
   }
 
   return (
-    <div className={cn("bg-card rounded-xl border border-border p-4", className)}>
+    <div className={cn("bg-card rounded-xl p-4 shadow-[0_6px_18px_rgba(0,0,0,0.05)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.16)]", className)}>
       {/* Header with arrows */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">

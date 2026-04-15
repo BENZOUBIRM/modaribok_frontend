@@ -4,6 +4,7 @@ import Image from "next/image"
 import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
+import { useUserProfileStats } from "@/hooks/use-user-profile-stats"
 import { NavLink } from "@/components/ui/nav-link"
 
 /**
@@ -13,6 +14,7 @@ import { NavLink } from "@/components/ui/nav-link"
 export function UserProfileCard() {
   const { dictionary, lang } = useDictionary()
   const { user } = useAuth()
+  const { stats } = useUserProfileStats(user?.id)
   const t = dictionary.profile
 
   if (!user) return null
@@ -20,10 +22,10 @@ export function UserProfileCard() {
   const avatarSrc = user.profileImageUrl || "/images/default-user.jpg"
   const handle = `@${user.firstName.toLowerCase()}${user.lastName.toLowerCase()}`
 
-  const stats = [
-    { label: t.posts, value: "548" },
-    { label: t.followers, value: "12.7K" },
-    { label: t.following, value: "221" },
+  const statsItems = [
+    { label: t.following, value: stats.following },
+    { label: t.followers, value: stats.followers },
+    { label: t.posts, value: stats.posts },
   ]
 
   const subAccounts = [
@@ -44,7 +46,7 @@ export function UserProfileCard() {
   ]
 
   return (
-    <div className="p-4 border-b border-border">
+    <div className="border-b border-border/30 p-4">
       {/* Avatar */}
       <div className="flex flex-col items-center text-center">
         <NavLink href={`/${lang}/profile`} className="group inline-flex flex-col items-center text-center">
@@ -53,7 +55,7 @@ export function UserProfileCard() {
             alt={`${user.firstName} ${user.lastName}`}
             width={80}
             height={80}
-            className="size-20 rounded-full object-cover border-2 border-border group-hover:border-primary transition-colors"
+            className="size-20 rounded-full object-cover border-2 border-border/35 transition-colors group-hover:border-primary"
           />
           <h3 className="font-bold text-foreground mt-2 text-sm group-hover:text-primary transition-colors">
             {user.firstName} {user.lastName}
@@ -64,22 +66,22 @@ export function UserProfileCard() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 mt-4">
-        {stats.map((stat) => (
+        {statsItems.map((stat) => (
           <div key={stat.label} className="flex flex-col items-center text-center">
-            <span className="font-bold text-foreground text-sm">{stat.value}</span>
+            <span className="font-bold text-foreground text-sm">{formatCompactCount(stat.value, lang)}</span>
             <span className="text-xs text-muted-foreground">{stat.label}</span>
           </div>
         ))}
       </div>
 
-      <div className="mt-4 border-t border-border pt-4">
+      <div className="mt-4 border-t border-border/30 pt-4">
         <div className="mb-2 text-xs font-semibold text-muted-foreground">
           {lang === "ar" ? "حساباتي الخاصة" : "Private accounts"}
         </div>
 
         <div className="space-y-2">
           {subAccounts.map((account) => (
-            <div key={account.id} className="rounded-lg border border-border bg-background/50 p-2">
+            <div key={account.id} className="rounded-lg border border-border/35 bg-background/50 p-2">
               <div className="flex items-center gap-2">
                 <Image src={account.image} alt={account.name} width={36} height={36} className="size-9 rounded-md object-cover" />
                 <div className="min-w-0 flex-1">
@@ -97,4 +99,18 @@ export function UserProfileCard() {
       </div>
     </div>
   )
+}
+
+function formatCompactCount(value: number, lang: "ar" | "en"): string {
+  const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0
+
+  try {
+    return new Intl.NumberFormat(lang === "ar" ? "ar-MA" : "en-US", {
+      notation: "compact",
+      compactDisplay: "short",
+      maximumFractionDigits: 1,
+    }).format(safeValue)
+  } catch {
+    return String(safeValue)
+  }
 }

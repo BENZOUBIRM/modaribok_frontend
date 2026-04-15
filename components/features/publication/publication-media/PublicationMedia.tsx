@@ -217,7 +217,7 @@ export function PublicationMedia({
 
   const getCardClass = (item: FeedMediaItem, index: number): string =>
     cn(
-      "group relative w-full overflow-hidden rounded-xl border border-border/60 bg-muted/20",
+      "group relative w-full overflow-hidden rounded-xl border border-border/35 bg-muted/20",
       item.type === "video" && "bg-black",
       isSingleSquareImage && "aspect-square",
       visibleCount === 2 && "h-full",
@@ -236,7 +236,7 @@ export function PublicationMedia({
               onClick={() => openPreviewAt(singleItem.previewIndex)}
               disabled={singleItem.unavailable}
               className={cn(
-                "w-full max-w-115 cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-muted/20 disabled:cursor-not-allowed",
+                "w-full max-w-115 cursor-pointer overflow-hidden rounded-xl border border-border/35 bg-muted/20 disabled:cursor-not-allowed",
                 isRTL ? "ml-auto" : "mr-auto",
               )}
               title={lang === "ar" ? "معاينة الصورة" : "Preview image"}
@@ -304,7 +304,7 @@ export function PublicationMedia({
                     stopInlineVideo(singleItem.sourceIndex)
                   }
               }
-              className="relative w-full overflow-hidden rounded-xl border border-border/60 bg-black aspect-video"
+              className="relative w-full overflow-hidden rounded-xl border border-border/35 bg-black aspect-video"
             >
               {!singleItem.unavailable && (
                 <button
@@ -317,7 +317,7 @@ export function PublicationMedia({
                   title={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
                   aria-label={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
                 >
-                  <span className="inline-flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/30 bg-black/55 text-white transition-colors hover:bg-black/75">
+                  <span className="inline-flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/55 text-white transition-colors hover:border-white/40 hover:bg-black/75">
                     <Icon icon="solar:play-bold" className="size-6" />
                   </span>
                 </button>
@@ -421,7 +421,7 @@ export function PublicationMedia({
                       title={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
                       aria-label={lang === "ar" ? "معاينة الفيديو" : "Preview video"}
                     >
-                      <span className="inline-flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/30 bg-black/55 text-white transition-colors hover:bg-black/75">
+                      <span className="inline-flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/55 text-white transition-colors hover:border-white/40 hover:bg-black/75">
                         <Icon icon="solar:play-bold" className="size-6" />
                       </span>
                     </button>

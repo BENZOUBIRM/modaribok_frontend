@@ -38,9 +38,9 @@ export const PRODUCT_ROUTES = {
   CATEGORIES: (lang: string) => `/${lang}/products/categories`,
 } as const
 
-export const TRAINER_ROUTES = {
-  LIST: (lang: string) => `/${lang}/trainers`,
-  DETAIL: (lang: string, id: string | number) => `/${lang}/trainers/${id}`,
+export const COACHES_ROUTES = {
+  LIST: (lang: string) => `/${lang}/coaches`,
+  DETAIL: (lang: string, id: string | number) => `/${lang}/coaches/${id}`,
 } as const
 
 export const GYM_ROUTES = {
@@ -86,7 +86,7 @@ export const ROUTES = {
   DASHBOARD: DASHBOARD_ROUTES,
   USERS: USER_ROUTES,
   PRODUCTS: PRODUCT_ROUTES,
-  TRAINERS: TRAINER_ROUTES,
+  COACHES: COACHES_ROUTES,
   GYMS: GYM_ROUTES,
   EVENTS: EVENT_ROUTES,
   FIELDS: FIELD_ROUTES,
@@ -125,7 +125,7 @@ export const PROTECTED_SLUGS = [
   "dashboard",
   "users",
   "products",
-  "trainers",
+  "coaches",
   "gyms",
   "events",
   "fields",

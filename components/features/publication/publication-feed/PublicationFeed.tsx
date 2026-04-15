@@ -4,7 +4,7 @@ import * as React from "react"
 import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
-import { publicationService } from "@/services/api"
+import { followService, publicationService } from "@/services/api"
 import {
   cacheCommentReactionState,
   hydrateCommentsWithReactionCache,
@@ -66,6 +66,8 @@ type CommentPaginationState = {
   hasMore: boolean
   isLoading: boolean
 }
+
+type AuthorFollowState = "follow" | "following"
 
 function mergePostsById(currentPosts: FeedPost[], incomingPosts: FeedPost[]): FeedPost[] {
   if (!incomingPosts.length) {
@@ -163,6 +165,7 @@ export function PublicationFeed({
   showHeader = true,
   showSuggestions = true,
   emptyState,
+  publicationCardClassName,
 }: PublicationFeedProps) {
   const { dictionary, lang } = useDictionary()
   const { user } = useAuth()
@@ -180,6 +183,9 @@ export function PublicationFeed({
   const [updatingPostById, setUpdatingPostById] = React.useState<Record<number, boolean>>({})
   const [deletingPostById, setDeletingPostById] = React.useState<Record<number, boolean>>({})
   const [sharingPostById, setSharingPostById] = React.useState<Record<number, boolean>>({})
+  const [followStateByAuthorId, setFollowStateByAuthorId] = React.useState<Record<number, AuthorFollowState>>({})
+  const [isFollowBusyByAuthorId, setIsFollowBusyByAuthorId] = React.useState<Record<number, boolean>>({})
+  const requestedFollowStatusByAuthorIdRef = React.useRef<Set<number>>(new Set())
 
   const cacheKey = React.useMemo(
     () => buildPublicationFeedCacheKey({
@@ -529,6 +535,115 @@ export function PublicationFeed({
       hasMorePosts,
     })
   }, [cacheKey, currentPage, errorCode, hasMorePosts, isLoading, posts])
+
+  React.useEffect(() => {
+    setFollowStateByAuthorId({})
+    setIsFollowBusyByAuthorId({})
+    requestedFollowStatusByAuthorIdRef.current.clear()
+  }, [user?.id])
+
+  React.useEffect(() => {
+    if (!user?.id || posts.length === 0) {
+      return
+    }
+
+    let isCancelled = false
+
+    const targetAuthorIds = new Set<number>()
+    posts.forEach((post) => {
+      if (post.author.id > 0 && post.author.id !== user.id) {
+        targetAuthorIds.add(post.author.id)
+      }
+
+      const sharedAuthorId = post.sharedPublication?.author.id
+      if (sharedAuthorId && sharedAuthorId > 0 && sharedAuthorId !== user.id) {
+        targetAuthorIds.add(sharedAuthorId)
+      }
+    })
+
+    targetAuthorIds.forEach((authorId) => {
+      if (requestedFollowStatusByAuthorIdRef.current.has(authorId)) {
+        return
+      }
+
+      requestedFollowStatusByAuthorIdRef.current.add(authorId)
+      void (async () => {
+        const isFollowing = await followService.isFollowingUser(user.id, authorId)
+        if (isCancelled) {
+          return
+        }
+
+        setFollowStateByAuthorId((current) => ({
+          ...current,
+          [authorId]: isFollowing ? "following" : "follow",
+        }))
+      })()
+    })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [posts, user?.id])
+
+  const handleFollowUser = React.useCallback(async (targetUserId: number): Promise<boolean> => {
+    if (!user?.id || targetUserId <= 0 || targetUserId === user.id) {
+      return false
+    }
+
+    setIsFollowBusyByAuthorId((current) => ({
+      ...current,
+      [targetUserId]: true,
+    }))
+
+    const result = await followService.followUser(targetUserId)
+
+    setIsFollowBusyByAuthorId((current) => ({
+      ...current,
+      [targetUserId]: false,
+    }))
+
+    if (!result.success) {
+      return false
+    }
+
+    requestedFollowStatusByAuthorIdRef.current.add(targetUserId)
+    setFollowStateByAuthorId((current) => ({
+      ...current,
+      [targetUserId]: "following",
+    }))
+
+    return true
+  }, [user?.id])
+
+  const handleUnfollowUser = React.useCallback(async (targetUserId: number): Promise<boolean> => {
+    if (!user?.id || targetUserId <= 0 || targetUserId === user.id) {
+      return false
+    }
+
+    setIsFollowBusyByAuthorId((current) => ({
+      ...current,
+      [targetUserId]: true,
+    }))
+
+    const result = await followService.unfollowUser(targetUserId)
+
+    setIsFollowBusyByAuthorId((current) => ({
+      ...current,
+      [targetUserId]: false,
+    }))
+
+    if (!result.success) {
+      return false
+    }
+
+    requestedFollowStatusByAuthorIdRef.current.add(targetUserId)
+    setFollowStateByAuthorId((current) => ({
+      ...current,
+      [targetUserId]: "follow",
+    }))
+
+    return true
+  }, [user?.id])
 
   const loadRootCommentsPage = React.useCallback(async (
     publicationId: number,
@@ -1109,7 +1224,7 @@ export function PublicationFeed({
           className={
             showHeader
               ? "flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background"
-              : "flex min-h-56 items-center justify-center rounded-lg border border-border bg-muted/20"
+              : "flex min-h-56 items-center justify-center rounded-lg border border-border/30 bg-muted/20"
           }
         >
           <Spinner className="size-12" />
@@ -1132,6 +1247,12 @@ export function PublicationFeed({
           <div key={post.id} className="space-y-4">
             <PublicationCard
               post={post}
+              className={publicationCardClassName}
+              currentUserId={user?.id}
+              followStateByUserId={followStateByAuthorId}
+              isFollowBusyByUserId={isFollowBusyByAuthorId}
+              onFollowUser={handleFollowUser}
+              onUnfollowUser={handleUnfollowUser}
               onReact={handleReact}
               onReactComment={handleReactComment}
               onAddComment={handleAddComment}
@@ -1166,7 +1287,7 @@ export function PublicationFeed({
             type="button"
             onClick={() => void handleLoadMorePosts()}
             disabled={isLoadingMorePosts}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border/35 bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:border-border/60 hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoadingMorePosts ? <Spinner className="size-4" /> : null}
             {isLoadingMorePosts ? t.loading : t.showMore}

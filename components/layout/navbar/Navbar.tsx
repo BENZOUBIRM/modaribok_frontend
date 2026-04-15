@@ -58,7 +58,7 @@ export function Navbar({
 
   return (
     <nav className={cn(
-      "z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md",
+      "z-50 h-16 border-b border-border bg-navbar/80 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_3px_12px_rgba(0,0,0,0.22)]",
       fixed ? "fixed top-0 left-0 right-0" : "shrink-0 w-full"
     )}>
       <div className="flex h-full items-center justify-between px-4 sm:px-6">
@@ -130,7 +130,7 @@ export function Navbar({
                 type="text"
                 placeholder={dictionary.navbar.searchPlaceholder}
                 className={cn(
-                  "w-full h-10 rounded-full bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+                  "w-full h-10 rounded-full bg-surface border border-border/40 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30",
                   isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
                 )}
               />
@@ -159,7 +159,7 @@ export function Navbar({
               )
             })}
             {/* Divider between page links and auth links */}
-            <div className="w-px h-6 bg-border mx-1" />
+            <div className="w-px h-6 bg-border/35 mx-1" />
             {authLinks.map((link) => {
               const isActive = bare === link.path
               return (

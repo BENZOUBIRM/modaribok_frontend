@@ -83,7 +83,7 @@ export function CommentInput({
             }
           }}
           className={cn(
-            "w-full h-9 rounded-full bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+            "w-full h-9 rounded-full bg-surface border border-border/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
             isRTL ? "pr-4 pl-10 text-right" : "pl-4 pr-10"
           )}
         />
