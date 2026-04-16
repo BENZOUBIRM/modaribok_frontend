@@ -211,7 +211,7 @@ export function CoachsPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-colors hover:bg-zinc-100 dark:border-border dark:bg-card dark:text-zinc-100 dark:hover:bg-zinc-700"
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-card text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/75 hover:bg-card dark:text-zinc-100 dark:hover:border-border/65"
             title={lang === "ar" ? "إضافة" : "Add"}
             aria-label={lang === "ar" ? "إضافة" : "Add"}
           >
@@ -220,7 +220,7 @@ export function CoachsPage() {
 
           <button
             type="button"
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-colors hover:bg-zinc-100 dark:border-border dark:bg-card dark:text-zinc-100 dark:hover:bg-zinc-700"
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-card text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/75 hover:bg-card dark:text-zinc-100 dark:hover:border-border/65"
             title={lang === "ar" ? "تصفية" : "Filter"}
             aria-label={lang === "ar" ? "تصفية" : "Filter"}
           >

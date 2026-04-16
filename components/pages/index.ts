@@ -1,5 +1,7 @@
 export * from "./auth"
 export * from "./coaches"
 export * from "./errors"
+export * from "./gyms"
 export * from "./home"
+export * from "./products"
 export * from "./profile"

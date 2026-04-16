@@ -211,7 +211,7 @@ export function CoachesPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-background/80 text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/60 hover:bg-background dark:bg-card/90 dark:text-zinc-100 dark:hover:border-border/50 dark:hover:bg-card"
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-card text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/75 hover:bg-card dark:text-zinc-100 dark:hover:border-border/65"
             title={lang === "ar" ? "إضافة" : "Add"}
             aria-label={lang === "ar" ? "إضافة" : "Add"}
           >
@@ -220,7 +220,7 @@ export function CoachesPage() {
 
           <button
             type="button"
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-background/80 text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/60 hover:bg-background dark:bg-card/90 dark:text-zinc-100 dark:hover:border-border/50 dark:hover:bg-card"
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-card text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/75 hover:bg-card dark:text-zinc-100 dark:hover:border-border/65"
             title={lang === "ar" ? "تصفية" : "Filter"}
             aria-label={lang === "ar" ? "تصفية" : "Filter"}
           >
