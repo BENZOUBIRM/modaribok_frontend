@@ -5,6 +5,7 @@ import * as React from "react"
 import { useAuth } from "@/providers/auth-provider"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useNavRouter } from "@/hooks/use-nav-router"
+import { applyUserProfileStatsDelta, refreshUserProfileStats } from "@/hooks/use-user-profile-stats"
 import { followService, profileStatsService } from "@/services/api"
 import * as profileService from "@/services/api/profile.service"
 import type { OtherUserProfile } from "@/types"
@@ -271,6 +272,14 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
       const refreshed = await profileStatsService.getUserProfileStats(normalizedTargetUserId, fallbackStats)
       setStats(refreshed)
     }
+    const syncViewerFollowingStats = (delta: number) => {
+      if (!user.id || delta === 0) {
+        return
+      }
+
+      applyUserProfileStatsDelta(user.id, { following: delta })
+      refreshUserProfileStats(user.id)
+    }
 
     if (followState === "following") {
       const result = await followService.unfollowUser(normalizedTargetUserId)
@@ -283,6 +292,7 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
 
       writePendingFollowFlag(user.id, normalizedTargetUserId, false)
       setFollowState("follow")
+      syncViewerFollowingStats(-1)
       await refreshStatsFromBackend()
 
       setIsFollowBusy(false)
@@ -324,6 +334,7 @@ export function OtherUserProfilePage({ targetUserId }: OtherUserProfilePageProps
 
     writePendingFollowFlag(user.id, normalizedTargetUserId, false)
     setFollowState("following")
+    syncViewerFollowingStats(1)
     await refreshStatsFromBackend()
 
     setIsFollowBusy(false)

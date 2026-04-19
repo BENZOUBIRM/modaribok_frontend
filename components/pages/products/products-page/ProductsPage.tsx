@@ -1,142 +1,36 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import Image from "next/image"
 import { Icon } from "@iconify/react"
 
+import { PRODUCT_ROUTES } from "@/lib/routes"
 import { useDictionary } from "@/providers/dictionary-provider"
-
-interface ProductCardData {
-  id: number
-  nameAr: string
-  nameEn: string
-  priceAr: string
-  priceEn: string
-  descriptionAr: string
-  descriptionEn: string
-  categoryAr: string
-  categoryEn: string
-  ratingAr: string
-  ratingEn: string
-  soldAr: string
-  soldEn: string
-  discountPercentage?: number
-}
-
-const DEFAULT_AVATAR = "/images/default-user.jpg"
-
-const PRODUCTS: ProductCardData[] = [
-  {
-    id: 1,
-    nameAr: "منتج وي بروتين فيت خوليتي",
-    nameEn: "Gold Standard Whey Protein",
-    priceAr: "97.50 MAD",
-    priceEn: "97.50 MAD",
-    descriptionAr: "بروتين ثري لدعم العضلات والاستشفاء بعد التمرين.",
-    descriptionEn: "Premium protein to support muscle recovery after workouts.",
-    categoryAr: "مكملات غذائية",
-    categoryEn: "Supplements",
-    ratingAr: "4.9 (1,090)",
-    ratingEn: "4.9 (1,090)",
-    soldAr: "458 تم البيع",
-    soldEn: "458 Sold",
-    discountPercentage: 70,
-  },
-  {
-    id: 2,
-    nameAr: "منتج وي بروتين فيت خوليتي",
-    nameEn: "Gold Standard Whey Protein",
-    priceAr: "97.50 MAD",
-    priceEn: "97.50 MAD",
-    descriptionAr: "بروتين ثري لدعم العضلات والاستشفاء بعد التمرين.",
-    descriptionEn: "Premium protein to support muscle recovery after workouts.",
-    categoryAr: "مكملات غذائية",
-    categoryEn: "Supplements",
-    ratingAr: "4.9 (1,090)",
-    ratingEn: "4.9 (1,090)",
-    soldAr: "458 تم البيع",
-    soldEn: "458 Sold",
-  },
-  {
-    id: 3,
-    nameAr: "منتج وي بروتين فيت خوليتي",
-    nameEn: "Gold Standard Whey Protein",
-    priceAr: "97.50 MAD",
-    priceEn: "97.50 MAD",
-    descriptionAr: "بروتين ثري لدعم العضلات والاستشفاء بعد التمرين.",
-    descriptionEn: "Premium protein to support muscle recovery after workouts.",
-    categoryAr: "مكملات غذائية",
-    categoryEn: "Supplements",
-    ratingAr: "4.9 (1,090)",
-    ratingEn: "4.9 (1,090)",
-    soldAr: "458 تم البيع",
-    soldEn: "458 Sold",
-    discountPercentage: 35,
-  },
-  {
-    id: 4,
-    nameAr: "منتج وي بروتين فيت خوليتي",
-    nameEn: "Gold Standard Whey Protein",
-    priceAr: "97.50 MAD",
-    priceEn: "97.50 MAD",
-    descriptionAr: "بروتين ثري لدعم العضلات والاستشفاء بعد التمرين.",
-    descriptionEn: "Premium protein to support muscle recovery after workouts.",
-    categoryAr: "مكملات غذائية",
-    categoryEn: "Supplements",
-    ratingAr: "4.9 (1,090)",
-    ratingEn: "4.9 (1,090)",
-    soldAr: "458 تم البيع",
-    soldEn: "458 Sold",
-  },
-  {
-    id: 5,
-    nameAr: "منتج وي بروتين فيت خوليتي",
-    nameEn: "Gold Standard Whey Protein",
-    priceAr: "97.50 MAD",
-    priceEn: "97.50 MAD",
-    descriptionAr: "بروتين ثري لدعم العضلات والاستشفاء بعد التمرين.",
-    descriptionEn: "Premium protein to support muscle recovery after workouts.",
-    categoryAr: "مكملات غذائية",
-    categoryEn: "Supplements",
-    ratingAr: "4.9 (1,090)",
-    ratingEn: "4.9 (1,090)",
-    soldAr: "458 تم البيع",
-    soldEn: "458 Sold",
-    discountPercentage: 20,
-  },
-  {
-    id: 6,
-    nameAr: "منتج وي بروتين فيت خوليتي",
-    nameEn: "Gold Standard Whey Protein",
-    priceAr: "97.50 MAD",
-    priceEn: "97.50 MAD",
-    descriptionAr: "بروتين ثري لدعم العضلات والاستشفاء بعد التمرين.",
-    descriptionEn: "Premium protein to support muscle recovery after workouts.",
-    categoryAr: "مكملات غذائية",
-    categoryEn: "Supplements",
-    ratingAr: "4.9 (1,090)",
-    ratingEn: "4.9 (1,090)",
-    soldAr: "458 تم البيع",
-    soldEn: "458 Sold",
-  },
-]
-
-function getDiscountLabel(discountPercentage: number, lang: string) {
-  return lang === "ar" ? `خصم %${discountPercentage}` : `${discountPercentage}% OFF`
-}
+import {
+  DEFAULT_PRODUCT_IMAGE,
+  PRODUCTS,
+  getDiscountLabel,
+  getOriginalPriceLabel,
+  type ProductData,
+} from "../shared"
 
 function ProductCard({
   data,
   isRTL,
   lang,
   liked,
+  inCart,
   onToggleLike,
+  onAddToCart,
 }: {
-  data: ProductCardData
+  data: ProductData
   isRTL: boolean
   lang: string
   liked: boolean
+  inCart: boolean
   onToggleLike: (id: number) => void
+  onAddToCart: (id: number) => void
 }) {
   const name = isRTL ? data.nameAr : data.nameEn
   const price = isRTL ? data.priceAr : data.priceEn
@@ -148,6 +42,7 @@ function ProductCard({
     typeof data.discountPercentage === "number"
       ? getDiscountLabel(data.discountPercentage, lang)
       : null
+  const originalPriceLabel = getOriginalPriceLabel(price, data.discountPercentage)
 
   return (
     <article
@@ -178,13 +73,19 @@ function ProductCard({
             </div>
           </div>
         ) : null}
-        <Image
-          src={DEFAULT_AVATAR}
-          alt={name}
-          fill
-          className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 360px"
-        />
+        <Link
+          href={PRODUCT_ROUTES.DETAIL(lang, data.id)}
+          aria-label={isRTL ? `عرض تفاصيل ${name}` : `View details for ${name}`}
+          className="absolute inset-0 block"
+        >
+          <Image
+            src={data.galleryImages[0] ?? DEFAULT_PRODUCT_IMAGE}
+            alt={name}
+            fill
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 360px"
+          />
+        </Link>
       </div>
 
       <div className="relative space-y-3 px-3 pb-3 pt-8 overflow-visible">
@@ -210,9 +111,15 @@ function ProductCard({
         </div>
 
         <div dir="ltr" className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
-          <h3 className={`line-clamp-2 min-h-12 min-w-0 flex-1 text-lg font-extrabold leading-6 text-foreground ${isRTL ? "text-right" : "text-left"}`}>
-            {name}
+          <h3 className={`line-clamp-2 min-w-0 flex-1 text-lg font-extrabold leading-6 text-foreground ${isRTL ? "text-right" : "text-left"}`}>
+            <Link href={PRODUCT_ROUTES.DETAIL(lang, data.id)} className="cursor-pointer transition-colors hover:text-primary">
+              {name}
+            </Link>
           </h3>
+        </div>
+
+        <div className="rounded-xl bg-zinc-200/65 px-3 py-2 text-center text-sm leading-6 text-muted-foreground dark:bg-zinc-700/55">
+          <span className="line-clamp-2 wrap-break-word">{description}</span>
         </div>
 
         <div className="space-y-1">
@@ -228,10 +135,6 @@ function ProductCard({
           </div>
         </div>
 
-        <div className="rounded-xl bg-zinc-200/65 px-3 py-2 text-center text-sm leading-6 text-muted-foreground dark:bg-zinc-700/55">
-          <span className="line-clamp-2 wrap-break-word">{description}</span>
-        </div>
-
         <div className="space-y-2">
           <div dir="ltr" className={`flex ${isRTL ? "justify-end" : "justify-start"}`}>
             <span className="inline-flex shrink-0 rounded-full bg-primary/12 px-2.5 py-1 text-xs font-bold text-primary">
@@ -240,9 +143,46 @@ function ProductCard({
           </div>
 
           <div dir="ltr" className={`flex items-center justify-between gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
-            <span className="text-lg font-extrabold text-primary">{price}</span>
-            <button type="button" className="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-              <Icon icon="solar:cart-plus-linear" className="size-4" />
+            <div className={`inline-flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
+              <span className="text-lg font-extrabold text-primary">{price}</span>
+              {originalPriceLabel ? (
+                <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-zinc-200/70 px-1.5 py-0.5 text-[10px] font-semibold text-red-500 line-through dark:bg-zinc-700/60 dark:text-red-400">
+                  {originalPriceLabel}
+                </span>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              aria-label={
+                inCart
+                  ? isRTL
+                    ? "تمت الإضافة إلى السلة"
+                    : "Added to cart"
+                  : isRTL
+                    ? "إضافة إلى السلة"
+                    : "Add to cart"
+              }
+              title={
+                inCart
+                  ? isRTL
+                    ? "تمت الإضافة إلى السلة"
+                    : "Added to cart"
+                  : isRTL
+                    ? "إضافة إلى السلة"
+                    : "Add to cart"
+              }
+              aria-pressed={inCart}
+              disabled={inCart}
+              onClick={() => onAddToCart(data.id)}
+              className={`relative inline-flex size-8 items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                inCart
+                  ? "scale-125 cursor-default text-emerald-500"
+                  : "scale-125 cursor-pointer text-zinc-700 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-200"
+              }`}
+            >
+              <span className="relative inline-flex items-center justify-center">
+                <Icon icon={inCart ? "solar:cart-check-bold" : "solar:cart-plus-bold"} className="size-7" />
+              </span>
             </button>
           </div>
         </div>
@@ -256,6 +196,7 @@ function ProductCard({
 export function ProductsPage() {
   const { isRTL, lang } = useDictionary()
   const [favoriteIds, setFavoriteIds] = React.useState<Set<number>>(new Set())
+  const [cartIds, setCartIds] = React.useState<Set<number>>(new Set())
 
   const toggleFavorite = React.useCallback((id: number) => {
     setFavoriteIds((prev) => {
@@ -265,6 +206,18 @@ export function ProductsPage() {
       } else {
         next.add(id)
       }
+      return next
+    })
+  }, [])
+
+  const addToCart = React.useCallback((id: number) => {
+    setCartIds((prev) => {
+      if (prev.has(id)) {
+        return prev
+      }
+
+      const next = new Set(prev)
+      next.add(id)
       return next
     })
   }, [])
@@ -307,7 +260,9 @@ export function ProductsPage() {
               isRTL={isRTL}
               lang={lang}
               liked={favoriteIds.has(product.id)}
+              inCart={cartIds.has(product.id)}
               onToggleLike={toggleFavorite}
+              onAddToCart={addToCart}
             />
           ))}
         </div>

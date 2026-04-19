@@ -6,4 +6,5 @@ export interface PublicationFeedProps {
   showHeader?: boolean
   showSuggestions?: boolean
   emptyState?: React.ReactNode
+  externalFollowStateByUserId?: Record<number, "follow" | "following">
 }

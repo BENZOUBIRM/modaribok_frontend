@@ -37,6 +37,11 @@ export function DictionaryProvider({
   const direction = localeDirection[lang]
   const isRTL = direction === "rtl"
 
+  React.useEffect(() => {
+    const alternateLocale: Locale = lang === "ar" ? "en" : "ar"
+    void getDictionary(alternateLocale)
+  }, [lang])
+
   const switchLocale = React.useCallback(
     async (newLocale: Locale) => {
       if (newLocale === lang) return

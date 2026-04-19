@@ -25,12 +25,11 @@ function isExpired(timestamp: number): boolean {
 export function buildPublicationFeedCacheKey(params: {
   scopeUserId?: number
   viewerUserId?: number
-  lang: "ar" | "en"
 }): string {
   const scopeKey = params.scopeUserId ? `user:${params.scopeUserId}` : "home"
   const viewerKey = params.viewerUserId ? `viewer:${params.viewerUserId}` : "viewer:guest"
 
-  return `${scopeKey}:${viewerKey}:lang:${params.lang}`
+  return `${scopeKey}:${viewerKey}`
 }
 
 export function getPublicationFeedCache(cacheKey: string): PublicationFeedCacheEntry | null {

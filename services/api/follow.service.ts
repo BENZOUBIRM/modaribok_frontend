@@ -17,16 +17,26 @@ type ApiResult<T> = {
 
 interface PageLike<T> {
   content?: T[]
-  totalElements?: number
-  totalPages?: number
-  number?: number
-  size?: number
-  last?: boolean
+  totalElements?: number | string
+  totalPages?: number | string
+  number?: number | string
+  size?: number | string
+  last?: boolean | string
   // Some backends return snake_case keys
-  total_elements?: number
-  total_pages?: number
-  page?: number
-  isLast?: boolean
+  total_elements?: number | string
+  total_pages?: number | string
+  page?: number | string
+  isLast?: boolean | string
+  // Other common aliases
+  totalItems?: number | string
+  total_items?: number | string
+  totalCount?: number | string
+  total_count?: number | string
+  pageNumber?: number | string
+  pageSize?: number | string
+  page_size?: number | string
+  limit?: number | string
+  is_last?: boolean | string
 }
 
 interface FollowActionResponse {
@@ -150,7 +160,7 @@ export async function isFollowingUser(
       return true
     }
 
-    const signature = `${normalized.page}:${content.map((item) => item.id).join(",")}`
+    const signature = content.map((item) => item.id).join(",")
     if (visitedSignatures.has(signature)) {
       return false
     }
@@ -160,13 +170,12 @@ export async function isFollowingUser(
     if (
       normalized.last
       || content.length === 0
-      || content.length < normalized.size
-      || page >= normalized.totalPages - 1
+      || normalized.page >= normalized.totalPages - 1
     ) {
       return false
     }
 
-    page += 1
+    page = normalized.page + 1
     visitedPages += 1
   }
 
@@ -189,7 +198,7 @@ async function getFollowCount(
   let page = 0
   let visitedPages = 0
   const MAX_PAGES = 200
-  let totalCount = 0
+  const uniqueFollowedUserIds = new Set<number>()
   const visitedSignatures = new Set<string>()
 
   while (visitedPages < MAX_PAGES) {
@@ -214,31 +223,77 @@ async function getFollowCount(
       }
     }
 
-    const signature = `${normalized.page}:${normalized.content.map((item) => item.id).join(",")}`
+    const signature = normalized.content.map((item) => item.id).join(",")
     if (visitedSignatures.has(signature)) {
       break
     }
 
     visitedSignatures.add(signature)
-    totalCount += normalized.content.length
+    normalized.content.forEach((followedUser) => {
+      if (typeof followedUser.id === "number" && Number.isFinite(followedUser.id) && followedUser.id > 0) {
+        uniqueFollowedUserIds.add(followedUser.id)
+      }
+    })
 
     if (
       normalized.last
       || normalized.content.length === 0
-      || normalized.content.length < normalized.size
-      || page >= normalized.totalPages - 1
+      || normalized.page >= normalized.totalPages - 1
     ) {
       break
     }
 
-    page += 1
+    page = normalized.page + 1
     visitedPages += 1
   }
 
   return {
     success: true,
-    data: Math.max(0, totalCount),
+    data: Math.max(0, uniqueFollowedUserIds.size),
   }
+}
+
+function parseNonNegativeInteger(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value)
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return Math.floor(parsed)
+    }
+  }
+
+  return undefined
+}
+
+function parsePositiveInteger(value: unknown): number | undefined {
+  const parsed = parseNonNegativeInteger(value)
+  if (typeof parsed === "number" && parsed > 0) {
+    return parsed
+  }
+
+  return undefined
+}
+
+function parseBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === "true") {
+      return true
+    }
+
+    if (normalized === "false") {
+      return false
+    }
+  }
+
+  return undefined
 }
 
 function normalizePage(
@@ -255,35 +310,48 @@ function normalizePage(
 } {
   const content = Array.isArray(pageData?.content) ? pageData.content : []
 
-  const totalElements = typeof pageData?.totalElements === "number"
-    ? pageData.totalElements
-    : typeof pageData?.total_elements === "number"
-      ? pageData.total_elements
-      : undefined
+  const totalElements =
+    parseNonNegativeInteger(pageData?.totalElements)
+    ?? parseNonNegativeInteger(pageData?.total_elements)
+    ?? parseNonNegativeInteger(pageData?.totalItems)
+    ?? parseNonNegativeInteger(pageData?.total_items)
+    ?? parseNonNegativeInteger(pageData?.totalCount)
+    ?? parseNonNegativeInteger(pageData?.total_count)
 
-  const page = typeof pageData?.number === "number"
-    ? pageData.number
-    : typeof pageData?.page === "number"
-      ? pageData.page
-      : fallbackPage
+  const page =
+    parseNonNegativeInteger(pageData?.number)
+    ?? parseNonNegativeInteger(pageData?.page)
+    ?? parseNonNegativeInteger(pageData?.pageNumber)
+    ?? fallbackPage
 
-  const size = typeof pageData?.size === "number" && pageData.size > 0
-    ? pageData.size
-    : fallbackSize
+  const size =
+    parsePositiveInteger(pageData?.size)
+    ?? parsePositiveInteger(pageData?.pageSize)
+    ?? parsePositiveInteger(pageData?.page_size)
+    ?? parsePositiveInteger(pageData?.limit)
+    ?? fallbackSize
 
-  const totalPages = typeof pageData?.totalPages === "number"
-    ? Math.max(1, pageData.totalPages)
-    : typeof pageData?.total_pages === "number"
-      ? Math.max(1, pageData.total_pages)
-      : content.length < size
+  const explicitTotalPages =
+    parsePositiveInteger(pageData?.totalPages)
+    ?? parsePositiveInteger(pageData?.total_pages)
+
+  const totalPages = explicitTotalPages
+    ?? (typeof totalElements === "number" && size > 0
+      ? Math.max(1, Math.ceil(totalElements / size))
+      : content.length === 0
         ? page + 1
-        : page + 2
+        : page + 2)
 
-  const last = typeof pageData?.last === "boolean"
-    ? pageData.last
-    : typeof pageData?.isLast === "boolean"
-      ? pageData.isLast
-      : content.length < size
+  const explicitLast =
+    parseBoolean(pageData?.last)
+    ?? parseBoolean(pageData?.isLast)
+    ?? parseBoolean(pageData?.is_last)
+
+  const last = typeof explicitLast === "boolean"
+    ? explicitLast
+    : typeof totalElements === "number" && size > 0
+      ? (page + 1) * size >= totalElements
+      : content.length === 0
 
   return {
     content,

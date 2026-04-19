@@ -54,6 +54,7 @@ type ProfileStats = {
 }
 
 type FollowButtonState = "follow" | "following" | "requested"
+type FeedAuthorFollowState = "follow" | "following"
 
 interface ProfileViewsProps {
   lang: "ar" | "en"
@@ -1950,10 +1951,12 @@ function EmptyProfileTabs({
   lang,
   userId,
   canCreatePost = true,
+  authorFollowStateById,
 }: {
   lang: "ar" | "en"
   userId?: number
   canCreatePost?: boolean
+  authorFollowStateById?: Record<number, FeedAuthorFollowState>
 }) {
   const t = labels(lang)
   const isRTL = lang === "ar"
@@ -2003,6 +2006,7 @@ function EmptyProfileTabs({
                 showSuggestions={false}
                 refreshKey={refreshKey}
                 publicationCardClassName="border border-border/30"
+                externalFollowStateByUserId={authorFollowStateById}
                 emptyState={<EmptyState title={t.emptyTitle} description={t.emptyDesc} />}
               />
             </div>
@@ -2090,6 +2094,15 @@ function UserProfileView({
   onToggleFollow,
 }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
+  const authorFollowStateById = React.useMemo<Record<number, FeedAuthorFollowState> | undefined>(() => {
+    if (!userId || isOwnProfile) {
+      return undefined
+    }
+
+    return {
+      [userId]: followState === "following" || followState === "requested" ? "following" : "follow",
+    }
+  }, [followState, isOwnProfile, userId])
 
   return (
     <div className="space-y-4">
@@ -2107,7 +2120,12 @@ function UserProfileView({
         isFollowBusy={isFollowBusy}
         onToggleFollow={onToggleFollow}
       />
-      <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
+      <EmptyProfileTabs
+        lang={lang}
+        userId={userId}
+        canCreatePost={isOwnProfile}
+        authorFollowStateById={authorFollowStateById}
+      />
     </div>
   )
 }
@@ -2126,6 +2144,15 @@ function StoreProfileView({
   onToggleFollow,
 }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
+  const authorFollowStateById = React.useMemo<Record<number, FeedAuthorFollowState> | undefined>(() => {
+    if (!userId || isOwnProfile) {
+      return undefined
+    }
+
+    return {
+      [userId]: followState === "following" || followState === "requested" ? "following" : "follow",
+    }
+  }, [followState, isOwnProfile, userId])
 
   return (
     <div className="space-y-4">
@@ -2166,7 +2193,12 @@ function StoreProfileView({
         </div>
       </SectionCard>
 
-      <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
+      <EmptyProfileTabs
+        lang={lang}
+        userId={userId}
+        canCreatePost={isOwnProfile}
+        authorFollowStateById={authorFollowStateById}
+      />
     </div>
   )
 }
@@ -2185,6 +2217,15 @@ function CoachProfileView({
   onToggleFollow,
 }: Omit<ProfileViewsProps, "profileType">) {
   const t = labels(lang)
+  const authorFollowStateById = React.useMemo<Record<number, FeedAuthorFollowState> | undefined>(() => {
+    if (!userId || isOwnProfile) {
+      return undefined
+    }
+
+    return {
+      [userId]: followState === "following" || followState === "requested" ? "following" : "follow",
+    }
+  }, [followState, isOwnProfile, userId])
 
   return (
     <div className="space-y-4">
@@ -2236,7 +2277,12 @@ function CoachProfileView({
         </div>
       </SectionCard>
 
-      <EmptyProfileTabs lang={lang} userId={userId} canCreatePost={isOwnProfile} />
+      <EmptyProfileTabs
+        lang={lang}
+        userId={userId}
+        canCreatePost={isOwnProfile}
+        authorFollowStateById={authorFollowStateById}
+      />
     </div>
   )
 }

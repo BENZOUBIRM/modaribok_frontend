@@ -9,12 +9,10 @@ interface TrainerCardData {
   id: number
   nameAr: string
   nameEn: string
-  statusAr: string
-  statusEn: string
+  status: "online" | "offline"
+  coachType: "fitness" | "running" | "football" | "basketball" | "yoga" | "strength"
   descriptionAr: string
   descriptionEn: string
-  tagAr: string
-  tagEn: string
   mutualLeadAr: string
   mutualLeadEn: string
   mutualLabelAr: string
@@ -23,17 +21,69 @@ interface TrainerCardData {
 
 const DEFAULT_AVATAR = "/images/default-user.jpg"
 
+const COACH_STATUS_META = {
+  online: {
+    labelAr: "اونلاين",
+    labelEn: "Online",
+    chipClassName: "bg-emerald-500/15 text-emerald-500",
+    dotClassName: "bg-emerald-500",
+  },
+  offline: {
+    labelAr: "اوفلاين",
+    labelEn: "Offline",
+    chipClassName: "bg-red-500/15 text-red-500",
+    dotClassName: "bg-red-500",
+  },
+} as const
+
+const COACH_TYPE_META = {
+  fitness: {
+    labelAr: "مدرب لياقة بدنية",
+    labelEn: "Fitness coach",
+    icon: "solar:dumbbell-large-2-linear",
+    chipClassName: "bg-amber-500/15 text-amber-500",
+  },
+  running: {
+    labelAr: "مدرب جري",
+    labelEn: "Running coach",
+    icon: "solar:running-2-linear",
+    chipClassName: "bg-sky-500/15 text-sky-500",
+  },
+  football: {
+    labelAr: "مدرب كرة قدم",
+    labelEn: "Football coach",
+    icon: "mdi:soccer",
+    chipClassName: "bg-emerald-500/15 text-emerald-500",
+  },
+  basketball: {
+    labelAr: "مدرب كرة سلة",
+    labelEn: "Basketball coach",
+    icon: "mdi:basketball",
+    chipClassName: "bg-orange-500/15 text-orange-500",
+  },
+  yoga: {
+    labelAr: "مدرب يوغا",
+    labelEn: "Yoga coach",
+    icon: "mdi:meditation",
+    chipClassName: "bg-violet-500/15 text-violet-500",
+  },
+  strength: {
+    labelAr: "مدرب قوة",
+    labelEn: "Strength coach",
+    icon: "mdi:arm-flex-outline",
+    chipClassName: "bg-rose-500/15 text-rose-500",
+  },
+} as const
+
 const COACHES: TrainerCardData[] = [
   {
     id: 1,
     nameAr: "حمزة بن الزوير",
     nameEn: "Hamza Ben Alzuwair",
-    statusAr: "اونلاين",
-    statusEn: "Online",
+    status: "online",
+    coachType: "fitness",
     descriptionAr: "حالنا الرياضية هي المساحة المثالية لتحقيق أهدافك اللياقة، قوة، أو حياة صحية مستمرة.",
     descriptionEn: "Our fitness space is ideal to reach your goals for strength, health, and consistent progress.",
-    tagAr: "مدرب لياقة بدنية",
-    tagEn: "Fitness coach",
     mutualLeadAr: "شمس حسن و 15 آخرين",
     mutualLeadEn: "Shams Hassan and 15 others",
     mutualLabelAr: "أصدقاء مشتركين",
@@ -43,12 +93,10 @@ const COACHES: TrainerCardData[] = [
     id: 2,
     nameAr: "حمزة بن الزوير",
     nameEn: "Hamza Ben Alzuwair",
-    statusAr: "اونلاين",
-    statusEn: "Online",
+    status: "offline",
+    coachType: "running",
     descriptionAr: "حالنا الرياضية هي المساحة المثالية لتحقيق أهدافك اللياقة، قوة، أو حياة صحية مستمرة.",
     descriptionEn: "Our fitness space is ideal to reach your goals for strength, health, and consistent progress.",
-    tagAr: "مدرب لياقة بدنية",
-    tagEn: "Fitness coach",
     mutualLeadAr: "شمس حسن و 15 آخرين",
     mutualLeadEn: "Shams Hassan and 15 others",
     mutualLabelAr: "أصدقاء مشتركين",
@@ -58,12 +106,10 @@ const COACHES: TrainerCardData[] = [
     id: 3,
     nameAr: "حمزة بن الزوير",
     nameEn: "Hamza Ben Alzuwair",
-    statusAr: "اونلاين",
-    statusEn: "Online",
+    status: "online",
+    coachType: "football",
     descriptionAr: "حالنا الرياضية هي المساحة المثالية لتحقيق أهدافك اللياقة، قوة، أو حياة صحية مستمرة.",
     descriptionEn: "Our fitness space is ideal to reach your goals for strength, health, and consistent progress.",
-    tagAr: "مدرب لياقة بدنية",
-    tagEn: "Fitness coach",
     mutualLeadAr: "شمس حسن و 15 آخرين",
     mutualLeadEn: "Shams Hassan and 15 others",
     mutualLabelAr: "أصدقاء مشتركين",
@@ -73,12 +119,10 @@ const COACHES: TrainerCardData[] = [
     id: 4,
     nameAr: "حمزة بن الزوير",
     nameEn: "Hamza Ben Alzuwair",
-    statusAr: "اونلاين",
-    statusEn: "Online",
+    status: "offline",
+    coachType: "basketball",
     descriptionAr: "حالنا الرياضية هي المساحة المثالية لتحقيق أهدافك اللياقة، قوة، أو حياة صحية مستمرة.",
     descriptionEn: "Our fitness space is ideal to reach your goals for strength, health, and consistent progress.",
-    tagAr: "مدرب لياقة بدنية",
-    tagEn: "Fitness coach",
     mutualLeadAr: "شمس حسن و 15 آخرين",
     mutualLeadEn: "Shams Hassan and 15 others",
     mutualLabelAr: "أصدقاء مشتركين",
@@ -88,12 +132,10 @@ const COACHES: TrainerCardData[] = [
     id: 5,
     nameAr: "حمزة بن الزوير",
     nameEn: "Hamza Ben Alzuwair",
-    statusAr: "اونلاين",
-    statusEn: "Online",
+    status: "online",
+    coachType: "yoga",
     descriptionAr: "حالنا الرياضية هي المساحة المثالية لتحقيق أهدافك اللياقة، قوة، أو حياة صحية مستمرة.",
     descriptionEn: "Our fitness space is ideal to reach your goals for strength, health, and consistent progress.",
-    tagAr: "مدرب لياقة بدنية",
-    tagEn: "Fitness coach",
     mutualLeadAr: "شمس حسن و 15 آخرين",
     mutualLeadEn: "Shams Hassan and 15 others",
     mutualLabelAr: "أصدقاء مشتركين",
@@ -103,12 +145,10 @@ const COACHES: TrainerCardData[] = [
     id: 6,
     nameAr: "حمزة بن الزوير",
     nameEn: "Hamza Ben Alzuwair",
-    statusAr: "اونلاين",
-    statusEn: "Online",
+    status: "online",
+    coachType: "strength",
     descriptionAr: "حالنا الرياضية هي المساحة المثالية لتحقيق أهدافك اللياقة، قوة، أو حياة صحية مستمرة.",
     descriptionEn: "Our fitness space is ideal to reach your goals for strength, health, and consistent progress.",
-    tagAr: "مدرب لياقة بدنية",
-    tagEn: "Fitness coach",
     mutualLeadAr: "شمس حسن و 15 آخرين",
     mutualLeadEn: "Shams Hassan and 15 others",
     mutualLabelAr: "أصدقاء مشتركين",
@@ -118,9 +158,11 @@ const COACHES: TrainerCardData[] = [
 
 function CoachesCard({ data, isRTL }: { data: TrainerCardData; isRTL: boolean }) {
   const title = isRTL ? data.nameAr : data.nameEn
-  const status = isRTL ? data.statusAr : data.statusEn
+  const statusMeta = COACH_STATUS_META[data.status]
+  const status = isRTL ? statusMeta.labelAr : statusMeta.labelEn
   const description = isRTL ? data.descriptionAr : data.descriptionEn
-  const tag = isRTL ? data.tagAr : data.tagEn
+  const typeMeta = COACH_TYPE_META[data.coachType]
+  const tag = isRTL ? typeMeta.labelAr : typeMeta.labelEn
   const mutualLead = isRTL ? data.mutualLeadAr : data.mutualLeadEn
   const mutualLabel = isRTL ? data.mutualLabelAr : data.mutualLabelEn
 
@@ -141,12 +183,12 @@ function CoachesCard({ data, isRTL }: { data: TrainerCardData; isRTL: boolean })
 
       <div className="space-y-3 p-3">
         <div dir="ltr" className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
-          <h3 className={`line-clamp-2 min-h-12 min-w-0 flex-1 text-lg font-extrabold leading-6 text-foreground ${isRTL ? "text-right" : "text-left"}`}>
+          <h3 className={`line-clamp-1 min-w-0 flex-1 text-lg font-extrabold leading-6 text-foreground ${isRTL ? "text-right" : "text-left"}`}>
             {title}
           </h3>
 
-          <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-500">
-            <span className="inline-block size-2 rounded-full bg-emerald-500" />
+          <div className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${statusMeta.chipClassName}`}>
+            <span className={`inline-block size-2 rounded-full ${statusMeta.dotClassName}`} />
             {status}
           </div>
         </div>
@@ -157,7 +199,8 @@ function CoachesCard({ data, isRTL }: { data: TrainerCardData; isRTL: boolean })
 
         <div className="space-y-2">
           <div dir="ltr" className={`flex ${isRTL ? "justify-end" : "justify-start"}`}>
-            <span className="inline-flex shrink-0 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-500">
+            <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${typeMeta.chipClassName}`}>
+              <Icon icon={typeMeta.icon} className="size-3.5" />
               {tag}
             </span>
           </div>

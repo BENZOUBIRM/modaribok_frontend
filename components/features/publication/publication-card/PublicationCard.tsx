@@ -457,7 +457,10 @@ export function PublicationCard({
             />
           </button>
           <div>
-            <div className={cn("flex items-center gap-2", isRTL && "justify-end")}>
+            <div
+              dir={isRTL && canShowFollowActionForUser(post.author.id) ? "ltr" : undefined}
+              className={cn("flex items-center gap-2", isRTL ? "flex-row-reverse justify-end" : "justify-start")}
+            >
               <button
                 type="button"
                 onClick={() => handleOpenUserProfile({
@@ -467,12 +470,14 @@ export function PublicationCard({
                 })}
                 className="cursor-pointer text-sm font-semibold text-foreground leading-tight hover:underline"
               >
-                {post.author.name}
+                <bdi>{post.author.name}</bdi>
               </button>
               {canShowFollowActionForUser(post.author.id) && (
                 <span className="mx-1 text-muted-foreground">-</span>
               )}
-              {renderFollowAction(post.author.id)}
+              <span dir={isRTL ? "rtl" : "ltr"} className="inline-flex items-center">
+                {renderFollowAction(post.author.id)}
+              </span>
             </div>
             <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
               <span className="inline-flex items-center gap-1.5">
@@ -601,7 +606,10 @@ export function PublicationCard({
                       />
                     </button>
                     <div>
-                      <div className={cn("flex items-center gap-2", isRTL && "justify-end")}>
+                      <div
+                        dir={isRTL && canShowFollowActionForUser(sharedPost.author.id) ? "ltr" : undefined}
+                        className={cn("flex items-center gap-2", isRTL ? "flex-row-reverse justify-end" : "justify-start")}
+                      >
                         <button
                           type="button"
                           onClick={() => handleOpenUserProfile({
@@ -611,12 +619,14 @@ export function PublicationCard({
                           })}
                           className="cursor-pointer text-sm font-semibold leading-tight text-foreground hover:underline"
                         >
-                          {sharedPost.author.name}
+                          <bdi>{sharedPost.author.name}</bdi>
                         </button>
                         {canShowFollowActionForUser(sharedPost.author.id) && (
                           <span className="mx-1 text-muted-foreground">-</span>
                         )}
-                        {renderFollowAction(sharedPost.author.id)}
+                        <span dir={isRTL ? "rtl" : "ltr"} className="inline-flex items-center">
+                          {renderFollowAction(sharedPost.author.id)}
+                        </span>
                       </div>
                       <p className={cn("mt-0.5 text-xs text-muted-foreground", isRTL && "text-right")}>
                         <span className="inline-flex items-center gap-1.5">

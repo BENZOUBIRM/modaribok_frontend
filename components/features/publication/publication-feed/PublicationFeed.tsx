@@ -4,6 +4,7 @@ import * as React from "react"
 import { Icon } from "@iconify/react"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { useAuth } from "@/providers/auth-provider"
+import { applyUserProfileStatsDelta, refreshUserProfileStats } from "@/hooks/use-user-profile-stats"
 import { followService, publicationService } from "@/services/api"
 import {
   cacheCommentReactionState,
@@ -48,7 +49,7 @@ const REACTION_TYPES: ReactionType[] = [
 ]
 
 // Tuning knobs: adjust these values (after alignment with the project owner) to control
-// how many posts/comments appear first and how many are loaded on each "show more" action.
+// how many posts/comments appear first and how many are loaded on each pagination step.
 const FEED_PAGE_SIZE = 5
 const ROOT_COMMENTS_PAGE_SIZE = 2
 
@@ -166,6 +167,7 @@ export function PublicationFeed({
   showSuggestions = true,
   emptyState,
   publicationCardClassName,
+  externalFollowStateByUserId,
 }: PublicationFeedProps) {
   const { dictionary, lang } = useDictionary()
   const { user } = useAuth()
@@ -186,6 +188,7 @@ export function PublicationFeed({
   const [followStateByAuthorId, setFollowStateByAuthorId] = React.useState<Record<number, AuthorFollowState>>({})
   const [isFollowBusyByAuthorId, setIsFollowBusyByAuthorId] = React.useState<Record<number, boolean>>({})
   const requestedFollowStatusByAuthorIdRef = React.useRef<Set<number>>(new Set())
+  const loadMoreSentinelRef = React.useRef<HTMLDivElement | null>(null)
 
   const cacheKey = React.useMemo(
     () => buildPublicationFeedCacheKey({
@@ -425,7 +428,7 @@ export function PublicationFeed({
       })),
       paginationByPostId,
     }
-  }, [user?.id])
+  }, [user])
 
   React.useEffect(() => {
     let isCancelled = false
@@ -524,6 +527,43 @@ export function PublicationFeed({
   }, [bootstrapInitialComments, currentPage, fetchFeedPage, hasMorePosts, isLoading, isLoadingMorePosts, userId])
 
   React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    if (isLoading || Boolean(errorCode) || !hasMorePosts || Boolean(userId)) {
+      return
+    }
+
+    const sentinelElement = loadMoreSentinelRef.current
+    if (!sentinelElement) {
+      return
+    }
+
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0]
+        if (!firstEntry?.isIntersecting) {
+          return
+        }
+
+        void handleLoadMorePosts()
+      },
+      {
+        root: null,
+        rootMargin: "220px 0px",
+        threshold: 0.01,
+      },
+    )
+
+    observer.observe(sentinelElement)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [errorCode, handleLoadMorePosts, hasMorePosts, isLoading, userId])
+
+  React.useEffect(() => {
     if (isLoading) {
       return
     }
@@ -540,7 +580,37 @@ export function PublicationFeed({
     setFollowStateByAuthorId({})
     setIsFollowBusyByAuthorId({})
     requestedFollowStatusByAuthorIdRef.current.clear()
-  }, [user?.id])
+  }, [user])
+
+  React.useEffect(() => {
+    if (!externalFollowStateByUserId) {
+      return
+    }
+
+    const entries = Object.entries(externalFollowStateByUserId)
+    if (entries.length === 0) {
+      return
+    }
+
+    setFollowStateByAuthorId((current) => {
+      let changed = false
+      const next = { ...current }
+
+      entries.forEach(([rawUserId, state]) => {
+        const parsedUserId = Number(rawUserId)
+        if (!Number.isFinite(parsedUserId) || parsedUserId <= 0) {
+          return
+        }
+
+        if (next[parsedUserId] !== state) {
+          next[parsedUserId] = state
+          changed = true
+        }
+      })
+
+      return changed ? next : current
+    })
+  }, [externalFollowStateByUserId])
 
   React.useEffect(() => {
     if (!user?.id || posts.length === 0) {
@@ -612,8 +682,13 @@ export function PublicationFeed({
       [targetUserId]: "following",
     }))
 
+    if (result.data?.status !== "PENDING") {
+      applyUserProfileStatsDelta(user.id, { following: 1 })
+      refreshUserProfileStats(user.id)
+    }
+
     return true
-  }, [user?.id])
+  }, [user])
 
   const handleUnfollowUser = React.useCallback(async (targetUserId: number): Promise<boolean> => {
     if (!user?.id || targetUserId <= 0 || targetUserId === user.id) {
@@ -642,8 +717,11 @@ export function PublicationFeed({
       [targetUserId]: "follow",
     }))
 
+    applyUserProfileStatsDelta(user.id, { following: -1 })
+    refreshUserProfileStats(user.id)
+
     return true
-  }, [user?.id])
+  }, [user])
 
   const loadRootCommentsPage = React.useCallback(async (
     publicationId: number,
@@ -1282,16 +1360,16 @@ export function PublicationFeed({
       })}
 
       {!isLoading && !errorCode && hasMorePosts && (
-        <div className="flex justify-center pt-2">
-          <button
-            type="button"
-            onClick={() => void handleLoadMorePosts()}
-            disabled={isLoadingMorePosts}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border/35 bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:border-border/60 hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoadingMorePosts ? <Spinner className="size-4" /> : null}
-            {isLoadingMorePosts ? t.loading : t.showMore}
-          </button>
+        <div className="pt-2">
+          <div ref={loadMoreSentinelRef} className="h-1 w-full" aria-hidden="true" />
+          {isLoadingMorePosts ? (
+            <div className="flex justify-center pt-2">
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Spinner className="size-4" />
+                {t.loading}
+              </span>
+            </div>
+          ) : null}
         </div>
       )}
 

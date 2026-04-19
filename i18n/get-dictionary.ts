@@ -52,9 +52,27 @@ const KEYS = [
   "activity", "feed", "profile", "events", "suggestions", "apiMessages", "errors",
 ] as const
 
+const dictionaryPromiseCache: Partial<Record<Locale, Promise<Dictionary>>> = {}
+
 export async function getDictionary(locale: Locale): Promise<Dictionary> {
-  const values = await dictionaries[locale]()
-  const result = {} as Record<string, unknown>
-  KEYS.forEach((k, i) => { result[k] = values[i] })
-  return result as Dictionary
+  const cachedPromise = dictionaryPromiseCache[locale]
+  if (cachedPromise) {
+    return cachedPromise
+  }
+
+  const loadPromise = dictionaries[locale]()
+    .then((values) => {
+      const result = {} as Record<string, unknown>
+      KEYS.forEach((k, i) => {
+        result[k] = values[i]
+      })
+      return result as Dictionary
+    })
+    .catch((error) => {
+      delete dictionaryPromiseCache[locale]
+      throw error
+    })
+
+  dictionaryPromiseCache[locale] = loadPromise
+  return loadPromise
 }
