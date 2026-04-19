@@ -194,9 +194,8 @@ export function PublicationFeed({
     () => buildPublicationFeedCacheKey({
       scopeUserId: userId,
       viewerUserId: user?.id,
-      lang,
     }),
-    [lang, user?.id, userId],
+    [user?.id, userId],
   )
 
   const fetchFeedPage = React.useCallback(async (pageToLoad: number): Promise<FeedPageLoadResult> => {
@@ -428,7 +427,7 @@ export function PublicationFeed({
       })),
       paginationByPostId,
     }
-  }, [user])
+  }, [user?.id])
 
   React.useEffect(() => {
     let isCancelled = false
@@ -580,7 +579,7 @@ export function PublicationFeed({
     setFollowStateByAuthorId({})
     setIsFollowBusyByAuthorId({})
     requestedFollowStatusByAuthorIdRef.current.clear()
-  }, [user])
+  }, [user?.id])
 
   React.useEffect(() => {
     if (!externalFollowStateByUserId) {
