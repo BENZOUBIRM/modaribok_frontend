@@ -52,6 +52,12 @@ const REACTION_TYPES: ReactionType[] = [
 // how many posts/comments appear first and how many are loaded on each pagination step.
 const FEED_PAGE_SIZE = 5
 const ROOT_COMMENTS_PAGE_SIZE = 2
+const PULL_TO_REFRESH_TRIGGER_PX = 84
+const PULL_TO_REFRESH_MAX_PX = 128
+const PULL_TO_REFRESH_HOLD_PX = 56
+const PULL_TO_REFRESH_WHEEL_SCALE = 0.22
+const PULL_TO_REFRESH_WHEEL_RESET_MS = 170
+const PULL_TO_REFRESH_MIN_SPIN_MS = 2000
 
 type FeedPageLoadResult = {
   success: boolean
@@ -98,6 +104,44 @@ function mergeCommentsById(currentComments: FeedComment[], incomingComments: Fee
   }
 
   return [...currentComments, ...uniqueIncoming]
+}
+
+function mergeRefreshedPosts(currentPosts: FeedPost[], refreshedPosts: FeedPost[]): FeedPost[] {
+  if (!refreshedPosts.length) {
+    return currentPosts
+  }
+
+  const refreshedIds = new Set(refreshedPosts.map((post) => post.id))
+  const remainingCurrentPosts = currentPosts.filter((post) => !refreshedIds.has(post.id))
+
+  return [...refreshedPosts, ...remainingCurrentPosts]
+}
+
+function applyPullResistance(rawDistance: number): number {
+  if (rawDistance <= 0) {
+    return 0
+  }
+
+  const dampedDistance = Math.sqrt(rawDistance) * 9
+  return Math.min(PULL_TO_REFRESH_MAX_PX, dampedDistance)
+}
+
+function PullStaticIndicatorIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-7 text-primary" aria-hidden="true">
+      <defs>
+        <filter id="pull-static-gooey-indicator">
+          <feGaussianBlur in="SourceGraphic" result="y" stdDeviation="1" />
+          <feColorMatrix in="y" result="z" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 18 -7" />
+          <feBlend in="SourceGraphic" in2="z" />
+        </filter>
+      </defs>
+      <g filter="url(#pull-static-gooey-indicator)">
+        <circle cx="8" cy="12" r="4" fill="currentColor" />
+        <circle cx="16" cy="12" r="4" fill="currentColor" />
+      </g>
+    </svg>
+  )
 }
 
 function resolveHasMoreFromPageMeta(
@@ -187,8 +231,21 @@ export function PublicationFeed({
   const [sharingPostById, setSharingPostById] = React.useState<Record<number, boolean>>({})
   const [followStateByAuthorId, setFollowStateByAuthorId] = React.useState<Record<number, AuthorFollowState>>({})
   const [isFollowBusyByAuthorId, setIsFollowBusyByAuthorId] = React.useState<Record<number, boolean>>({})
+  const [isPullRefreshing, setIsPullRefreshing] = React.useState(false)
   const requestedFollowStatusByAuthorIdRef = React.useRef<Set<number>>(new Set())
   const loadMoreSentinelRef = React.useRef<HTMLDivElement | null>(null)
+  const pullHostRef = React.useRef<HTMLDivElement | null>(null)
+  const pullContentRef = React.useRef<HTMLDivElement | null>(null)
+  const pullIndicatorRef = React.useRef<HTMLDivElement | null>(null)
+  const pullDistanceRef = React.useRef(0)
+  const touchStartYRef = React.useRef<number | null>(null)
+  const isTouchPullingRef = React.useRef(false)
+  const wheelDistanceRef = React.useRef(0)
+  const wheelResetTimerRef = React.useRef<number | null>(null)
+  const postsRef = React.useRef<FeedPost[]>([])
+  const isLoadingRef = React.useRef(isLoading)
+  const isLoadingMorePostsRef = React.useRef(isLoadingMorePosts)
+  const isPullRefreshingRef = React.useRef(false)
 
   const cacheKey = React.useMemo(
     () => buildPublicationFeedCacheKey({
@@ -196,6 +253,33 @@ export function PublicationFeed({
       viewerUserId: user?.id,
     }),
     [user?.id, userId],
+  )
+
+  const updatePullVisual = React.useCallback(
+    (distance: number, immediate = false) => {
+      const resolvedDistance = Math.max(0, Math.min(PULL_TO_REFRESH_MAX_PX, distance))
+      pullDistanceRef.current = resolvedDistance
+      const progress = Math.min(1, resolvedDistance / PULL_TO_REFRESH_TRIGGER_PX)
+      const revealProgress = isPullRefreshingRef.current ? 1 : progress
+
+      const contentElement = pullContentRef.current
+      if (contentElement) {
+        contentElement.style.transitionDuration = immediate ? "0ms" : "180ms"
+        contentElement.style.transform = `translate3d(0, ${resolvedDistance}px, 0)`
+      }
+
+      const indicatorElement = pullIndicatorRef.current
+      if (indicatorElement) {
+        const scale = 0.88 + revealProgress * 0.12
+        const resolvedOpacity = isPullRefreshingRef.current
+          ? 1
+          : (resolvedDistance > 0 ? 0.14 + revealProgress * 0.86 : 0)
+        indicatorElement.style.opacity = `${resolvedOpacity}`
+        indicatorElement.style.transform = `translate3d(-50%, ${Math.max(10, resolvedDistance * 0.58)}px, 0) scale(${scale})`
+        indicatorElement.style.clipPath = "none"
+      }
+    },
+    [],
   )
 
   const fetchFeedPage = React.useCallback(async (pageToLoad: number): Promise<FeedPageLoadResult> => {
@@ -498,6 +582,55 @@ export function PublicationFeed({
     }
   }, [bootstrapInitialComments, cacheKey, fetchFeedPage, refreshKey])
 
+  React.useEffect(() => {
+    postsRef.current = posts
+  }, [posts])
+
+  React.useEffect(() => {
+    isLoadingRef.current = isLoading
+  }, [isLoading])
+
+  React.useEffect(() => {
+    isLoadingMorePostsRef.current = isLoadingMorePosts
+  }, [isLoadingMorePosts])
+
+  React.useEffect(() => {
+    isPullRefreshingRef.current = isPullRefreshing
+  }, [isPullRefreshing])
+
+  const handleRefreshFromTop = React.useCallback(async () => {
+    if (isLoadingRef.current || isLoadingMorePostsRef.current) {
+      return false
+    }
+
+    const firstPageResult = await fetchFeedPage(0)
+    if (!firstPageResult.success) {
+      return false
+    }
+
+    const firstPageWithComments = await bootstrapInitialComments(firstPageResult.posts)
+    setErrorCode(null)
+
+    if (userId) {
+      postsRef.current = firstPageWithComments.posts
+      setPosts(firstPageWithComments.posts)
+      setCommentPaginationByPostId(firstPageWithComments.paginationByPostId)
+      setCurrentPage(firstPageResult.page)
+      setHasMorePosts(firstPageResult.hasMore)
+      return true
+    }
+
+    const mergedPosts = mergeRefreshedPosts(postsRef.current, firstPageWithComments.posts)
+    postsRef.current = mergedPosts
+
+    setPosts(mergedPosts)
+    setCommentPaginationByPostId(buildCommentPaginationSnapshot(mergedPosts))
+    setCurrentPage((current) => (current > 0 ? current : firstPageResult.page))
+    setHasMorePosts((current) => current || firstPageResult.hasMore)
+
+    return true
+  }, [bootstrapInitialComments, fetchFeedPage, userId])
+
   const handleLoadMorePosts = React.useCallback(async () => {
     if (isLoading || isLoadingMorePosts || !hasMorePosts || Boolean(userId)) {
       return
@@ -561,6 +694,226 @@ export function PublicationFeed({
       observer.disconnect()
     }
   }, [errorCode, handleLoadMorePosts, hasMorePosts, isLoading, userId])
+
+  React.useEffect(() => {
+    const hostElement = pullHostRef.current
+    if (!hostElement || typeof window === "undefined") {
+      return
+    }
+
+    const getScrollContainer = () => document.getElementById("main-content")
+    const isScrollAtTop = () => {
+      const scrollContainer = getScrollContainer()
+      return !scrollContainer || scrollContainer.scrollTop <= 0
+    }
+
+    const clearWheelResetTimer = () => {
+      if (wheelResetTimerRef.current !== null) {
+        window.clearTimeout(wheelResetTimerRef.current)
+        wheelResetTimerRef.current = null
+      }
+    }
+
+    const resetPullState = (immediate = false) => {
+      touchStartYRef.current = null
+      isTouchPullingRef.current = false
+      wheelDistanceRef.current = 0
+      clearWheelResetTimer()
+
+      if (!isPullRefreshingRef.current) {
+        updatePullVisual(0, immediate)
+      }
+    }
+
+    const startRefreshFromPull = () => {
+      if (isPullRefreshingRef.current) {
+        return
+      }
+
+      isPullRefreshingRef.current = true
+      setIsPullRefreshing(true)
+
+      touchStartYRef.current = null
+      isTouchPullingRef.current = false
+      wheelDistanceRef.current = 0
+      clearWheelResetTimer()
+      updatePullVisual(PULL_TO_REFRESH_HOLD_PX)
+
+      void (async () => {
+        try {
+          await Promise.all([
+            handleRefreshFromTop(),
+            new Promise<void>((resolve) => {
+              window.setTimeout(resolve, PULL_TO_REFRESH_MIN_SPIN_MS)
+            }),
+          ])
+        } finally {
+          isPullRefreshingRef.current = false
+          setIsPullRefreshing(false)
+          updatePullVisual(0)
+        }
+      })()
+    }
+
+    const isInteractiveTarget = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) {
+        return false
+      }
+
+      return Boolean(target.closest("input, textarea, select, button, a, [role='button'], [contenteditable='true']"))
+    }
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (isPullRefreshingRef.current || isLoadingRef.current || isLoadingMorePostsRef.current) {
+        return
+      }
+
+      if (event.touches.length !== 1 || !isScrollAtTop() || isInteractiveTarget(event.target)) {
+        resetPullState(true)
+        return
+      }
+
+      touchStartYRef.current = event.touches[0].clientY
+      isTouchPullingRef.current = false
+    }
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (isPullRefreshingRef.current) {
+        event.preventDefault()
+        return
+      }
+
+      const startY = touchStartYRef.current
+      if (startY === null) {
+        return
+      }
+
+      const currentY = event.touches[0]?.clientY
+      if (typeof currentY !== "number") {
+        return
+      }
+
+      const deltaY = currentY - startY
+      if (deltaY <= 0) {
+        if (isTouchPullingRef.current) {
+          updatePullVisual(0, true)
+        }
+        return
+      }
+
+      if (!isScrollAtTop()) {
+        resetPullState(true)
+        return
+      }
+
+      const nextPullDistance = applyPullResistance(deltaY)
+      if (nextPullDistance <= 0) {
+        return
+      }
+
+      isTouchPullingRef.current = true
+      event.preventDefault()
+      updatePullVisual(nextPullDistance, true)
+
+      if (nextPullDistance >= PULL_TO_REFRESH_TRIGGER_PX) {
+        startRefreshFromPull()
+      }
+    }
+
+    const handleTouchEnd = () => {
+      if (!isTouchPullingRef.current) {
+        touchStartYRef.current = null
+        return
+      }
+
+      if (pullDistanceRef.current >= PULL_TO_REFRESH_TRIGGER_PX) {
+        startRefreshFromPull()
+        return
+      }
+
+      resetPullState()
+    }
+
+    const handleGlobalRelease = () => {
+      if (isPullRefreshingRef.current) {
+        return
+      }
+
+      if (pullDistanceRef.current > 0 && pullDistanceRef.current < PULL_TO_REFRESH_TRIGGER_PX) {
+        resetPullState()
+      }
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return
+      }
+
+      if (isPullRefreshingRef.current || isLoadingRef.current || isLoadingMorePostsRef.current) {
+        return
+      }
+
+      const scrollContainer = getScrollContainer()
+      if (!scrollContainer || scrollContainer.scrollTop > 0 || event.deltaY >= 0) {
+        if (event.deltaY > 0 && pullDistanceRef.current > 0 && !isPullRefreshingRef.current) {
+          resetPullState()
+        }
+        return
+      }
+
+      event.preventDefault()
+
+      const normalizedDelta = Math.abs(event.deltaY)
+        * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1)
+        * (event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1)
+
+      const maxWheelDistance = PULL_TO_REFRESH_MAX_PX / PULL_TO_REFRESH_WHEEL_SCALE
+      wheelDistanceRef.current = Math.min(maxWheelDistance, wheelDistanceRef.current + normalizedDelta)
+
+      const nextPullDistance = Math.min(
+        PULL_TO_REFRESH_MAX_PX,
+        wheelDistanceRef.current * PULL_TO_REFRESH_WHEEL_SCALE,
+      )
+
+      updatePullVisual(nextPullDistance, true)
+
+      if (nextPullDistance >= PULL_TO_REFRESH_TRIGGER_PX) {
+        startRefreshFromPull()
+        return
+      }
+
+      clearWheelResetTimer()
+      wheelResetTimerRef.current = window.setTimeout(() => {
+        if (!isPullRefreshingRef.current && pullDistanceRef.current < PULL_TO_REFRESH_TRIGGER_PX) {
+          resetPullState()
+        }
+      }, PULL_TO_REFRESH_WHEEL_RESET_MS)
+    }
+
+    hostElement.addEventListener("touchstart", handleTouchStart, { passive: true })
+    hostElement.addEventListener("touchmove", handleTouchMove, { passive: false })
+    hostElement.addEventListener("touchend", handleTouchEnd, { passive: true })
+    hostElement.addEventListener("touchcancel", handleTouchEnd, { passive: true })
+    hostElement.addEventListener("wheel", handleWheel, { passive: false })
+    window.addEventListener("touchend", handleGlobalRelease, { passive: true })
+    window.addEventListener("touchcancel", handleGlobalRelease, { passive: true })
+    window.addEventListener("pointerup", handleGlobalRelease, { passive: true })
+    window.addEventListener("mouseup", handleGlobalRelease, { passive: true })
+
+    return () => {
+      clearWheelResetTimer()
+      hostElement.removeEventListener("touchstart", handleTouchStart)
+      hostElement.removeEventListener("touchmove", handleTouchMove)
+      hostElement.removeEventListener("touchend", handleTouchEnd)
+      hostElement.removeEventListener("touchcancel", handleTouchEnd)
+      hostElement.removeEventListener("wheel", handleWheel)
+      window.removeEventListener("touchend", handleGlobalRelease)
+      window.removeEventListener("touchcancel", handleGlobalRelease)
+      window.removeEventListener("pointerup", handleGlobalRelease)
+      window.removeEventListener("mouseup", handleGlobalRelease)
+      updatePullVisual(0, true)
+    }
+  }, [handleRefreshFromTop, updatePullVisual])
 
   React.useEffect(() => {
     if (isLoading) {
@@ -1288,7 +1641,17 @@ export function PublicationFeed({
   }
 
   return (
-    <div className="space-y-4" dir={isRTL ? "rtl" : "ltr"}>
+    <div ref={pullHostRef} className="relative overscroll-y-none" dir={isRTL ? "rtl" : "ltr"}>
+      <div
+        ref={pullIndicatorRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-0 z-20 opacity-0 transition-opacity duration-150"
+        style={{ transform: "translate3d(-50%, 10px, 0)" }}
+      >
+        {isPullRefreshing ? <Spinner tone="primary" className="size-7" /> : <PullStaticIndicatorIcon />}
+      </div>
+
+      <div ref={pullContentRef} className="space-y-4 will-change-transform transition-transform duration-200 ease-out">
       {showHeader && (
         <div className="flex items-center gap-2">
           <Icon icon="solar:document-text-linear" className="size-5 text-primary" />
@@ -1372,6 +1735,7 @@ export function PublicationFeed({
         </div>
       )}
 
+      </div>
     </div>
   )
 }

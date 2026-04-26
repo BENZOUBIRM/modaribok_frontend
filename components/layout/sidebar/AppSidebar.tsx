@@ -11,10 +11,22 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState, useCallback, type WheelEvent } from "react"
 import Image from "next/image"
 
-const navItems = [
+interface SidebarNavItem {
+  path: string
+  icon: string
+  translationKey: string
+  mobileOnly?: boolean
+  adminOnly?: boolean
+}
+
+const DASHBOARD_ROOT_PATH = "/dashboard"
+
+const navItems: SidebarNavItem[] = [
   { path: "/", icon: "solar:widget-4-bold", translationKey: "home" },
   { path: "/search", icon: "solar:magnifer-linear", translationKey: "search", mobileOnly: true },
   { path: "/dashboard", icon: "solar:chart-square-bold", translationKey: "dashboard", adminOnly: true },
+  { path: "/dashboard/sports", icon: "solar:dumbbells-bold", translationKey: "sportsManagement", adminOnly: true },
+  { path: "/dashboard/certifications", icon: "solar:verified-check-bold", translationKey: "certificationsManagement", adminOnly: true },
   { path: "/products", icon: "solar:cart-3-bold", translationKey: "products" },
   { path: "/coaches", icon: "solar:users-group-rounded-bold", translationKey: "coaches" },
   { path: "/gyms", icon: "solar:dumbbells-bold", translationKey: "gyms" },
@@ -47,9 +59,10 @@ export default function AppSidebar({
   const { user } = useAuth()
   const pathname = usePathname()
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [isDashboardMenuOpen, setIsDashboardMenuOpen] = useState(false)
 
   const visibleItems = navItems.filter(
-    (item) => !('adminOnly' in item && item.adminOnly) || user?.role === "ADMIN"
+    (item) => !item.adminOnly || user?.role === "ADMIN"
   )
 
   useEffect(() => {
@@ -111,8 +124,17 @@ export default function AppSidebar({
   const bare = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/"
   const isActive = (path: string) => {
     if (path === "/") return bare === "/"
+    if (path === DASHBOARD_ROOT_PATH) return bare === DASHBOARD_ROOT_PATH
     return bare === path || bare.startsWith(`${path}/`)
   }
+
+  const isDashboardChildPath = (path: string) => path.startsWith(`${DASHBOARD_ROOT_PATH}/`)
+
+  useEffect(() => {
+    if (bare === DASHBOARD_ROOT_PATH || bare.startsWith(`${DASHBOARD_ROOT_PATH}/`)) {
+      setIsDashboardMenuOpen(true)
+    }
+  }, [bare])
 
   // Mobile sidebar
   if (isMobile) {
@@ -167,6 +189,68 @@ export default function AppSidebar({
                 <div className="space-y-1">
                   {visibleItems.map((item) => {
                     const active = isActive(item.path)
+                    const isDashboardRoot = item.path === DASHBOARD_ROOT_PATH
+                    const isDashboardChild = isDashboardChildPath(item.path)
+
+                    if (isDashboardChild && !isDashboardMenuOpen && !active) {
+                      return null
+                    }
+
+                    if (isDashboardRoot) {
+                      return (
+                        <div key={item.path} className="space-y-1">
+                          <div
+                            className={cn(
+                              "relative flex items-center rounded-lg",
+                              active
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                            )}
+                          >
+                            <NavLink
+                              href={getHref(item.path)}
+                              onClick={onClose}
+                              className="relative flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all"
+                            >
+                              {active && (
+                                <motion.span
+                                  layoutId="mobile-active-indicator"
+                                  className={cn(
+                                    "absolute top-1/2 -translate-y-1/2 w-1.5 h-10 bg-primary",
+                                    isRTL ? "rounded-l-full -right-4" : "rounded-r-full -left-4",
+                                  )}
+                                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                />
+                              )}
+                              <Icon icon={item.icon} className="size-4 shrink-0" />
+                              <motion.span
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                {dictionary.sidebar[item.translationKey as keyof typeof dictionary.sidebar]}
+                              </motion.span>
+                            </NavLink>
+
+                            <button
+                              type="button"
+                              onClick={() => setIsDashboardMenuOpen((current) => !current)}
+                              className={cn(
+                                "me-1 inline-flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors",
+                                active ? "text-primary-foreground/90 hover:bg-primary-foreground/15" : "hover:bg-muted",
+                              )}
+                              aria-label={isDashboardMenuOpen ? "Collapse dashboard links" : "Expand dashboard links"}
+                            >
+                              <Icon
+                                icon={isDashboardMenuOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                                className="size-4"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    }
+
                     return (
                       <NavLink
                         key={item.path}
@@ -174,17 +258,28 @@ export default function AppSidebar({
                         onClick={onClose}
                         className={cn(
                           "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                          isDashboardChild && "ms-6 text-[13px]",
                           active
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            ? (isDashboardChild ? "bg-primary/15 text-primary" : "bg-primary text-primary-foreground shadow-sm")
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                         )}
                       >
-                        {active && (
+                        {active && !isDashboardChild && (
                           <motion.span
                             layoutId="mobile-active-indicator"
                             className={cn(
                               "absolute top-1/2 -translate-y-1/2 w-1.5 h-10 bg-primary",
                               isRTL ? "rounded-l-full -right-4" : "rounded-r-full -left-4"
+                            )}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          />
+                        )}
+                        {active && isDashboardChild && (
+                          <motion.span
+                            layoutId="mobile-dashboard-child-active-indicator"
+                            className={cn(
+                              "absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-primary",
+                              isRTL ? "rounded-l-full -right-10" : "rounded-r-full -left-10",
                             )}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                           />
@@ -298,25 +393,109 @@ export default function AppSidebar({
           <div className="space-y-1">
             {visibleItems.filter(item => !item.mobileOnly).map((item) => {
               const active = isActive(item.path)
+              const isDashboardRoot = item.path === DASHBOARD_ROOT_PATH
+              const isDashboardChild = isDashboardChildPath(item.path)
+
+              if (isDashboardChild && (isCollapsed || (!isDashboardMenuOpen && !active))) {
+                return null
+              }
+
+              if (isDashboardRoot) {
+                return (
+                  <div key={item.path} className="space-y-1">
+                    <div
+                      className={cn(
+                        "relative flex items-center rounded-lg",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                      )}
+                    >
+                      <NavLink
+                        href={getHref(item.path)}
+                        className={cn(
+                          "relative flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                          isCollapsed && "justify-center size-10 p-0",
+                        )}
+                        title={isCollapsed ? dictionary.sidebar[item.translationKey as keyof typeof dictionary.sidebar] : undefined}
+                      >
+                        {active && (
+                          <motion.span
+                            layoutId="desktop-active-indicator"
+                            className={cn(
+                              "absolute top-1/2 -translate-y-1/2 w-1 h-10 bg-primary",
+                              isRTL ? "rounded-l-full -right-4" : "rounded-r-full -left-4",
+                            )}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          />
+                        )}
+
+                        <Icon icon={item.icon} className="size-4 shrink-0" />
+
+                        {!isCollapsed && (
+                          <motion.span
+                            className="truncate"
+                            initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                            transition={{ duration: 0.2, delay: 0.05 }}
+                          >
+                            {dictionary.sidebar[item.translationKey as keyof typeof dictionary.sidebar]}
+                          </motion.span>
+                        )}
+                      </NavLink>
+
+                      {!isCollapsed && (
+                        <button
+                          type="button"
+                          onClick={() => setIsDashboardMenuOpen((current) => !current)}
+                          className={cn(
+                            "me-1 inline-flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors",
+                            active ? "text-primary-foreground/90 hover:bg-primary-foreground/15" : "hover:bg-muted",
+                          )}
+                          aria-label={isDashboardMenuOpen ? "Collapse dashboard links" : "Expand dashboard links"}
+                        >
+                          <Icon
+                            icon={isDashboardMenuOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                            className="size-4"
+                          />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+
               return (
                 <NavLink
                   key={item.path}
                   href={getHref(item.path)}
                   className={cn(
                     "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-w-0",
+                    isDashboardChild && !isCollapsed && "ms-5 text-[13px]",
                     isCollapsed && "justify-center size-10 p-0",
                     active
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? (isDashboardChild ? "bg-primary/15 text-primary" : "bg-primary text-primary-foreground shadow-sm")
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                   title={isCollapsed ? dictionary.sidebar[item.translationKey as keyof typeof dictionary.sidebar] : undefined}
                 >
-                  {active && (
+                  {active && !isDashboardChild && (
                     <motion.span
                       layoutId="desktop-active-indicator"
                       className={cn(
                         "absolute top-1/2 -translate-y-1/2 w-1 h-10 bg-primary",
                         isRTL ? "rounded-l-full -right-4" : "rounded-r-full -left-4"
+                      )}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  {active && isDashboardChild && (
+                    <motion.span
+                      layoutId="desktop-dashboard-child-active-indicator"
+                      className={cn(
+                        "absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-primary",
+                        isRTL ? "rounded-l-full -right-9" : "rounded-r-full -left-9",
                       )}
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />

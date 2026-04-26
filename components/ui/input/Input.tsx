@@ -9,10 +9,11 @@ interface InputProps extends React.ComponentProps<"input"> {
   startIcon?: React.ReactNode
   endIcon?: React.ReactNode
   iconClassName?: string
+  endIconInteractive?: boolean
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, startIcon, endIcon, iconClassName, ...props }, ref) => {
+  ({ className, type, startIcon, endIcon, iconClassName, endIconInteractive = false, ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false)
     const isPassword = type === "password"
     const resolvedType = isPassword && showPassword ? "text" : type
@@ -70,7 +71,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {isPassword ? passwordToggle : endIcon ? (
           <div
             className={cn(
-              "absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground",
+              "absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-muted-foreground",
+              !endIconInteractive && "pointer-events-none",
               iconClassName
             )}
           >

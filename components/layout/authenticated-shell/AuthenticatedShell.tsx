@@ -284,7 +284,7 @@ export default function AuthenticatedShell({
           <div className="flex flex-1 overflow-hidden">
             <main
               id="main-content"
-              className="flex-1 overflow-auto min-w-0 bg-background"
+              className="flex-1 min-w-0 overflow-auto overscroll-y-contain bg-background"
             >
               {isNavigating ? (
                 <div className="flex flex-1 min-h-full items-center justify-center">

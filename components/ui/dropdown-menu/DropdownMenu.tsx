@@ -133,7 +133,7 @@ function DropdownMenuRadioItem({
       )}
       {...props}
     >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+      <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center rounded-full border border-border/70 bg-background dark:border-zinc-400/60">
         <DropdownMenuPrimitive.ItemIndicator>
           <div className="size-2 rounded-full bg-primary" />
         </DropdownMenuPrimitive.ItemIndicator>
