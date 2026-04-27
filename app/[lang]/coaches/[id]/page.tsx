@@ -1,20 +1,22 @@
 import { notFound } from "next/navigation"
 
-import { CoachProfilePage, getCoachById } from "@/components/pages/coaches"
+import { CoachProfilePage } from "@/components/pages/coaches"
+import { getCoachById } from "@/components/pages/coaches/shared"
 
-interface CoachDetailsPageProps {
+interface PageProps {
   params: Promise<{
     id: string
+    lang: string
   }>
 }
 
-export default async function CoachDetailsRoute({ params }: CoachDetailsPageProps) {
+export default async function Page({ params }: PageProps) {
   const { id } = await params
-  const numericId = Number(id)
 
-  if (!Number.isInteger(numericId) || !getCoachById(numericId)) {
+  const coachId = Number(id)
+  if (!Number.isFinite(coachId) || !getCoachById(coachId)) {
     notFound()
   }
 
-  return <CoachProfilePage coachId={id} />
+  return <CoachProfilePage coachId={coachId} />
 }

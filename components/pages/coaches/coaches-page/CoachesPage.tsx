@@ -1,15 +1,15 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import Image from "next/image"
+import Link from "next/link"
 import { Icon } from "@iconify/react"
 
-import { COACHES_ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { COACHES_ROUTES } from "@/lib/routes"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -20,21 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { COACHES as SHARED_COACHES, DEFAULT_COACH_AVATAR } from "../shared"
-
-interface TrainerCardData {
-  id: number
-  nameAr: string
-  nameEn: string
-  status: "online" | "offline"
-  coachType: "fitness" | "running" | "football" | "basketball" | "yoga" | "strength"
-  descriptionAr: string
-  descriptionEn: string
-  mutualLeadAr: string
-  mutualLeadEn: string
-  mutualLabelAr: string
-  mutualLabelEn: string
-}
+import { COACHES, type CoachData, type CoachType } from "../shared"
 
 const COACH_STATUS_META = {
   online: {
@@ -90,27 +76,13 @@ const COACH_TYPE_META = {
   },
 } as const
 
-const COACHES: TrainerCardData[] = SHARED_COACHES.map((coach) => ({
-  id: coach.id,
-  nameAr: coach.nameAr,
-  nameEn: coach.nameEn,
-  status: coach.status,
-  coachType: coach.coachType,
-  descriptionAr: coach.descriptionAr,
-  descriptionEn: coach.descriptionEn,
-  mutualLeadAr: coach.mutualLeadAr,
-  mutualLeadEn: coach.mutualLeadEn,
-  mutualLabelAr: coach.mutualLabelAr,
-  mutualLabelEn: coach.mutualLabelEn,
-}))
-
 type CoachSortMode = "id-asc" | "id-desc" | "name-asc" | "name-desc"
 
 function normalizeSearchValue(value: string): string {
   return value.toLowerCase().trim()
 }
 
-function CoachesCard({ data, isRTL, lang }: { data: TrainerCardData; isRTL: boolean; lang: string }) {
+function CoachesCard({ data, isRTL, lang }: { data: CoachData; isRTL: boolean; lang: string }) {
   const title = isRTL ? data.nameAr : data.nameEn
   const statusMeta = COACH_STATUS_META[data.status]
   const status = isRTL ? statusMeta.labelAr : statusMeta.labelEn
@@ -119,7 +91,6 @@ function CoachesCard({ data, isRTL, lang }: { data: TrainerCardData; isRTL: bool
   const tag = isRTL ? typeMeta.labelAr : typeMeta.labelEn
   const mutualLead = isRTL ? data.mutualLeadAr : data.mutualLeadEn
   const mutualLabel = isRTL ? data.mutualLabelAr : data.mutualLabelEn
-  const coachProfileHref = COACHES_ROUTES.DETAIL(lang, data.id)
 
   return (
     <article
@@ -127,9 +98,9 @@ function CoachesCard({ data, isRTL, lang }: { data: TrainerCardData; isRTL: bool
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div className="relative h-56 w-full overflow-hidden border-b border-border/20 bg-muted/50 sm:h-64">
-        <Link href={coachProfileHref} className="block h-full w-full" aria-label={title}>
+        <Link href={COACHES_ROUTES.DETAIL(lang, data.id)} className="block h-full w-full cursor-pointer">
           <Image
-            src={DEFAULT_COACH_AVATAR}
+            src={data.avatarSrc}
             alt={title}
             fill
             className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
@@ -140,11 +111,11 @@ function CoachesCard({ data, isRTL, lang }: { data: TrainerCardData; isRTL: bool
 
       <div className="space-y-3 p-3">
         <div dir="ltr" className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
-          <h3 className={`line-clamp-1 min-w-0 flex-1 text-lg font-extrabold leading-6 text-foreground ${isRTL ? "text-right" : "text-left"}`}>
-            <Link href={coachProfileHref} className="cursor-pointer underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
+          <Link href={COACHES_ROUTES.DETAIL(lang, data.id)} className={`min-w-0 flex-1 cursor-pointer ${isRTL ? "text-right" : "text-left"}`}>
+            <h3 className="line-clamp-1 text-lg font-extrabold leading-6 text-foreground transition-colors hover:text-primary">
               {title}
-            </Link>
-          </h3>
+            </h3>
+          </Link>
 
           <div className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${statusMeta.chipClassName}`}>
             <span className={`inline-block size-2 rounded-full ${statusMeta.dotClassName}`} />
@@ -176,7 +147,7 @@ function CoachesCard({ data, isRTL, lang }: { data: TrainerCardData; isRTL: bool
                   }}
                 >
                   <Image
-                    src={DEFAULT_COACH_AVATAR}
+                    src={data.avatarSrc}
                     alt="mutual"
                     fill
                     className="object-cover"
@@ -210,12 +181,12 @@ export function CoachesPage() {
   const [sortMode, setSortMode] = React.useState<CoachSortMode>("id-asc")
   const [statusOnlineOnly, setStatusOnlineOnly] = React.useState(false)
   const [statusOfflineOnly, setStatusOfflineOnly] = React.useState(false)
-  const [selectedTypes, setSelectedTypes] = React.useState<Set<TrainerCardData["coachType"]>>(new Set())
+  const [selectedTypes, setSelectedTypes] = React.useState<Set<CoachType>>(new Set())
 
   const [draftSortMode, setDraftSortMode] = React.useState<CoachSortMode>("id-asc")
   const [draftStatusOnlineOnly, setDraftStatusOnlineOnly] = React.useState(false)
   const [draftStatusOfflineOnly, setDraftStatusOfflineOnly] = React.useState(false)
-  const [draftSelectedTypes, setDraftSelectedTypes] = React.useState<Set<TrainerCardData["coachType"]>>(new Set())
+  const [draftSelectedTypes, setDraftSelectedTypes] = React.useState<Set<CoachType>>(new Set())
 
   const labels = lang === "ar"
     ? {
@@ -266,7 +237,7 @@ export function CoachesPage() {
       }
 
   const typeOptions = React.useMemo(
-    () => (Object.keys(COACH_TYPE_META) as TrainerCardData["coachType"][]).map((type) => ({
+    () => (Object.keys(COACH_TYPE_META) as CoachType[]).map((type) => ({
       key: type,
       label: isRTL ? COACH_TYPE_META[type].labelAr : COACH_TYPE_META[type].labelEn,
     })),
@@ -289,7 +260,7 @@ export function CoachesPage() {
   }, [draftSelectedTypes, draftSortMode, draftStatusOfflineOnly, draftStatusOnlineOnly])
 
   const resetDraftSettings = React.useCallback(() => {
-    const emptyTypes = new Set<TrainerCardData["coachType"]>()
+    const emptyTypes = new Set<CoachType>()
     setDraftSortMode("id-asc")
     setDraftStatusOnlineOnly(false)
     setDraftStatusOfflineOnly(false)
@@ -302,7 +273,7 @@ export function CoachesPage() {
     setSelectedTypes(new Set(emptyTypes))
   }, [])
 
-  const toggleDraftType = React.useCallback((type: TrainerCardData["coachType"]) => {
+  const toggleDraftType = React.useCallback((type: CoachType) => {
     setDraftSelectedTypes((current) => {
       const next = new Set(current)
       if (next.has(type)) {
