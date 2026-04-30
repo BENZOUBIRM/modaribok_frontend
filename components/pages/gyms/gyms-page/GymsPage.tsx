@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react"
 import { GYM_ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import type { Dictionary } from "@/i18n/get-dictionary"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +24,8 @@ import {
 import { CreateGymModal } from "../create-gym-modal/CreateGymModal"
 import { GYMS, type GymData } from "../shared"
 
+type GymsDictionary = Dictionary["gyms"]
+
 type GymSortMode = "id-asc" | "id-desc" | "name-asc" | "name-desc"
 type GymGenderFilter = "all" | "women" | "men" | "mixed"
 
@@ -30,11 +33,11 @@ function normalizeSearchValue(value: string): string {
   return value.toLowerCase().trim()
 }
 
-function GymCard({ gym, isRTL, lang }: { gym: GymData; isRTL: boolean; lang: string }) {
+function GymCard({ gym, isRTL, lang, labels }: { gym: GymData; isRTL: boolean; lang: string; labels: GymsDictionary }) {
   const title = isRTL ? gym.titleAr : gym.titleEn
   const description = isRTL ? gym.descriptionAr : gym.descriptionEn
   const location = isRTL ? gym.locationAr : gym.locationEn
-  const genderTags = gym.genderTags.map((gender) => (gender === "women" ? (isRTL ? "نساء" : "Women") : (isRTL ? "رجال" : "Men")))
+  const genderTags = gym.genderTags.map((gender) => (gender === "women" ? labels.genderTags.women : labels.genderTags.men))
   const categoryTags = isRTL ? gym.sportsAr : gym.sportsEn
 
   const isFemaleTag = (tag: string): boolean => {
@@ -167,7 +170,7 @@ function GymCard({ gym, isRTL, lang }: { gym: GymData; isRTL: boolean; lang: str
 }
 
 export function GymsPage() {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL, lang } = useDictionary()
   const [isCreateGymModalOpen, setIsCreateGymModalOpen] = React.useState(false)
   const [searchDraft, setSearchDraft] = React.useState("")
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -182,57 +185,7 @@ export function GymsPage() {
   const [draftGenderFilter, setDraftGenderFilter] = React.useState<GymGenderFilter>("all")
   const [draftSelectedCategories, setDraftSelectedCategories] = React.useState<Set<string>>(new Set())
 
-  const labels = lang === "ar"
-    ? {
-        title: "صالات رياضية",
-        add: "إضافة",
-        settings: "الإعدادات",
-        settingsTitle: "إعدادات الصالات",
-        sortSection: "الترتيب",
-        sortNewest: "الأحدث (المعرف تنازلي)",
-        sortOldest: "الأقدم (المعرف تصاعدي)",
-        sortNameAsc: "الاسم (أ - ي)",
-        sortNameDesc: "الاسم (ي - أ)",
-        womenOnly: "نسائي فقط",
-        menOnly: "رجالي فقط",
-        mixed: "مختلط (رجال ونساء)",
-        allGenders: "الكل",
-        categorySection: "التصنيفات",
-        searchPlaceholder: "ابحث عن صالة...",
-        searchButton: "بحث",
-        openSearch: "فتح البحث",
-        searchOnMap: "بحث على الخريطة",
-        cancelSearch: "إلغاء",
-        applyFilters: "تطبيق",
-        resetFilters: "إعادة الضبط",
-        results: "نتيجة",
-        noResults: "لا توجد صالات مطابقة.",
-      }
-    : {
-        title: "Gyms",
-        add: "Add",
-        settings: "Settings",
-        settingsTitle: "Gyms Settings",
-        sortSection: "Sort",
-        sortNewest: "Newest (ID Desc)",
-        sortOldest: "Oldest (ID Asc)",
-        sortNameAsc: "Name (A-Z)",
-        sortNameDesc: "Name (Z-A)",
-        womenOnly: "Women only",
-        menOnly: "Men only",
-        mixed: "Mixed (male and female)",
-        allGenders: "All",
-        categorySection: "Categories",
-        searchPlaceholder: "Search gyms...",
-        searchButton: "Search",
-        openSearch: "Open search",
-        searchOnMap: "Search on map",
-        cancelSearch: "Cancel",
-        applyFilters: "Apply",
-        resetFilters: "Reset",
-        results: "results",
-        noResults: "No matching gyms found.",
-      }
+  const labels = dictionary.gyms
 
   const categoryOptions = React.useMemo(() => {
     const map = new Map<string, string>()
@@ -416,7 +369,7 @@ export function GymsPage() {
                       type="button"
                       onClick={clearSearchDraft}
                       className="inline-flex size-5 cursor-pointer items-center justify-center leading-none text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label={lang === "ar" ? "مسح النص" : "Clear text"}
+                      aria-label={labels.clearSearch}
                     >
                       <Icon icon="material-symbols:close-rounded" className="block size-4" />
                     </button>
@@ -562,7 +515,7 @@ export function GymsPage() {
 
         <div className="space-y-3">
           {visibleGyms.map((gym) => (
-            <GymCard key={gym.id} gym={gym} isRTL={isRTL} lang={lang} />
+            <GymCard key={gym.id} gym={gym} isRTL={isRTL} lang={lang} labels={labels} />
           ))}
         </div>
       </section>
@@ -570,8 +523,6 @@ export function GymsPage() {
       <CreateGymModal
         open={isCreateGymModalOpen}
         onOpenChange={setIsCreateGymModalOpen}
-        isRTL={isRTL}
-        lang={lang}
       />
     </div>
   )

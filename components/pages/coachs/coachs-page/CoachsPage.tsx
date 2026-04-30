@@ -199,21 +199,22 @@ function CoachsCard({ data, isRTL }: { data: TrainerCardData; isRTL: boolean }) 
 }
 
 export function CoachsPage() {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL } = useDictionary()
+  const labels = dictionary.coaches
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
       <div dir={isRTL ? "rtl" : "ltr"} className="mb-3 flex items-center justify-between gap-3">
         <h2 className={`text-xl font-bold text-foreground ${isRTL ? "text-right" : "text-left"}`}>
-          {lang === "ar" ? "المدربين" : "Coachs"}
+          {labels.title}
         </h2>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-card text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/75 hover:bg-card dark:text-zinc-100 dark:hover:border-border/65"
-            title={lang === "ar" ? "إضافة" : "Add"}
-            aria-label={lang === "ar" ? "إضافة" : "Add"}
+            title={labels.add}
+            aria-label={labels.add}
           >
             <Icon icon="lucide:plus" className="size-5" />
           </button>
@@ -221,8 +222,8 @@ export function CoachsPage() {
           <button
             type="button"
             className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg border border-border/30 bg-card text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-border/75 hover:bg-card dark:text-zinc-100 dark:hover:border-border/65"
-            title={lang === "ar" ? "تصفية" : "Filter"}
-            aria-label={lang === "ar" ? "تصفية" : "Filter"}
+            title={labels.filtersSection}
+            aria-label={labels.filtersSection}
           >
             <Icon icon="lucide:sliders-horizontal" className="size-5" />
           </button>

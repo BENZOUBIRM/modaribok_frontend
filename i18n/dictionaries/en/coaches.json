@@ -1,0 +1,36 @@
+{
+  "title": "Coaches",
+  "add": "Add",
+  "settings": "Settings",
+  "settingsTitle": "Coaches Settings",
+  "sortSection": "Sort",
+  "sortNewest": "Newest (ID Desc)",
+  "sortOldest": "Oldest (ID Asc)",
+  "sortNameAsc": "Name (A-Z)",
+  "sortNameDesc": "Name (Z-A)",
+  "filtersSection": "Filters",
+  "onlineOnly": "Online only",
+  "offlineOnly": "Offline only",
+  "typesSection": "Coach Types",
+  "searchPlaceholder": "Search coaches...",
+  "searchButton": "Search",
+  "openSearch": "Open search",
+  "cancelSearch": "Cancel",
+  "applyFilters": "Apply",
+  "resetFilters": "Reset",
+  "results": "results",
+  "noResults": "No matching coaches found.",
+  "clearSearch": "Clear text",
+  "status": {
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "types": {
+    "fitness": "Fitness coach",
+    "running": "Running coach",
+    "football": "Football coach",
+    "basketball": "Basketball coach",
+    "yoga": "Yoga coach",
+    "strength": "Strength coach"
+  }
+}

@@ -5,6 +5,10 @@ export type CoachType = "fitness" | "running" | "football" | "basketball" | "yog
 export interface CoachCertification {
   titleAr: string
   titleEn: string
+  dateAr: string
+  dateEn: string
+  typeAr: string
+  typeEn: string
   issuerAr: string
   issuerEn: string
   year: string
@@ -100,9 +104,9 @@ export const COACHES: CoachData[] = [
       { value: "96%", labelAr: "نسبة رضا", labelEn: "Satisfaction" },
     ],
     certifications: [
-      { titleAr: "شهادة تدريب شخصي متقدم", titleEn: "Advanced Personal Training Certificate", issuerAr: "أكاديمية القوة والحركة", issuerEn: "Strength & Motion Academy", year: "2023", imageSrc: "/images/default-user.jpg" },
-      { titleAr: "اعتماد تغذية رياضية", titleEn: "Sports Nutrition Accreditation", issuerAr: "معهد الأداء الرياضي", issuerEn: "Sports Performance Institute", year: "2022", imageSrc: "/images/default-user-1.png" },
-      { titleAr: "دورة تأهيل وإصابات", titleEn: "Rehab & Injury Course", issuerAr: "مركز الحركة المتقدمة", issuerEn: "Advanced Movement Center", year: "2021", imageSrc: "/images/man-running.png" },
+      { titleAr: "شهادة تدريب شخصي متقدم", titleEn: "Advanced Personal Training Certificate", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "أكاديمية القوة والحركة", issuerEn: "Strength & Motion Academy", year: "2023", imageSrc: "/images/default-user.jpg" },
+      { titleAr: "اعتماد تغذية رياضية", titleEn: "Sports Nutrition Accreditation", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "معهد الأداء الرياضي", issuerEn: "Sports Performance Institute", year: "2022", imageSrc: "/images/default-user-1.png" },
+      { titleAr: "دورة تأهيل وإصابات", titleEn: "Rehab & Injury Course", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "مركز الحركة المتقدمة", issuerEn: "Advanced Movement Center", year: "2021", imageSrc: "/images/man-running.png" },
     ],
     socialLinks: [
       { key: "facebook", labelAr: "فيسبوك", labelEn: "Facebook", icon: "ri:facebook-fill", url: "https://example.com" },
@@ -144,8 +148,8 @@ export const COACHES: CoachData[] = [
       { value: "4.9", labelAr: "تقييم المتدربين", labelEn: "Coach rating" },
     ],
     certifications: [
-      { titleAr: "شهادة تدريب جري متقدم", titleEn: "Advanced Running Coaching", issuerAr: "اتحاد اللياقة الفلسطيني", issuerEn: "Palestinian Fitness Union", year: "2024", imageSrc: "/images/default-user-1.png" },
-      { titleAr: "اعتماد تحليل الأداء الرياضي", titleEn: "Sports Performance Analysis", issuerAr: "أكاديمية الأداء", issuerEn: "Performance Academy", year: "2022", imageSrc: "/images/default-user.jpg" },
+      { titleAr: "شهادة تدريب جري متقدم", titleEn: "Advanced Running Coaching", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "اتحاد اللياقة الفلسطيني", issuerEn: "Palestinian Fitness Union", year: "2024", imageSrc: "/images/default-user-1.png" },
+      { titleAr: "اعتماد تحليل الأداء الرياضي", titleEn: "Sports Performance Analysis", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "أكاديمية الأداء", issuerEn: "Performance Academy", year: "2022", imageSrc: "/images/default-user.jpg" },
     ],
     socialLinks: [
       { key: "instagram", labelAr: "انستغرام", labelEn: "Instagram", icon: "mdi:instagram", url: "https://example.com" },
@@ -184,7 +188,7 @@ export const COACHES: CoachData[] = [
       { value: "32", labelAr: "فريقا", labelEn: "Teams" },
     ],
     certifications: [
-      { titleAr: "شهادة تدريب كرة قدم", titleEn: "Football Coaching License", issuerAr: "الاتحاد الرياضي", issuerEn: "Sports Federation", year: "2023", imageSrc: "/images/man-running.png" },
+      { titleAr: "شهادة تدريب كرة قدم", titleEn: "Football Coaching License", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "الاتحاد الرياضي", issuerEn: "Sports Federation", year: "2023", imageSrc: "/images/man-running.png" },
     ],
     socialLinks: [
       { key: "facebook", labelAr: "فيسبوك", labelEn: "Facebook", icon: "ri:facebook-fill", url: "https://example.com" },
@@ -222,7 +226,7 @@ export const COACHES: CoachData[] = [
       { value: "18", labelAr: "منافسة", labelEn: "Competitions" },
     ],
     certifications: [
-      { titleAr: "اعتماد تدريب كرة سلة", titleEn: "Basketball Coaching Certificate", issuerAr: "مجمع الأداء الرياضي", issuerEn: "Sport Performance Complex", year: "2021", imageSrc: "/images/default-user.jpg" },
+      { titleAr: "اعتماد تدريب كرة سلة", titleEn: "Basketball Coaching Certificate", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "مجمع الأداء الرياضي", issuerEn: "Sport Performance Complex", year: "2021", imageSrc: "/images/default-user.jpg" },
     ],
     socialLinks: [
       { key: "instagram", labelAr: "انستغرام", labelEn: "Instagram", icon: "mdi:instagram", url: "https://example.com" },
@@ -260,7 +264,7 @@ export const COACHES: CoachData[] = [
       { value: "4.8", labelAr: "تقييم المتدربين", labelEn: "Coach rating" },
     ],
     certifications: [
-      { titleAr: "معلمة يوغا معتمدة", titleEn: "Certified Yoga Instructor", issuerAr: "أكاديمية الوعي والحركة", issuerEn: "Mind & Motion Academy", year: "2024", imageSrc: "/images/default-user-1.png" },
+      { titleAr: "معلمة يوغا معتمدة", titleEn: "Certified Yoga Instructor", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "أكاديمية الوعي والحركة", issuerEn: "Mind & Motion Academy", year: "2024", imageSrc: "/images/default-user-1.png" },
     ],
     socialLinks: [
       { key: "instagram", labelAr: "انستغرام", labelEn: "Instagram", icon: "mdi:instagram", url: "https://example.com" },
@@ -298,7 +302,7 @@ export const COACHES: CoachData[] = [
       { value: "5", labelAr: "خطط تدريب", labelEn: "Programs" },
     ],
     certifications: [
-      { titleAr: "شهادة تدريب قوة متقدم", titleEn: "Advanced Strength Coaching", issuerAr: "معهد الأداء البدني", issuerEn: "Physical Performance Institute", year: "2023", imageSrc: "/images/default-user.jpg" },
+      { titleAr: "شهادة تدريب قوة متقدم", titleEn: "Advanced Strength Coaching", dateAr: "3 يناير 2026", dateEn: "Jan 3, 2026", typeAr: "كرة القدم", typeEn: "Football", issuerAr: "معهد الأداء البدني", issuerEn: "Physical Performance Institute", year: "2023", imageSrc: "/images/default-user.jpg" },
     ],
     socialLinks: [
       { key: "facebook", labelAr: "فيسبوك", labelEn: "Facebook", icon: "ri:facebook-fill", url: "https://example.com" },

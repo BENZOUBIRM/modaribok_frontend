@@ -1,0 +1,36 @@
+{
+  "title": "المدربين",
+  "add": "إضافة",
+  "settings": "الإعدادات",
+  "settingsTitle": "إعدادات المدربين",
+  "sortSection": "الترتيب",
+  "sortNewest": "الأحدث (المعرف تنازلي)",
+  "sortOldest": "الأقدم (المعرف تصاعدي)",
+  "sortNameAsc": "الاسم (أ - ي)",
+  "sortNameDesc": "الاسم (ي - أ)",
+  "filtersSection": "الفلاتر",
+  "onlineOnly": "اونلاين فقط",
+  "offlineOnly": "اوفلاين فقط",
+  "typesSection": "أنواع التدريب",
+  "searchPlaceholder": "ابحث عن مدرب...",
+  "searchButton": "بحث",
+  "openSearch": "فتح البحث",
+  "cancelSearch": "إلغاء",
+  "applyFilters": "تطبيق",
+  "resetFilters": "إعادة الضبط",
+  "results": "نتيجة",
+  "noResults": "لا توجد نتائج مطابقة.",
+  "clearSearch": "مسح النص",
+  "status": {
+    "online": "اونلاين",
+    "offline": "اوفلاين"
+  },
+  "types": {
+    "fitness": "مدرب لياقة بدنية",
+    "running": "مدرب جري",
+    "football": "مدرب كرة قدم",
+    "basketball": "مدرب كرة سلة",
+    "yoga": "مدرب يوغا",
+    "strength": "مدرب قوة"
+  }
+}

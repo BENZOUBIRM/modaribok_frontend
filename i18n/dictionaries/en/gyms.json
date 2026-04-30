@@ -1,0 +1,30 @@
+{
+  "title": "Gyms",
+  "add": "Add",
+  "settings": "Settings",
+  "settingsTitle": "Gyms Settings",
+  "sortSection": "Sort",
+  "sortNewest": "Newest (ID Desc)",
+  "sortOldest": "Oldest (ID Asc)",
+  "sortNameAsc": "Name (A-Z)",
+  "sortNameDesc": "Name (Z-A)",
+  "womenOnly": "Women only",
+  "menOnly": "Men only",
+  "mixed": "Mixed (male and female)",
+  "allGenders": "All",
+  "categorySection": "Categories",
+  "searchPlaceholder": "Search gyms...",
+  "searchButton": "Search",
+  "openSearch": "Open search",
+  "searchOnMap": "Search on map",
+  "cancelSearch": "Cancel",
+  "applyFilters": "Apply",
+  "resetFilters": "Reset",
+  "results": "results",
+  "noResults": "No matching gyms found.",
+  "clearSearch": "Clear text",
+  "genderTags": {
+    "women": "Women",
+    "men": "Men"
+  }
+}

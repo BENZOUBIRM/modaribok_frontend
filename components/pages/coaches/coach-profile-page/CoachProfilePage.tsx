@@ -149,23 +149,13 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 }
 
 export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL } = useDictionary()
 
   const coachNumericId = React.useMemo(() => Number(coachId), [coachId])
   const coach = React.useMemo(
     () => (Number.isFinite(coachNumericId) ? getCoachById(coachNumericId) : undefined),
     [coachNumericId],
   )
-
-  if (!coach) {
-    return null
-  }
-
-  const name = isRTL ? coach.nameAr : coach.nameEn
-  const bio = isRTL ? coach.bioAr : coach.bioEn
-  const specialties = isRTL ? coach.specialtiesAr : coach.specialtiesEn
-  const certifications = coach.certifications
-  const workDays = coach.workDays
 
   const certificationScrollRef = React.useRef<HTMLDivElement | null>(null)
   const certificationTrackRef = React.useRef<HTMLDivElement | null>(null)
@@ -175,31 +165,13 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
   const [canCertScrollLeft, setCanCertScrollLeft] = React.useState(false)
   const [canCertScrollRight, setCanCertScrollRight] = React.useState(false)
 
-  const labels = lang === "ar"
-    ? {
-        changeAccount: "تبديل الحساب",
-        archive: "عرض الأرشيف",
-        editProfile: "تعديل الملف الشخصي",
-        bio: "نبذة",
-        certifications: "الشهادات",
-        specialties: "التخصصات",
-        workSchedule: "مواعيد العمل",
-        posts: "منشور",
-        followers: "متابعين",
-        following: "أتابع",
-      }
-    : {
-        changeAccount: "Change account",
-        archive: "View archive",
-        editProfile: "Edit profile",
-        bio: "Bio",
-        certifications: "Certifications",
-        specialties: "Specialties",
-        workSchedule: "Work schedule",
-        posts: "Posts",
-        followers: "Followers",
-        following: "Following",
-      }
+  const labels = dictionary.coachProfile
+
+  const name = coach ? (isRTL ? coach.nameAr : coach.nameEn) : ""
+  const bio = coach ? (isRTL ? coach.bioAr : coach.bioEn) : ""
+  const specialties = coach ? (isRTL ? coach.specialtiesAr : coach.specialtiesEn) : []
+  const certifications = coach?.certifications ?? []
+  const workDays = coach?.workDays ?? []
 
   const socialToneByKey = (key: string) => {
     switch (key) {
@@ -357,6 +329,10 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
     window.setTimeout(updateCertScrollState, 60)
   }
 
+  if (!coach) {
+    return null
+  }
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6" dir={isRTL ? "rtl" : "ltr"}>
       <div className="space-y-4">
@@ -368,7 +344,7 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
 
             <div className="min-w-0 flex-1">
               <div className={cn("flex flex-wrap items-center gap-2", isRTL ? "text-right" : "text-left")}>
-                <h1 className="text-3xl font-black leading-tight text-foreground">{name}</h1>
+                <h1 className="text-3xl font-black leading-tight text-foreground" title={name}>{name}</h1>
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-4 md:flex-nowrap md:justify-between">
@@ -421,16 +397,21 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
             <p className="max-w-5xl text-sm leading-7 text-muted-foreground">{bio}</p>
           </div>
 
-          <div className="my-4 border-t-2 border-dashed border-border/60" aria-hidden="true" />
+          <div className="my-3 border-t-2 border-dashed border-border/60" aria-hidden="true" />
 
           <div className="mt-4">
             <Accordion type="multiple" defaultValue={["certifications"]} className="w-full">
               <AccordionItem value="certifications" className="border-0">
-                <AccordionTrigger className="py-5 text-base font-black no-underline hover:no-underline">
+                <AccordionTrigger
+                  className={cn(
+                    "cursor-pointer items-center justify-start gap-2 py-5 text-base font-black no-underline hover:no-underline",
+                    isRTL ? "text-right" : "text-left",
+                  )}
+                >
                   <span>{labels.certifications}</span>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className={cn("mb-3 flex items-center", isRTL ? "justify-start" : "justify-end")} dir="ltr">
+                  <div className={cn("mb-2 flex items-center", isRTL ? "justify-start" : "justify-end")} dir="ltr">
                     <div className={cn("items-center gap-1", hasCertOverflow ? "flex" : "hidden")}>
                       <button
                         type="button"
@@ -441,7 +422,7 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
                           "hover:bg-black/10 dark:hover:bg-white/10",
                           !canCertScrollLeft && "opacity-40 cursor-not-allowed",
                         )}
-                        aria-label="Scroll certifications left"
+                        aria-label={labels.scrollLeft}
                       >
                         <Icon icon="solar:alt-arrow-left-linear" className="size-4" />
                       </button>
@@ -454,7 +435,7 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
                           "hover:bg-black/10 dark:hover:bg-white/10",
                           !canCertScrollRight && "opacity-40 cursor-not-allowed",
                         )}
-                        aria-label="Scroll certifications right"
+                        aria-label={labels.scrollRight}
                       >
                         <Icon icon="solar:alt-arrow-right-linear" className="size-4" />
                       </button>
@@ -464,10 +445,7 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
                   <div
                     ref={certificationScrollRef}
                     dir={isRTL ? "rtl" : "ltr"}
-                    className={cn(
-                      "overflow-x-auto overflow-y-hidden pb-2",
-                      "scrollbar-on-hover",
-                    )}
+                    className="overflow-x-scroll overflow-y-hidden pb-2 md:overflow-x-auto"
                   >
                     <div ref={certificationTrackRef} className="flex w-max items-stretch gap-3 pe-2">
                       {certifications.map((certification) => (
@@ -475,22 +453,30 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
                           key={`${certification.titleEn}-${certification.year}`}
                           data-cert-card
                           className={cn(
-                            "flex w-64 shrink-0 gap-3 rounded-2xl border border-border/30 bg-muted/30 p-3",
-                            isRTL ? "flex-row-reverse" : "flex-row",
+                            "flex min-h-24 w-72 shrink-0 items-stretch gap-3 rounded-2xl border border-border/50 bg-muted/60 p-3 dark:bg-muted/20 sm:w-80",
+                            isRTL ? "text-right" : "text-left",
                           )}
+                          dir={isRTL ? "rtl" : "ltr"}
                         >
-                          <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-border/40 bg-card">
-                            <Image src={certification.imageSrc} alt={isRTL ? certification.titleAr : certification.titleEn} fill className="object-cover" sizes="64px" />
+                          <div className="relative aspect-square h-full shrink-0 overflow-hidden rounded-xl border border-border/40 bg-card">
+                            <Image src={certification.imageSrc} alt={isRTL ? certification.titleAr : certification.titleEn} fill className="object-cover" sizes="96px" />
                           </div>
 
                           <div className={cn("min-w-0 flex-1", isRTL ? "text-right" : "text-left")}>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-sm font-extrabold text-foreground">{isRTL ? certification.titleAr : certification.titleEn}</h3>
-                              <Badge tone="green">{certification.year}</Badge>
-                            </div>
-                            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                              {isRTL ? certification.issuerAr : certification.issuerEn}
+                            <h3
+                              className={cn("w-full text-sm font-extrabold text-foreground", isRTL ? "line-clamp-2" : "truncate")}
+                              title={isRTL ? certification.titleAr : certification.titleEn}
+                            >
+                              {isRTL ? certification.titleAr : certification.titleEn}
+                            </h3>
+                            <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                              {isRTL ? certification.dateAr : certification.dateEn}
                             </p>
+                            <div className="mt-2 flex justify-start">
+                              <span className="inline-flex w-fit items-center rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
+                                {isRTL ? certification.typeAr : certification.typeEn}
+                              </span>
+                            </div>
                           </div>
                         </article>
                       ))}
@@ -502,7 +488,12 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
               <div className="border-t-2 border-dashed border-border/60" aria-hidden="true" />
 
               <AccordionItem value="work-schedule" className="border-0">
-                <AccordionTrigger className="py-5 text-base font-black no-underline hover:no-underline">
+                <AccordionTrigger
+                  className={cn(
+                    "cursor-pointer items-center justify-start gap-2 py-5 text-base font-black no-underline hover:no-underline",
+                    isRTL ? "text-right" : "text-left",
+                  )}
+                >
                   <span>{labels.workSchedule}</span>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -527,7 +518,12 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
               <div className="border-t-2 border-dashed border-border/60" aria-hidden="true" />
 
               <AccordionItem value="specialties" className="border-0">
-                <AccordionTrigger className="py-5 text-base font-black no-underline hover:no-underline">
+                <AccordionTrigger
+                  className={cn(
+                    "cursor-pointer items-center justify-start gap-2 py-5 text-base font-black no-underline hover:no-underline",
+                    isRTL ? "text-right" : "text-left",
+                  )}
+                >
                   <span>{labels.specialties}</span>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -543,12 +539,12 @@ export function CoachProfilePage({ coachId }: CoachProfilePageProps) {
             </Accordion>
           </div>
 
-          <div className="my-4 border-t-2 border-dashed border-border/60" aria-hidden="true" />
+          <div className="my-3 border-t-2 border-dashed border-border/60" aria-hidden="true" />
 
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Icon icon="ri:facebook-fill" className="size-5 text-black dark:text-white" />
-              <h2 className="text-lg font-black text-foreground">{lang === "ar" ? "روابط التواصل الاجتماعي" : "Social links"}</h2>
+              <h2 className="text-lg font-black text-foreground">{labels.socialLinks}</h2>
             </div>
           </div>
 

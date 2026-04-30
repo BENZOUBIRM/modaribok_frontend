@@ -1,0 +1,18 @@
+{
+  "size": "الحجم",
+  "quantity": "الكمية",
+  "total": "الاجمالي",
+  "addToCart": "اضافة الى السلة",
+  "added": "تمت الاضافة",
+  "showMore": "عرض المزيد",
+  "showLess": "عرض أقل",
+  "hideBottomGallery": "إخفاء شريط الصور",
+  "showBottomGallery": "إظهار شريط الصور",
+  "currency": "درهم",
+  "decreaseQuantity": "انقاص الكمية",
+  "increaseQuantity": "زيادة الكمية",
+  "previousImage": "الصورة السابقة",
+  "nextImage": "الصورة التالية",
+  "thumbnail": "صورة مصغرة {index}",
+  "discountLabel": "خصم %{value}"
+}

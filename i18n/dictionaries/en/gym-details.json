@@ -1,0 +1,18 @@
+{
+  "edit": "Edit",
+  "website": "Website",
+  "phone": "Phone",
+  "email": "Email",
+  "capacity": "Capacity",
+  "members": "members",
+  "facilities": "Available facilities",
+  "workSchedule": "Work schedule",
+  "prices": "Prices",
+  "social": "Social links",
+  "showMoreImages": "Show more",
+  "currency": "MAD",
+  "genderTags": {
+    "women": "Women",
+    "men": "Men"
+  }
+}

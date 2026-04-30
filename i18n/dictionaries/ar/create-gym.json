@@ -1,0 +1,62 @@
+{
+  "title": "انشاء نادي رياضي",
+  "close": "إغلاق",
+  "next": "التالي",
+  "back": "رجوع",
+  "submit": "انشاء حساب نادي رياضي",
+  "oneOfThree": "صورة (1/3)",
+  "mapHash": "/#",
+  "capacityDecrease": "إنقاص السعة",
+  "capacityIncrease": "زيادة السعة",
+  "stepOne": {
+    "gymName": "اسم النادي",
+    "gymNamePlaceholder": "طريقة تقديم التدريب: عبر الانترنت، حضورا، كلاهما",
+    "logo": "الشعار",
+    "logoHint": "إرفاق صورة الشعار (jpg, jpeg, png)",
+    "description": "وصف النادي",
+    "descriptionPlaceholder": "اكتب نبذة المميزة...",
+    "country": "الدولة",
+    "countryPlaceholder": "اختر الدولة...",
+    "city": "المدينة",
+    "cityPlaceholder": "اختر المدينة...",
+    "searchCountry": "ابحث عن الدولة",
+    "searchCity": "ابحث عن المدينة",
+    "noResults": "لا توجد نتائج",
+    "address": "العنوان",
+    "addressPlaceholder": "اكتب العنوان بالتفصيل ...",
+    "phone": "رقم الهاتف",
+    "phonePlaceholder": "طريقة تقديم التدريب: عبر الانترنت، حضورا، كلاهما",
+    "email": "البريد الالكتروني",
+    "emailPlaceholder": "طريقة تقديم التدريب: عبر الانترنت، حضورا، كلاهما"
+  },
+  "stepTwo": {
+    "website": "الموقع الالكتروني",
+    "websitePlaceholder": "/#",
+    "capacity": "الطاقة الاستيعابية",
+    "capacityPlaceholder": "عدد الاعضاء المسموح بهم",
+    "sports": "الرياضات المتوفرة",
+    "facilities": "المرافق المتوفرة",
+    "facilitiesPlaceholder": "اختر المرافق..."
+  },
+  "stepThree": {
+    "gallery": "الصور (المعرض)",
+    "galleryEmpty": "لم يتم اضافة اي صورة بعد",
+    "galleryHint": "إضافة صور (jpg, jpeg, png)",
+    "social": "روابط التواصل الاجتماعي"
+  },
+  "sports": {
+    "basketball": "كرة السلة",
+    "football": "كرة القدم",
+    "run": "الجري مع الاصدقاء",
+    "karate": "كارتيه",
+    "swim": "السباحة",
+    "volleyball": "كرة الطائرة"
+  },
+  "facilities": {
+    "lockers": "غرف تبديل",
+    "parking": "موقف سيارات",
+    "cafe": "كافتيريا",
+    "sauna": "ساونا",
+    "pool": "مسبح"
+  }
+}

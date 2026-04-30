@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react"
 
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import type { Dictionary } from "@/i18n/get-dictionary"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { COACHES_ROUTES } from "@/lib/routes"
@@ -22,16 +23,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { COACHES, type CoachData, type CoachType } from "../shared"
 
+type CoachesDictionary = Dictionary["coaches"]
+
 const COACH_STATUS_META = {
   online: {
-    labelAr: "اونلاين",
-    labelEn: "Online",
     chipClassName: "bg-emerald-500/15 text-emerald-500",
     dotClassName: "bg-emerald-500",
   },
   offline: {
-    labelAr: "اوفلاين",
-    labelEn: "Offline",
     chipClassName: "bg-red-500/15 text-red-500",
     dotClassName: "bg-red-500",
   },
@@ -39,38 +38,26 @@ const COACH_STATUS_META = {
 
 const COACH_TYPE_META = {
   fitness: {
-    labelAr: "مدرب لياقة بدنية",
-    labelEn: "Fitness coach",
     icon: "solar:dumbbell-large-2-linear",
     chipClassName: "bg-amber-500/15 text-amber-500",
   },
   running: {
-    labelAr: "مدرب جري",
-    labelEn: "Running coach",
     icon: "solar:running-2-linear",
     chipClassName: "bg-sky-500/15 text-sky-500",
   },
   football: {
-    labelAr: "مدرب كرة قدم",
-    labelEn: "Football coach",
     icon: "mdi:soccer",
     chipClassName: "bg-emerald-500/15 text-emerald-500",
   },
   basketball: {
-    labelAr: "مدرب كرة سلة",
-    labelEn: "Basketball coach",
     icon: "mdi:basketball",
     chipClassName: "bg-orange-500/15 text-orange-500",
   },
   yoga: {
-    labelAr: "مدرب يوغا",
-    labelEn: "Yoga coach",
     icon: "mdi:meditation",
     chipClassName: "bg-violet-500/15 text-violet-500",
   },
   strength: {
-    labelAr: "مدرب قوة",
-    labelEn: "Strength coach",
     icon: "mdi:arm-flex-outline",
     chipClassName: "bg-rose-500/15 text-rose-500",
   },
@@ -82,13 +69,13 @@ function normalizeSearchValue(value: string): string {
   return value.toLowerCase().trim()
 }
 
-function CoachesCard({ data, isRTL, lang }: { data: CoachData; isRTL: boolean; lang: string }) {
+function CoachesCard({ data, isRTL, lang, labels }: { data: CoachData; isRTL: boolean; lang: string; labels: CoachesDictionary }) {
   const title = isRTL ? data.nameAr : data.nameEn
   const statusMeta = COACH_STATUS_META[data.status]
-  const status = isRTL ? statusMeta.labelAr : statusMeta.labelEn
+  const status = labels.status[data.status]
   const description = isRTL ? data.descriptionAr : data.descriptionEn
   const typeMeta = COACH_TYPE_META[data.coachType]
-  const tag = isRTL ? typeMeta.labelAr : typeMeta.labelEn
+  const tag = labels.types[data.coachType]
   const mutualLead = isRTL ? data.mutualLeadAr : data.mutualLeadEn
   const mutualLabel = isRTL ? data.mutualLabelAr : data.mutualLabelEn
 
@@ -172,7 +159,7 @@ function CoachesCard({ data, isRTL, lang }: { data: CoachData; isRTL: boolean; l
 }
 
 export function CoachesPage() {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL, lang } = useDictionary()
   const [searchDraft, setSearchDraft] = React.useState("")
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false)
@@ -188,60 +175,14 @@ export function CoachesPage() {
   const [draftStatusOfflineOnly, setDraftStatusOfflineOnly] = React.useState(false)
   const [draftSelectedTypes, setDraftSelectedTypes] = React.useState<Set<CoachType>>(new Set())
 
-  const labels = lang === "ar"
-    ? {
-        title: "المدربين",
-        add: "إضافة",
-        settings: "الإعدادات",
-        settingsTitle: "إعدادات المدربين",
-        sortSection: "الترتيب",
-        sortNewest: "الأحدث (المعرف تنازلي)",
-        sortOldest: "الأقدم (المعرف تصاعدي)",
-        sortNameAsc: "الاسم (أ - ي)",
-        sortNameDesc: "الاسم (ي - أ)",
-        filtersSection: "الفلاتر",
-        onlineOnly: "اونلاين فقط",
-        offlineOnly: "اوفلاين فقط",
-        typesSection: "أنواع التدريب",
-        searchPlaceholder: "ابحث عن مدرب...",
-        searchButton: "بحث",
-        openSearch: "فتح البحث",
-        cancelSearch: "إلغاء",
-        applyFilters: "تطبيق",
-        resetFilters: "إعادة الضبط",
-        results: "نتيجة",
-        noResults: "لا توجد نتائج مطابقة.",
-      }
-    : {
-        title: "Coaches",
-        add: "Add",
-        settings: "Settings",
-        settingsTitle: "Coaches Settings",
-        sortSection: "Sort",
-        sortNewest: "Newest (ID Desc)",
-        sortOldest: "Oldest (ID Asc)",
-        sortNameAsc: "Name (A-Z)",
-        sortNameDesc: "Name (Z-A)",
-        filtersSection: "Filters",
-        onlineOnly: "Online only",
-        offlineOnly: "Offline only",
-        typesSection: "Coach Types",
-        searchPlaceholder: "Search coaches...",
-        searchButton: "Search",
-        openSearch: "Open search",
-        cancelSearch: "Cancel",
-        applyFilters: "Apply",
-        resetFilters: "Reset",
-        results: "results",
-        noResults: "No matching coaches found.",
-      }
+  const labels = dictionary.coaches
 
   const typeOptions = React.useMemo(
     () => (Object.keys(COACH_TYPE_META) as CoachType[]).map((type) => ({
       key: type,
-      label: isRTL ? COACH_TYPE_META[type].labelAr : COACH_TYPE_META[type].labelEn,
+      label: labels.types[type],
     })),
-    [isRTL],
+    [labels.types],
   )
 
   const syncDraftWithApplied = React.useCallback(() => {
@@ -401,7 +342,7 @@ export function CoachesPage() {
                       type="button"
                       onClick={clearSearchDraft}
                       className="inline-flex size-5 cursor-pointer items-center justify-center leading-none text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label={lang === "ar" ? "مسح النص" : "Clear text"}
+                      aria-label={labels.clearSearch}
                     >
                       <Icon icon="material-symbols:close-rounded" className="block size-4" />
                     </button>
@@ -545,7 +486,7 @@ export function CoachesPage() {
         )}>
           {visibleCoaches.map((coach) => (
             <div key={coach.id} className={isCompactGrid ? "w-full sm:w-[320px]" : ""}>
-              <CoachesCard data={coach} isRTL={isRTL} lang={lang} />
+              <CoachesCard data={coach} isRTL={isRTL} lang={lang} labels={labels} />
             </div>
           ))}
         </div>

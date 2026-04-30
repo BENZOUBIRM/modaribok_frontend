@@ -4,6 +4,7 @@ import * as React from "react"
 import { Icon } from "@iconify/react"
 
 import { cn } from "@/lib/utils"
+import { useDictionary } from "@/providers/dictionary-provider"
 import type { CityOption, CountryOption } from "@/types"
 import { loadCitiesByCountry, loadCountries } from "@/lib/country-city"
 import {
@@ -27,8 +28,6 @@ import {
 type CreateGymModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  isRTL: boolean
-  lang: string
 }
 
 type Step = 1 | 2 | 3
@@ -62,20 +61,20 @@ const MAX_GALLERY_IMAGES = 3
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg"]
 
 const SPORT_OPTIONS = [
-  { key: "basketball", icon: "mdi:basketball", labelAr: "كرة السلة", labelEn: "Basketball", colorClass: "bg-orange-500/15 text-orange-500 border-orange-500/20" },
-  { key: "football", icon: "mdi:soccer", labelAr: "كرة القدم", labelEn: "Football", colorClass: "bg-indigo-500/15 text-indigo-500 border-indigo-500/20" },
-  { key: "run", icon: "solar:running-2-linear", labelAr: "الجري مع الاصدقاء", labelEn: "Run with friends", colorClass: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" },
-  { key: "karate", icon: "mdi:karate", labelAr: "كارتيه", labelEn: "Karate", colorClass: "bg-pink-500/15 text-pink-500 border-pink-500/20" },
-  { key: "swim", icon: "mdi:swim", labelAr: "السباحة", labelEn: "Swimming", colorClass: "bg-sky-500/15 text-sky-500 border-sky-500/20" },
-  { key: "volleyball", icon: "mdi:volleyball", labelAr: "كرة الطائرة", labelEn: "Volleyball", colorClass: "bg-amber-500/15 text-amber-500 border-amber-500/20" },
+  { key: "basketball", icon: "mdi:basketball", colorClass: "bg-orange-500/15 text-orange-500 border-orange-500/20" },
+  { key: "football", icon: "mdi:soccer", colorClass: "bg-indigo-500/15 text-indigo-500 border-indigo-500/20" },
+  { key: "run", icon: "solar:running-2-linear", colorClass: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" },
+  { key: "karate", icon: "mdi:karate", colorClass: "bg-pink-500/15 text-pink-500 border-pink-500/20" },
+  { key: "swim", icon: "mdi:swim", colorClass: "bg-sky-500/15 text-sky-500 border-sky-500/20" },
+  { key: "volleyball", icon: "mdi:volleyball", colorClass: "bg-amber-500/15 text-amber-500 border-amber-500/20" },
 ] as const
 
-const FACILITY_OPTIONS: Array<{ key: FacilityKey; labelAr: string; labelEn: string }> = [
-  { key: "lockers", labelAr: "غرف تبديل", labelEn: "Locker rooms" },
-  { key: "parking", labelAr: "موقف سيارات", labelEn: "Parking" },
-  { key: "cafe", labelAr: "كافتيريا", labelEn: "Cafe" },
-  { key: "sauna", labelAr: "ساونا", labelEn: "Sauna" },
-  { key: "pool", labelAr: "مسبح", labelEn: "Pool" },
+const FACILITY_OPTIONS: Array<{ key: FacilityKey }> = [
+  { key: "lockers" },
+  { key: "parking" },
+  { key: "cafe" },
+  { key: "sauna" },
+  { key: "pool" },
 ]
 
 const initialFormState: FormState = {
@@ -102,101 +101,6 @@ const initialFormState: FormState = {
   },
 }
 
-function buildLabels(lang: string) {
-  if (lang === "ar") {
-    return {
-      title: "انشاء نادي رياضي",
-      stepOne: {
-        gymName: "اسم النادي",
-        gymNamePlaceholder: "طريقة تقديم التدريب: عبر الانترنت، حضورا، كلاهما",
-        logo: "الشعار",
-        logoHint: "إرفاق صورة الشعار (jpg, jpeg, png)",
-        description: "وصف النادي",
-        descriptionPlaceholder: "اكتب نبذة المميزة...",
-        country: "الدولة",
-        countryPlaceholder: "اختر الدولة...",
-        city: "المدينة",
-        cityPlaceholder: "اختر المدينة...",
-        searchCountry: "ابحث عن الدولة",
-        searchCity: "ابحث عن المدينة",
-        noResults: "لا توجد نتائج",
-        address: "العنوان",
-        addressPlaceholder: "اكتب العنوان بالتفصيل ...",
-        phone: "رقم الهاتف",
-        phonePlaceholder: "طريقة تقديم التدريب: عبر الانترنت، حضورا، كلاهما",
-        email: "البريد الالكتروني",
-        emailPlaceholder: "طريقة تقديم التدريب: عبر الانترنت، حضورا، كلاهما",
-      },
-      stepTwo: {
-        website: "الموقع الالكتروني",
-        websitePlaceholder: "/#",
-        capacity: "الطاقة الاستيعابية",
-        capacityPlaceholder: "عدد الاعضاء المسموح بهم",
-        sports: "الرياضات المتوفرة",
-        facilities: "المرافق المتوفرة",
-        facilitiesPlaceholder: "اختر المرافق...",
-      },
-      stepThree: {
-        gallery: "الصور (المعرض)",
-        galleryEmpty: "لم يتم اضافة اي صورة بعد",
-        galleryHint: "إضافة صور (jpg, jpeg, png)",
-        social: "روابط التواصل الاجتماعي",
-      },
-      mapHash: "/#",
-      uploadImage: "رفع",
-      next: "التالي",
-      back: "رجوع",
-      submit: "انشاء حساب نادي رياضي",
-      oneOfThree: "صورة (1/3)",
-    }
-  }
-
-  return {
-    title: "Create Gym Account",
-    stepOne: {
-      gymName: "Gym name",
-      gymNamePlaceholder: "Training mode: online, in-person, or both",
-      logo: "Logo",
-      logoHint: "Upload logo image (jpg, jpeg, png)",
-      description: "Gym description",
-      descriptionPlaceholder: "Write a short standout summary...",
-      country: "Country",
-      countryPlaceholder: "Select country...",
-      city: "City",
-      cityPlaceholder: "Select city...",
-      searchCountry: "Search country",
-      searchCity: "Search city",
-      noResults: "No results",
-      address: "Address",
-      addressPlaceholder: "Write full address ...",
-      phone: "Phone number",
-      phonePlaceholder: "Training mode: online, in-person, or both",
-      email: "Email",
-      emailPlaceholder: "Training mode: online, in-person, or both",
-    },
-    stepTwo: {
-      website: "Website",
-      websitePlaceholder: "/#",
-      capacity: "Capacity",
-      capacityPlaceholder: "Allowed member count",
-      sports: "Available sports",
-      facilities: "Available facilities",
-      facilitiesPlaceholder: "Select facilities...",
-    },
-    stepThree: {
-      gallery: "Gallery photos",
-      galleryEmpty: "No image was added yet",
-      galleryHint: "Add images (jpg, jpeg, png)",
-      social: "Social links",
-    },
-    mapHash: "/#",
-    uploadImage: "Upload",
-    next: "Next",
-    back: "Back",
-    submit: "Create Gym Account",
-    oneOfThree: "Image (1/3)",
-  }
-}
 
 function isAcceptedImage(file: File): boolean {
   return ACCEPTED_IMAGE_TYPES.includes(file.type)
@@ -226,7 +130,9 @@ function SocialInput({
   )
 }
 
-export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymModalProps) {
+export function CreateGymModal({ open, onOpenChange }: CreateGymModalProps) {
+  const { dictionary, isRTL } = useDictionary()
+  const labels = dictionary.createGym
   const [step, setStep] = React.useState<Step>(1)
   const [formState, setFormState] = React.useState<FormState>(initialFormState)
   const [countries, setCountries] = React.useState<CountryOption[]>([])
@@ -243,8 +149,6 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
   const cityDropdownRef = React.useRef<HTMLDivElement | null>(null)
   const countryTriggerRef = React.useRef<HTMLButtonElement | null>(null)
   const cityTriggerRef = React.useRef<HTMLButtonElement | null>(null)
-
-  const labels = React.useMemo(() => buildLabels(lang), [lang])
 
   const selectedCountry = React.useMemo(
     () => countries.find((item) => String(item.id) === formState.country) ?? null,
@@ -471,9 +375,9 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
 
     return FACILITY_OPTIONS
       .filter((option) => formState.facilities.has(option.key))
-      .map((option) => (lang === "ar" ? option.labelAr : option.labelEn))
+      .map((option) => labels.facilities[option.key])
       .join(", ")
-  }, [formState.facilities, labels.stepTwo.facilitiesPlaceholder, lang])
+  }, [formState.facilities, labels.facilities, labels.stepTwo.facilitiesPlaceholder])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -487,7 +391,7 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
               type="button"
               onClick={() => onOpenChange(false)}
               className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border/45 bg-muted/35 text-foreground transition-colors hover:bg-muted"
-              aria-label={lang === "ar" ? "إغلاق" : "Close"}
+              aria-label={labels.close}
             >
               <Icon icon="material-symbols:close-rounded" className="size-5" />
             </button>
@@ -574,7 +478,7 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
                           <img
                             src={`https://flagcdn.com/20x15/${selectedCountry.iso2.toLowerCase()}.png`}
                             alt=""
-                            className="h-[15px] w-5 shrink-0 rounded-[2px] object-cover"
+                            className="h-3.75 w-5 shrink-0 rounded-[2px] object-cover"
                             loading="lazy"
                           />
                           <span className="truncate">{selectedCountry.name}</span>
@@ -613,7 +517,7 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
                               <img
                                 src={`https://flagcdn.com/20x15/${option.iso2.toLowerCase()}.png`}
                                 alt=""
-                                className="h-[15px] w-5 shrink-0 rounded-[2px] object-cover"
+                                className="h-3.75 w-5 shrink-0 rounded-[2px] object-cover"
                                 loading="lazy"
                               />
                               <span className="truncate">{option.label}</span>
@@ -757,12 +661,12 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
                     type="button"
                     onClick={decrementCapacity}
                     className="inline-flex size-12 cursor-pointer items-center justify-center rounded-xl border border-border/40 bg-muted/55 text-foreground transition-colors hover:bg-muted"
-                    aria-label="decrease capacity"
+                    aria-label={labels.capacityDecrease}
                   >
                     <Icon icon="material-symbols:remove-rounded" className="size-6" />
                   </button>
 
-                  <div className="flex h-12 min-w-[5.5rem] items-center justify-center rounded-xl border border-border/40 bg-muted/45 px-3 text-2xl font-extrabold text-foreground">
+                  <div className="flex h-12 min-w-22 items-center justify-center rounded-xl border border-border/40 bg-muted/45 px-3 text-2xl font-extrabold text-foreground">
                     {formState.capacity}
                   </div>
 
@@ -770,7 +674,7 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
                     type="button"
                     onClick={incrementCapacity}
                     className="inline-flex size-12 cursor-pointer items-center justify-center rounded-xl border border-border/40 bg-muted/55 text-foreground transition-colors hover:bg-muted"
-                    aria-label="increase capacity"
+                    aria-label={labels.capacityIncrease}
                   >
                     <Icon icon="material-symbols:add-rounded" className="size-6" />
                   </button>
@@ -784,7 +688,7 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
                 <div className="flex flex-wrap gap-1.5 rounded-lg border border-border/35 bg-muted/35 p-2">
                   {SPORT_OPTIONS.map((sport) => {
                     const selected = formState.sports.has(sport.key)
-                    const label = lang === "ar" ? sport.labelAr : sport.labelEn
+                    const label = labels.sports[sport.key]
 
                     return (
                       <button
@@ -839,7 +743,7 @@ export function CreateGymModal({ open, onOpenChange, isRTL, lang }: CreateGymMod
                           toggleFacility(option.key)
                         }}
                       >
-                        {lang === "ar" ? option.labelAr : option.labelEn}
+                        {labels.facilities[option.key]}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </DropdownMenuContent>

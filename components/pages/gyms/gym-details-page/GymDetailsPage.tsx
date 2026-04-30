@@ -42,7 +42,7 @@ function Pill({ children, tone = "default", icon }: { children: React.ReactNode;
 }
 
 export function GymDetailsPage({ gymId }: GymDetailsPageProps) {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL } = useDictionary()
 
   const gymNumericId = React.useMemo(() => Number(gymId), [gymId])
   const gym = React.useMemo(
@@ -63,53 +63,19 @@ export function GymDetailsPage({ gymId }: GymDetailsPageProps) {
   const secondaryGalleryImages = gym.galleryImages.slice(1, 5)
   const galleryExtraCount = Math.max(0, gym.galleryImages.length - 5)
 
-  const labels = lang === "ar"
-    ? {
-        edit: "تعديل",
-        website: "الموقع الالكتروني",
-        phone: "رقم الهاتف",
-        email: "البريد الالكتروني",
-        capacity: "الطاقة الاستيعابية",
-        members: "عضو",
-        facilities: "المرافق المتوفرة",
-        workSchedule: "مواعيد العمل",
-        prices: "الاسعار",
-        social: "روابط التواصل الاجتماعي",
-        showMoreImages: "عرض المزيد",
-        hour: "الساعة",
-        month: "الشهر",
-        year: "السنة",
-        currency: "درهم",
-      }
-    : {
-        edit: "Edit",
-        website: "Website",
-        phone: "Phone",
-        email: "Email",
-        capacity: "Capacity",
-        members: "members",
-        facilities: "Available facilities",
-        workSchedule: "Work schedule",
-        prices: "Prices",
-        social: "Social links",
-        showMoreImages: "Show more",
-        hour: "Hour",
-        month: "Month",
-        year: "Year",
-        currency: "MAD",
-      }
+  const labels = dictionary.gymDetails
 
   const genderChips = gym.genderTags.map((gender) => {
     if (gender === "men") {
       return {
-        label: lang === "ar" ? "رجال" : "Men",
+        label: labels.genderTags.men,
         className: "border-blue-400/45 bg-blue-500/10 text-blue-500",
         icon: "solar:men-linear",
       }
     }
 
     return {
-      label: lang === "ar" ? "نساء" : "Women",
+      label: labels.genderTags.women,
       className: "border-pink-400/45 bg-pink-500/10 text-pink-500",
       icon: "solar:women-linear",
     }

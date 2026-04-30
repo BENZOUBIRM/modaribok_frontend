@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react"
 import { PRODUCT_ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { useDictionary } from "@/providers/dictionary-provider"
+import type { Dictionary } from "@/i18n/get-dictionary"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,7 +25,6 @@ import {
   DEFAULT_PRODUCT_IMAGE,
   PRODUCTS,
   extractNumericPrice,
-  getDiscountLabel,
   getOriginalPriceLabel,
   type ProductData,
 } from "../shared"
@@ -42,6 +42,7 @@ type ProductSortMode =
 
 const DEFAULT_SORT_MODE: ProductSortMode = "id-asc"
 const DEFAULT_MIN_RATING: 0 | 4 | 4.5 = 0
+type ProductsDictionary = Dictionary["products"]
 
 function extractLeadingNumber(value: string): number {
   const match = value.match(/[\d,.]+/)
@@ -57,10 +58,15 @@ function normalizeSearchValue(value: string): string {
   return value.toLowerCase().trim()
 }
 
+function formatDiscountLabel(template: string, value: number): string {
+  return template.replace("{value}", String(value))
+}
+
 function ProductCard({
   data,
   isRTL,
   lang,
+  labels,
   liked,
   inCart,
   onToggleLike,
@@ -69,6 +75,7 @@ function ProductCard({
   data: ProductData
   isRTL: boolean
   lang: string
+  labels: ProductsDictionary
   liked: boolean
   inCart: boolean
   onToggleLike: (id: number) => void
@@ -82,9 +89,11 @@ function ProductCard({
   const sold = isRTL ? data.soldAr : data.soldEn
   const discountLabel =
     typeof data.discountPercentage === "number"
-      ? getDiscountLabel(data.discountPercentage, lang)
+      ? formatDiscountLabel(labels.discountLabel, data.discountPercentage)
       : null
   const originalPriceLabel = getOriginalPriceLabel(price, data.discountPercentage)
+  const detailsLabel = labels.viewDetails.replace("{name}", name)
+  const cartLabel = inCart ? labels.addedToCart : labels.addToCart
 
   return (
     <article
@@ -117,7 +126,7 @@ function ProductCard({
         ) : null}
         <Link
           href={PRODUCT_ROUTES.DETAIL(lang, data.id)}
-          aria-label={isRTL ? `عرض تفاصيل ${name}` : `View details for ${name}`}
+          aria-label={detailsLabel}
           className="absolute inset-0 block"
         >
           <Image
@@ -137,8 +146,8 @@ function ProductCard({
 
             <button
               type="button"
-              aria-label={isRTL ? "المفضلة" : "Favorite"}
-              title={isRTL ? "المفضلة" : "Favorite"}
+              aria-label={labels.favorite}
+              title={labels.favorite}
               aria-pressed={liked}
               onClick={() => onToggleLike(data.id)}
               className="inline-flex size-11 cursor-pointer items-center justify-center rounded-full border border-border/75 bg-zinc-200 text-muted-foreground transition-colors hover:border-border hover:text-foreground dark:border-0 dark:bg-zinc-600 dark:text-zinc-100 dark:hover:border-zinc-100/80"
@@ -196,23 +205,9 @@ function ProductCard({
             <button
               type="button"
               aria-label={
-                inCart
-                  ? isRTL
-                    ? "تمت الإضافة إلى السلة"
-                    : "Added to cart"
-                  : isRTL
-                    ? "إضافة إلى السلة"
-                    : "Add to cart"
+                cartLabel
               }
-              title={
-                inCart
-                  ? isRTL
-                    ? "تمت الإضافة إلى السلة"
-                    : "Added to cart"
-                  : isRTL
-                    ? "إضافة إلى السلة"
-                    : "Add to cart"
-              }
+              title={cartLabel}
               aria-pressed={inCart}
               disabled={inCart}
               onClick={() => onAddToCart(data.id)}
@@ -236,7 +231,7 @@ function ProductCard({
 }
 
 export function ProductsPage() {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL, lang } = useDictionary()
   const [favoriteIds, setFavoriteIds] = React.useState<Set<number>>(new Set())
   const [cartIds, setCartIds] = React.useState<Set<number>>(new Set())
   const [searchDraft, setSearchDraft] = React.useState("")
@@ -256,77 +251,7 @@ export function ProductsPage() {
   const [draftMinRating, setDraftMinRating] = React.useState<0 | 4 | 4.5>(DEFAULT_MIN_RATING)
   const [draftSelectedCategoryKeys, setDraftSelectedCategoryKeys] = React.useState<Set<string>>(new Set())
 
-  const labels = isRTL
-    ? {
-        title: "المتجر",
-        add: "إضافة",
-        settings: "الإعدادات",
-        settingsTitle: "إعدادات المنتجات",
-        sortSection: "الترتيب",
-        sortNewest: "الأحدث (المعرف تنازلي)",
-        sortOldest: "الأقدم (المعرف تصاعدي)",
-        sortNameAsc: "الاسم (أ - ي)",
-        sortNameDesc: "الاسم (ي - أ)",
-        sortPriceAsc: "السعر (من الأقل)",
-        sortPriceDesc: "السعر (من الأعلى)",
-        sortRating: "الأعلى تقييما",
-        sortSold: "الأكثر مبيعا",
-        sortDiscount: "أعلى خصم",
-        filtersSection: "الفلاتر",
-        filterDiscount: "العروض فقط",
-        filterStock: "المتاح فقط",
-        ratingSection: "الحد الأدنى للتقييم",
-        ratingAny: "الكل",
-        rating4: "4.0+",
-        rating45: "4.5+",
-        categoriesSection: "الفئات",
-        applyFilters: "تطبيق",
-        resetFilters: "إعادة الضبط",
-        searchPlaceholder: "ابحث عن منتج...",
-        searchButton: "بحث",
-        openSearch: "فتح البحث",
-        cancelSearch: "إلغاء",
-        favorites: "المفضلة",
-        favoritesOnly: "عرض المفضلة فقط",
-        allProducts: "عرض كل المنتجات",
-        results: "نتيجة",
-        noProducts: "لا توجد منتجات مطابقة للإعدادات الحالية.",
-      }
-    : {
-        title: "Store",
-        add: "Add",
-        settings: "Settings",
-        settingsTitle: "Products Settings",
-        sortSection: "Sort",
-        sortNewest: "Newest (ID Desc)",
-        sortOldest: "Oldest (ID Asc)",
-        sortNameAsc: "Name (A-Z)",
-        sortNameDesc: "Name (Z-A)",
-        sortPriceAsc: "Price (Low to High)",
-        sortPriceDesc: "Price (High to Low)",
-        sortRating: "Top Rated",
-        sortSold: "Best Selling",
-        sortDiscount: "Highest Discount",
-        filtersSection: "Filters",
-        filterDiscount: "Discounted only",
-        filterStock: "In stock only",
-        ratingSection: "Minimum rating",
-        ratingAny: "Any",
-        rating4: "4.0+",
-        rating45: "4.5+",
-        categoriesSection: "Categories",
-        applyFilters: "Apply",
-        resetFilters: "Reset",
-        searchPlaceholder: "Search products...",
-        searchButton: "Search",
-        openSearch: "Open search",
-        cancelSearch: "Cancel",
-        favorites: "Favorites",
-        favoritesOnly: "Show favorites only",
-        allProducts: "Show all products",
-        results: "results",
-        noProducts: "No products match the current settings.",
-      }
+  const labels = dictionary.products
 
   const categoryOptions = React.useMemo(
     () => Array.from(new Map(
@@ -530,7 +455,7 @@ export function ProductsPage() {
               setIsMobileSearchOpen(false)
             }}
           >
-            <div className="w-full md:max-w-[40rem]">
+            <div className="w-full md:max-w-160">
               <Input
                 value={searchDraft}
                 onChange={(event) => {
@@ -555,7 +480,7 @@ export function ProductsPage() {
                       type="button"
                       onClick={clearSearchDraft}
                       className="inline-flex size-5 cursor-pointer items-center justify-center leading-none text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label={lang === "ar" ? "مسح النص" : "Clear text"}
+                      aria-label={labels.clearSearch}
                     >
                       <Icon icon="material-symbols:close-rounded" className="block size-4" />
                     </button>
@@ -745,6 +670,7 @@ export function ProductsPage() {
                   data={product}
                   isRTL={isRTL}
                   lang={lang}
+                  labels={labels}
                   liked={favoriteIds.has(product.id)}
                   inCart={cartIds.has(product.id)}
                   onToggleLike={toggleFavorite}

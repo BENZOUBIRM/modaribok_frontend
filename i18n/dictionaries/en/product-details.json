@@ -1,0 +1,18 @@
+{
+  "size": "Size",
+  "quantity": "Quantity",
+  "total": "Total",
+  "addToCart": "Add to cart",
+  "added": "Added",
+  "showMore": "Show more",
+  "showLess": "Show less",
+  "hideBottomGallery": "Hide image bar",
+  "showBottomGallery": "Show image bar",
+  "currency": "MAD",
+  "decreaseQuantity": "Decrease quantity",
+  "increaseQuantity": "Increase quantity",
+  "previousImage": "Previous image",
+  "nextImage": "Next image",
+  "thumbnail": "Thumbnail {index}",
+  "discountLabel": "{value}% OFF"
+}

@@ -8,7 +8,6 @@ import { useDictionary } from "@/providers/dictionary-provider"
 import {
   DEFAULT_PRODUCT_IMAGE,
   extractNumericPrice,
-  getDiscountLabel,
   getOriginalPriceLabel,
   getProductById,
 } from "../shared"
@@ -23,6 +22,10 @@ const IMAGE_ZOOM_LENS_SIZE = 180
 
 type ProductSize = (typeof SIZE_OPTIONS)[number]
 type ZoomNaturalSize = { width: number; height: number }
+
+function formatDiscountLabel(template: string, value: number): string {
+  return template.replace("{value}", String(value))
+}
 
 function DiscountRibbon({ label, isRTL }: { label: string; isRTL: boolean }) {
   return (
@@ -68,7 +71,7 @@ function ProductInfoBadge({
 }
 
 export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
-  const { isRTL, lang } = useDictionary()
+  const { dictionary, isRTL } = useDictionary()
 
   const productNumericId = React.useMemo(() => Number(productId), [productId])
   const resolvedProduct = React.useMemo(
@@ -173,35 +176,12 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
   const soldProductsLabel = isRTL ? product.soldProductsAr : product.soldProductsEn
   const description = isRTL ? product.detailDescriptionAr : product.detailDescriptionEn
   const priceLabel = isRTL ? product.priceAr : product.priceEn
-  const currencyLabel = lang === "ar" ? "درهم" : "MAD"
-
-  const labels = lang === "ar"
-    ? {
-        size: "الحجم",
-        quantity: "الكمية",
-        total: "الاجمالي",
-        addToCart: "اضافة الى السلة",
-        added: "تمت الاضافة",
-        showMore: "عرض المزيد",
-        showLess: "عرض أقل",
-        hideBottomGallery: "إخفاء شريط الصور",
-        showBottomGallery: "إظهار شريط الصور",
-      }
-    : {
-        size: "Size",
-        quantity: "Quantity",
-        total: "Total",
-        addToCart: "Add to cart",
-        added: "Added",
-        showMore: "Show more",
-        showLess: "Show less",
-        hideBottomGallery: "Hide image bar",
-        showBottomGallery: "Show image bar",
-      }
+  const labels = dictionary.productDetails
+  const currencyLabel = labels.currency
 
   const discountLabel =
     typeof product.discountPercentage === "number"
-      ? getDiscountLabel(product.discountPercentage, lang)
+      ? formatDiscountLabel(labels.discountLabel, product.discountPercentage)
       : null
 
   const originalPriceLabel = getOriginalPriceLabel(priceLabel, product.discountPercentage)
@@ -329,13 +309,13 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1260px] px-4 py-6 md:px-6" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="mx-auto w-full max-w-315 px-4 py-6 md:px-6" dir={isRTL ? "rtl" : "ltr"}>
       <section className="w-full min-w-0 overflow-hidden rounded-3xl border border-border/30 bg-card shadow-[0_8px_24px_rgba(0,0,0,0.05)] dark:border-zinc-700 dark:shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-        <div dir="ltr" className="grid w-full min-w-0 lg:min-h-[610px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch">
+        <div dir="ltr" className="grid w-full min-w-0 lg:min-h-152.5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch">
           <div dir={isRTL ? "rtl" : "ltr"} className={`order-2 min-w-0 bg-card px-4 py-6 sm:px-7 sm:py-8 ${isRTL ? "lg:order-1" : "lg:order-2"} lg:px-10 lg:py-10`}>
-            <div className="mx-auto flex h-full w-full min-w-0 max-w-none flex-col gap-5 lg:max-w-[640px] lg:justify-center">
+            <div className="mx-auto flex h-full w-full min-w-0 max-w-none flex-col gap-5 lg:max-w-160 lg:justify-center">
               <header className="space-y-3">
-                <h1 className={`break-words text-3xl font-extrabold leading-tight text-foreground md:text-5xl ${isRTL ? "text-right" : "text-left"}`}>
+                <h1 className={`wrap-break-word text-3xl font-extrabold leading-tight text-foreground md:text-5xl ${isRTL ? "text-right" : "text-left"}`}>
                   {title}
                 </h1>
 
@@ -413,7 +393,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                         type="button"
                         onClick={decrementQuantity}
                         className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 transition-colors hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-                        aria-label={isRTL ? "انقاص الكمية" : "Decrease quantity"}
+                        aria-label={labels.decreaseQuantity}
                       >
                         <Icon icon="mdi:minus" className="size-5" />
                       </button>
@@ -424,7 +404,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                         type="button"
                         onClick={incrementQuantity}
                         className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 transition-colors hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-                        aria-label={isRTL ? "زيادة الكمية" : "Increase quantity"}
+                        aria-label={labels.increaseQuantity}
                       >
                         <Icon icon="mdi:plus" className="size-5" />
                       </button>
@@ -473,7 +453,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                   <button
                     type="button"
                     onClick={() => setIsAddedToCart(true)}
-                    className={`inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-2.5 text-lg font-bold transition-colors sm:w-auto sm:min-w-[180px] ${
+                    className={`inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-2.5 text-lg font-bold transition-colors sm:w-auto sm:min-w-45 ${
                       isAddedToCart
                         ? "bg-emerald-500 text-white hover:bg-emerald-500/90"
                         : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -496,7 +476,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
           </div>
 
           <div className={`order-1 min-w-0 bg-card ${isRTL ? "lg:order-2" : "lg:order-1"} lg:h-full`}>
-            <div className="relative h-[360px] w-full overflow-hidden sm:h-[520px] lg:h-full lg:min-h-[610px]">
+            <div className="relative h-90 w-full overflow-hidden sm:h-130 lg:h-full lg:min-h-152.5">
               <div
                 ref={zoomFrameRef}
                 onMouseEnter={handleImageMouseEnter}
@@ -533,7 +513,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                   <span className="absolute inset-0 border border-white/40" />
                 </div>
 
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                <span className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
               </div>
 
               <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-30 hidden px-4 pb-4 lg:block">
@@ -544,7 +524,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                         type="button"
                         onClick={isRTL ? handleNextImage : handlePrevImage}
                         className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-amber-300 transition-colors hover:bg-amber-500/15"
-                        aria-label={isRTL ? "الصورة السابقة" : "Previous image"}
+                        aria-label={labels.previousImage}
                       >
                         <Icon icon={isRTL ? "solar:arrow-right-linear" : "solar:arrow-left-linear"} className="size-5" />
                       </button>
@@ -555,12 +535,12 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                             key={`${thumb}-${index}`}
                             type="button"
                             onClick={() => setSelectedImageIndex(index)}
-                            className={`relative size-[72px] shrink-0 cursor-pointer overflow-hidden border transition-colors ${
+                            className={`relative size-18 shrink-0 cursor-pointer overflow-hidden border transition-colors ${
                               selectedImageIndex === index
                                 ? "border-primary shadow-[0_0_0_2px_rgba(47,102,246,0.24)]"
                                 : "border-white/25 hover:border-primary/60"
                             }`}
-                            aria-label={isRTL ? `صورة مصغرة ${index + 1}` : `Thumbnail ${index + 1}`}
+                            aria-label={labels.thumbnail.replace("{index}", String(index + 1))}
                           >
                             <Image src={thumb} alt={`${title} thumbnail ${index + 1}`} fill className="object-cover" sizes="72px" />
                           </button>
@@ -571,7 +551,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                         type="button"
                         onClick={isRTL ? handlePrevImage : handleNextImage}
                         className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-amber-300 transition-colors hover:bg-amber-500/15"
-                        aria-label={isRTL ? "الصورة التالية" : "Next image"}
+                        aria-label={labels.nextImage}
                       >
                         <Icon icon={isRTL ? "solar:arrow-left-linear" : "solar:arrow-right-linear"} className="size-5" />
                       </button>
@@ -619,7 +599,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                             ? "border-primary shadow-[0_0_0_2px_rgba(47,102,246,0.2)]"
                             : "border-border/40 hover:border-primary/50 dark:border-zinc-700"
                         }`}
-                        aria-label={isRTL ? `صورة مصغرة ${index + 1}` : `Thumbnail ${index + 1}`}
+                        aria-label={labels.thumbnail.replace("{index}", String(index + 1))}
                       >
                         <Image src={thumb} alt={`${title} thumbnail ${index + 1}`} fill className="object-cover" sizes="80px" />
                       </button>
@@ -631,7 +611,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                       type="button"
                       onClick={isRTL ? handleNextImage : handlePrevImage}
                       className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-amber-500 transition-colors hover:bg-amber-500/12"
-                      aria-label={isRTL ? "الصورة السابقة" : "Previous image"}
+                      aria-label={labels.previousImage}
                     >
                       <Icon icon={isRTL ? "solar:arrow-right-linear" : "solar:arrow-left-linear"} className="size-5" />
                     </button>
@@ -640,7 +620,7 @@ export function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
                       type="button"
                       onClick={isRTL ? handlePrevImage : handleNextImage}
                       className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-amber-500 transition-colors hover:bg-amber-500/12"
-                      aria-label={isRTL ? "الصورة التالية" : "Next image"}
+                      aria-label={labels.nextImage}
                     >
                       <Icon icon={isRTL ? "solar:arrow-left-linear" : "solar:arrow-right-linear"} className="size-5" />
                     </button>

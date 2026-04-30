@@ -1,0 +1,62 @@
+{
+  "title": "Create Gym Account",
+  "close": "Close",
+  "next": "Next",
+  "back": "Back",
+  "submit": "Create Gym Account",
+  "oneOfThree": "Image (1/3)",
+  "mapHash": "/#",
+  "capacityDecrease": "Decrease capacity",
+  "capacityIncrease": "Increase capacity",
+  "stepOne": {
+    "gymName": "Gym name",
+    "gymNamePlaceholder": "Training mode: online, in-person, or both",
+    "logo": "Logo",
+    "logoHint": "Upload logo image (jpg, jpeg, png)",
+    "description": "Gym description",
+    "descriptionPlaceholder": "Write a short standout summary...",
+    "country": "Country",
+    "countryPlaceholder": "Select country...",
+    "city": "City",
+    "cityPlaceholder": "Select city...",
+    "searchCountry": "Search country",
+    "searchCity": "Search city",
+    "noResults": "No results",
+    "address": "Address",
+    "addressPlaceholder": "Write full address ...",
+    "phone": "Phone number",
+    "phonePlaceholder": "Training mode: online, in-person, or both",
+    "email": "Email",
+    "emailPlaceholder": "Training mode: online, in-person, or both"
+  },
+  "stepTwo": {
+    "website": "Website",
+    "websitePlaceholder": "/#",
+    "capacity": "Capacity",
+    "capacityPlaceholder": "Allowed member count",
+    "sports": "Available sports",
+    "facilities": "Available facilities",
+    "facilitiesPlaceholder": "Select facilities..."
+  },
+  "stepThree": {
+    "gallery": "Gallery photos",
+    "galleryEmpty": "No image was added yet",
+    "galleryHint": "Add images (jpg, jpeg, png)",
+    "social": "Social links"
+  },
+  "sports": {
+    "basketball": "Basketball",
+    "football": "Football",
+    "run": "Run with friends",
+    "karate": "Karate",
+    "swim": "Swimming",
+    "volleyball": "Volleyball"
+  },
+  "facilities": {
+    "lockers": "Locker rooms",
+    "parking": "Parking",
+    "cafe": "Cafe",
+    "sauna": "Sauna",
+    "pool": "Pool"
+  }
+}

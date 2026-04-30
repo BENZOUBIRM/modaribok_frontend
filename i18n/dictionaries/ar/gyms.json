@@ -1,0 +1,30 @@
+{
+  "title": "صالات رياضية",
+  "add": "إضافة",
+  "settings": "الإعدادات",
+  "settingsTitle": "إعدادات الصالات",
+  "sortSection": "الترتيب",
+  "sortNewest": "الأحدث (المعرف تنازلي)",
+  "sortOldest": "الأقدم (المعرف تصاعدي)",
+  "sortNameAsc": "الاسم (أ - ي)",
+  "sortNameDesc": "الاسم (ي - أ)",
+  "womenOnly": "نسائي فقط",
+  "menOnly": "رجالي فقط",
+  "mixed": "مختلط (رجال ونساء)",
+  "allGenders": "الكل",
+  "categorySection": "التصنيفات",
+  "searchPlaceholder": "ابحث عن صالة...",
+  "searchButton": "بحث",
+  "openSearch": "فتح البحث",
+  "searchOnMap": "بحث على الخريطة",
+  "cancelSearch": "إلغاء",
+  "applyFilters": "تطبيق",
+  "resetFilters": "إعادة الضبط",
+  "results": "نتيجة",
+  "noResults": "لا توجد صالات مطابقة.",
+  "clearSearch": "مسح النص",
+  "genderTags": {
+    "women": "نساء",
+    "men": "رجال"
+  }
+}
